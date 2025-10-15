@@ -12,6 +12,7 @@ import * as dotenv from "dotenv";
 
 import { GHLApiClient } from "./clients/ghl-api-client";
 import { ContactTools } from "./tools/contact-tools";
+import { registerUtilityTools } from "./tools/utility-tools";
 import { GHLConfig } from "./types/ghl-types";
 
 // ALL OTHER TOOL IMPORTS COMMENTED OUT FOR NOW
@@ -134,6 +135,10 @@ class GHLMCPHttpServer {
   private registerTools(): void {
     console.log("[GHL MCP HTTP] Registering tools...");
 
+    // Register utility tools first (domain-agnostic)
+    registerUtilityTools(this.mcpServer);
+
+    // Register contact tools
     const contactToolDefinitions = this.contactTools.getToolDefinitions();
 
     for (const tool of contactToolDefinitions) {
@@ -215,7 +220,7 @@ class GHLMCPHttpServer {
     }
 
     console.log(
-      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact tools`
+      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact tools + utility tools`
     );
   }
 
@@ -232,7 +237,8 @@ class GHLMCPHttpServer {
         timestamp: new Date().toISOString(),
         tools: {
           contact: this.contactTools.getToolDefinitions().length,
-          total: this.contactTools.getToolDefinitions().length,
+          utility: 2,
+          total: this.contactTools.getToolDefinitions().length + 2,
         },
       });
     });
@@ -333,7 +339,8 @@ class GHLMCPHttpServer {
         },
         tools: {
           contact: this.contactTools.getToolDefinitions().length,
-          total: this.contactTools.getToolDefinitions().length,
+          utility: 2,
+          total: this.contactTools.getToolDefinitions().length + 2,
         },
         documentation: "https://github.com/your-repo/ghl-mcp-server",
       });
@@ -377,8 +384,8 @@ class GHLMCPHttpServer {
         console.log(`🔗 MCP Endpoint: http://0.0.0.0:${this.port}/mcp`);
         console.log(
           `📋 Tools Available: ${
-            this.contactTools.getToolDefinitions().length
-          } (Contact Tools Only)`
+            this.contactTools.getToolDefinitions().length + 2
+          } (32 Contact + 2 Utility)`
         );
         console.log("🎯 Ready for ADK integration!");
         console.log("=========================================");
@@ -396,7 +403,11 @@ class GHLMCPHttpServer {
         console.log("   CAMPAIGNS: add/remove contacts to/from campaigns");
         console.log("   WORKFLOWS: add/remove contacts to/from workflows");
         console.log("   APPOINTMENTS: get contact appointments");
-        console.log("=========================================");
+        console.log("");
+        console.log("🛠️  UTILITY TOOLS (2 tools):");
+        console.log("   DATE/TIME: calculate future datetime for GHL API");
+        console.log("   CALCULATOR: safe math calculations with functions");
+        console.log("=========================================\n");
       });
     } catch (error) {
       console.error("❌ Failed to start GHL MCP HTTP Server:", error);

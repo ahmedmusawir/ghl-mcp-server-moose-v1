@@ -146,7 +146,7 @@ export class ContactTools {
       },
       {
         name: "create_contact_task",
-        description: "Create a new task for a contact. IMPORTANT: assignedTo must be a GHL User ID (team member), NOT a contact ID. Tasks can only be assigned to users who log into GoHighLevel.",
+        description: "Create a new task for a contact",
         inputSchema: {
           contactId: z.string().describe("Contact ID"),
           title: z.string().describe("Task title"),
@@ -156,7 +156,7 @@ export class ContactTools {
           assignedTo: z
             .string()
             .optional()
-            .describe("GHL User ID (team member) to assign task to - NOT a contact ID"),
+            .describe("User ID to assign task to"),
         },
       },
       {
@@ -169,7 +169,7 @@ export class ContactTools {
       },
       {
         name: "update_contact_task",
-        description: "Update a task for a contact. IMPORTANT: assignedTo must be a GHL User ID (team member), NOT a contact ID. Tasks can only be assigned to users who log into GoHighLevel.",
+        description: "Update a task for a contact",
         inputSchema: {
           contactId: z.string().describe("Contact ID"),
           taskId: z.string().describe("Task ID"),
@@ -180,7 +180,7 @@ export class ContactTools {
           assignedTo: z
             .string()
             .optional()
-            .describe("GHL User ID (team member) to assign task to - NOT a contact ID"),
+            .describe("User ID to assign task to"),
         },
       },
       {
@@ -649,19 +649,14 @@ export class ContactTools {
   // Task Management
   private async getContactTasks(
     params: MCPGetContactTasksParams
-  ): Promise<{ tasks: GHLTask[]; count: number; contactId: string }> {
+  ): Promise<GHLTask[]> {
     const response = await this.ghlClient.getContactTasks(params.contactId);
 
     if (!response.success) {
       throw new Error(response.error?.message || "Failed to get contact tasks");
     }
 
-    const tasks = response.data || [];
-    return {
-      tasks: tasks,
-      count: tasks.length,
-      contactId: params.contactId,
-    };
+    return response.data!;
   }
 
   private async createContactTask(
@@ -761,19 +756,14 @@ export class ContactTools {
   // Note Management
   private async getContactNotes(
     params: MCPGetContactNotesParams
-  ): Promise<{ notes: GHLNote[]; count: number; contactId: string }> {
+  ): Promise<GHLNote[]> {
     const response = await this.ghlClient.getContactNotes(params.contactId);
 
     if (!response.success) {
       throw new Error(response.error?.message || "Failed to get contact notes");
     }
 
-    const notes = response.data || [];
-    return {
-      notes: notes,
-      count: notes.length,
-      contactId: params.contactId,
-    };
+    return response.data!;
   }
 
   private async createContactNote(
@@ -918,7 +908,7 @@ export class ContactTools {
 
   private async getContactAppointments(
     params: MCPGetContactAppointmentsParams
-  ): Promise<{ appointments: GHLAppointment[]; count: number; contactId: string }> {
+  ): Promise<GHLAppointment[]> {
     const response = await this.ghlClient.getContactAppointments(
       params.contactId
     );
@@ -929,12 +919,7 @@ export class ContactTools {
       );
     }
 
-    const appointments = response.data || [];
-    return {
-      appointments: appointments,
-      count: appointments.length,
-      contactId: params.contactId,
-    };
+    return response.data!;
   }
 
   // Bulk Operations
