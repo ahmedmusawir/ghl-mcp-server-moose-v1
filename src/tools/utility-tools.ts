@@ -11,8 +11,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
  * These tools are domain-agnostic and useful across all tool categories
  */
 export function registerUtilityTools(server: McpServer): void {
-  console.log("[Utility Tools] Registering utility tools...");
-
   // Tool 1: Calculate future datetime
   server.tool(
     "calculate_future_datetime",
@@ -84,10 +82,6 @@ export function registerUtilityTools(server: McpServer): void {
           },
         };
 
-        console.log(
-          `[Utility Tools] Calculated datetime: ${result.humanReadable}`
-        );
-
         return {
           content: [
             {
@@ -146,10 +140,6 @@ export function registerUtilityTools(server: McpServer): void {
           const percent = parseFloat(percentOfMatch[1]);
           const value = parseFloat(percentOfMatch[2]);
           const result = (percent / 100) * value;
-
-          console.log(
-            `[Utility Tools] Calculated ${percent}% of ${value} = ${result}`
-          );
 
           return {
             content: [
@@ -210,8 +200,6 @@ export function registerUtilityTools(server: McpServer): void {
         const result = safeEval(processedExpr);
         const rounded = parseFloat(result.toFixed(precision));
 
-        console.log(`[Utility Tools] Calculated ${expression} = ${rounded}`);
-
         return {
           content: [
             {
@@ -269,6 +257,4 @@ export function registerUtilityTools(server: McpServer): void {
       }
     }
   );
-
-  console.log("[Utility Tools] ✅ Registered 2 utility tools");
 }

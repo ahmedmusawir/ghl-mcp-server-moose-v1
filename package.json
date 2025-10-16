@@ -17,8 +17,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --exec ts-node src/http-server.ts",
+    "dev:stdio": "npm run build && npm run start:stdio-new",
     "start": "node dist/http-server.js",
     "start:stdio": "node dist/server.js",
+    "start:stdio-new": "node dist/stdio-server.js",
     "start:http": "node dist/http-server.js",
     "vercel-build": "npm run build",
     "prepublishOnly": "npm run build",
