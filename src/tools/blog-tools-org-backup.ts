@@ -35,60 +35,139 @@ export class BlogTools {
   // 1. Create Blog Post
   {
     name: 'create_blog_post',
-    description: `Create a new blog post in GoHighLevel with SEO optimization.
-
-Features:
-- Supports HTML content formatting
-- Auto-generates URL slug if not provided
-- SEO meta description and canonical link support
-- Category and tag support
-- Author attribution
-- Publication scheduling
-
-Requirements:
-- Blog ID (use get_blog_sites to find available blogs)
-- Author ID (use get_blog_authors to find available authors)
-- Category IDs (use get_blog_categories to find available categories)
-
-Best Practice: Use check_url_slug first to ensure slug availability.`,
+    description: 'Create a new blog post in GoHighLevel. Requires blog ID, author ID, and category IDs which can be obtained from other blog tools.',
     inputSchema: {
-      title: z.string().describe('Blog post title'),
-      blogId: z.string().describe('Blog site ID (use get_blog_sites to find available blogs)'),
-      content: z.string().describe('Full HTML content of the blog post'),
-      description: z.string().describe('Short description/excerpt of the blog post'),
-      imageUrl: z.string().describe('URL of the featured image for the blog post'),
-      imageAltText: z.string().describe('Alt text for the featured image (for SEO and accessibility)'),
-      urlSlug: z.string().describe('URL slug for the blog post (use check_url_slug to verify availability)'),
-      author: z.string().describe('Author ID (use get_blog_authors to find available authors)'),
-      categories: z.array(z.string()).describe('Array of category IDs (use get_blog_categories to find available categories)'),
-      tags: z.array(z.string()).optional().describe('Optional array of tags for the blog post'),
-      status: z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED']).optional().describe('Publication status of the blog post (default: DRAFT)'),
-      canonicalLink: z.string().optional().describe('Optional canonical URL for SEO'),
-      publishedAt: z.string().optional().describe('Optional ISO timestamp for publication date (defaults to now for PUBLISHED status)')
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description: 'Blog post title'
+        },
+        blogId: {
+          type: 'string',
+          description: 'Blog site ID (use get_blog_sites to find available blogs)'
+        },
+        content: {
+          type: 'string',
+          description: 'Full HTML content of the blog post'
+        },
+        description: {
+          type: 'string',
+          description: 'Short description/excerpt of the blog post'
+        },
+        imageUrl: {
+          type: 'string',
+          description: 'URL of the featured image for the blog post'
+        },
+        imageAltText: {
+          type: 'string',
+          description: 'Alt text for the featured image (for SEO and accessibility)'
+        },
+        urlSlug: {
+          type: 'string',
+          description: 'URL slug for the blog post (use check_url_slug to verify availability)'
+        },
+        author: {
+          type: 'string',
+          description: 'Author ID (use get_blog_authors to find available authors)'
+        },
+        categories: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of category IDs (use get_blog_categories to find available categories)'
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional array of tags for the blog post'
+        },
+        status: {
+          type: 'string',
+          enum: ['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED'],
+          description: 'Publication status of the blog post',
+          default: 'DRAFT'
+        },
+        canonicalLink: {
+          type: 'string',
+          description: 'Optional canonical URL for SEO'
+        },
+        publishedAt: {
+          type: 'string',
+          description: 'Optional ISO timestamp for publication date (defaults to now for PUBLISHED status)'
+        }
+      },
+      required: ['title', 'blogId', 'content', 'description', 'imageUrl', 'imageAltText', 'urlSlug', 'author', 'categories']
     }
   },
 
   // 2. Update Blog Post
   {
     name: 'update_blog_post',
-    description: `Update an existing blog post in GoHighLevel. All fields except postId and blogId are optional.
-
-Best Practice: Use check_url_slug before updating the slug to ensure availability.`,
+    description: 'Update an existing blog post in GoHighLevel. All fields except postId and blogId are optional.',
     inputSchema: {
-      postId: z.string().describe('Blog post ID to update'),
-      blogId: z.string().describe('Blog site ID that contains the post'),
-      title: z.string().optional().describe('Updated blog post title'),
-      content: z.string().optional().describe('Updated HTML content of the blog post'),
-      description: z.string().optional().describe('Updated description/excerpt of the blog post'),
-      imageUrl: z.string().optional().describe('Updated featured image URL'),
-      imageAltText: z.string().optional().describe('Updated alt text for the featured image'),
-      urlSlug: z.string().optional().describe('Updated URL slug (use check_url_slug to verify availability)'),
-      author: z.string().optional().describe('Updated author ID'),
-      categories: z.array(z.string()).optional().describe('Updated array of category IDs'),
-      tags: z.array(z.string()).optional().describe('Updated array of tags'),
-      status: z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED']).optional().describe('Updated publication status'),
-      canonicalLink: z.string().optional().describe('Updated canonical URL'),
-      publishedAt: z.string().optional().describe('Updated ISO timestamp for publication date')
+      type: 'object',
+      properties: {
+        postId: {
+          type: 'string',
+          description: 'Blog post ID to update'
+        },
+        blogId: {
+          type: 'string',
+          description: 'Blog site ID that contains the post'
+        },
+        title: {
+          type: 'string',
+          description: 'Updated blog post title'
+        },
+        content: {
+          type: 'string',
+          description: 'Updated HTML content of the blog post'
+        },
+        description: {
+          type: 'string',
+          description: 'Updated description/excerpt of the blog post'
+        },
+        imageUrl: {
+          type: 'string',
+          description: 'Updated featured image URL'
+        },
+        imageAltText: {
+          type: 'string',
+          description: 'Updated alt text for the featured image'
+        },
+        urlSlug: {
+          type: 'string',
+          description: 'Updated URL slug (use check_url_slug to verify availability)'
+        },
+        author: {
+          type: 'string',
+          description: 'Updated author ID'
+        },
+        categories: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Updated array of category IDs'
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Updated array of tags'
+        },
+        status: {
+          type: 'string',
+          enum: ['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED'],
+          description: 'Updated publication status'
+        },
+        canonicalLink: {
+          type: 'string',
+          description: 'Updated canonical URL'
+        },
+        publishedAt: {
+          type: 'string',
+          description: 'Updated ISO timestamp for publication date'
+        }
+      },
+      required: ['postId', 'blogId']
     }
   },
 
@@ -97,11 +176,33 @@ Best Practice: Use check_url_slug before updating the slug to ensure availabilit
     name: 'get_blog_posts',
     description: 'Get blog posts from a specific blog site. Use this to list and search existing blog posts.',
     inputSchema: {
-      blogId: z.string().describe('Blog site ID to get posts from (use get_blog_sites to find available blogs)'),
-      limit: z.number().min(1).max(100).optional().describe('Number of posts to retrieve (default: 10, max recommended: 50)'),
-      offset: z.number().min(0).optional().describe('Number of posts to skip for pagination (default: 0)'),
-      searchTerm: z.string().optional().describe('Optional search term to filter posts by title or content'),
-      status: z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED']).optional().describe('Optional filter by publication status')
+      type: 'object',
+      properties: {
+        blogId: {
+          type: 'string',
+          description: 'Blog site ID to get posts from (use get_blog_sites to find available blogs)'
+        },
+        limit: {
+          type: 'number',
+          description: 'Number of posts to retrieve (default: 10, max recommended: 50)',
+          default: 10
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of posts to skip for pagination (default: 0)',
+          default: 0
+        },
+        searchTerm: {
+          type: 'string',
+          description: 'Optional search term to filter posts by title or content'
+        },
+        status: {
+          type: 'string',
+          enum: ['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED'],
+          description: 'Optional filter by publication status'
+        }
+      },
+      required: ['blogId']
     }
   },
 
@@ -110,9 +211,23 @@ Best Practice: Use check_url_slug before updating the slug to ensure availabilit
     name: 'get_blog_sites',
     description: 'Get all blog sites for the current location. Use this to find available blogs before creating or managing posts.',
     inputSchema: {
-      limit: z.number().min(1).max(100).optional().describe('Number of blogs to retrieve (default: 10)'),
-      skip: z.number().min(0).optional().describe('Number of blogs to skip for pagination (default: 0)'),
-      searchTerm: z.string().optional().describe('Optional search term to filter blogs by name')
+      type: 'object',
+      properties: {
+        limit: {
+          type: 'number',
+          description: 'Number of blogs to retrieve (default: 10)',
+          default: 10
+        },
+        skip: {
+          type: 'number',
+          description: 'Number of blogs to skip for pagination (default: 0)',
+          default: 0
+        },
+        searchTerm: {
+          type: 'string',
+          description: 'Optional search term to filter blogs by name'
+        }
+      }
     }
   },
 
@@ -121,8 +236,19 @@ Best Practice: Use check_url_slug before updating the slug to ensure availabilit
     name: 'get_blog_authors',
     description: 'Get all available blog authors for the current location. Use this to find author IDs for creating blog posts.',
     inputSchema: {
-      limit: z.number().min(1).max(100).optional().describe('Number of authors to retrieve (default: 10)'),
-      offset: z.number().min(0).optional().describe('Number of authors to skip for pagination (default: 0)')
+      type: 'object',
+      properties: {
+        limit: {
+          type: 'number',
+          description: 'Number of authors to retrieve (default: 10)',
+          default: 10
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of authors to skip for pagination (default: 0)',
+          default: 0
+        }
+      }
     }
   },
 
@@ -131,8 +257,19 @@ Best Practice: Use check_url_slug before updating the slug to ensure availabilit
     name: 'get_blog_categories',
     description: 'Get all available blog categories for the current location. Use this to find category IDs for creating blog posts.',
     inputSchema: {
-      limit: z.number().min(1).max(100).optional().describe('Number of categories to retrieve (default: 10)'),
-      offset: z.number().min(0).optional().describe('Number of categories to skip for pagination (default: 0)')
+      type: 'object',
+      properties: {
+        limit: {
+          type: 'number',
+          description: 'Number of categories to retrieve (default: 10)',
+          default: 10
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of categories to skip for pagination (default: 0)',
+          default: 0
+        }
+      }
     }
   },
 
@@ -141,8 +278,18 @@ Best Practice: Use check_url_slug before updating the slug to ensure availabilit
     name: 'check_url_slug',
     description: 'Check if a URL slug is available for use. Use this before creating or updating blog posts to ensure unique URLs.',
     inputSchema: {
-      urlSlug: z.string().describe('URL slug to check for availability'),
-      postId: z.string().optional().describe('Optional post ID when updating an existing post (to exclude itself from the check)')
+      type: 'object',
+      properties: {
+        urlSlug: {
+          type: 'string',
+          description: 'URL slug to check for availability'
+        },
+        postId: {
+          type: 'string',
+          description: 'Optional post ID when updating an existing post (to exclude itself from the check)'
+        }
+      },
+      required: ['urlSlug']
     }
   }
     ];
@@ -220,21 +367,7 @@ Best Practice: Use check_url_slug before updating the slug to ensure availabilit
       } else {
         throw new Error('Failed to create blog post - no data returned');
       }
-    } catch (error: any) {
-      // Check for duplicate slug error (409 Conflict)
-      if (error.message?.includes('(409)') || error.message?.includes('slug') || error.message?.includes('already exists')) {
-        throw new Error(`Blog post slug already exists: "${params.urlSlug}"
-
-The URL slug you provided is already in use by another blog post.
-
-Solutions:
-1. Use check_url_slug tool to find an available slug
-2. Choose a different slug manually
-3. Let GHL auto-generate a slug by using a unique title
-
-Original error: ${error.message}`);
-      }
-      
+    } catch (error) {
       throw new Error(`Failed to create blog post: ${error}`);
     }
   }

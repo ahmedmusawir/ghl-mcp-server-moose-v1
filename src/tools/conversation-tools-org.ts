@@ -1,9 +1,9 @@
 /**
- * GoHighLevel Conversation Tools
- * Implements all conversation and messaging functionality for the MCP server
+ * MCP Conversation Tools for GoHighLevel Integration
+ * Exposes messaging and conversation capabilities to ChatGPT
  */
 
-import { z } from "zod";
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { GHLApiClient } from '../clients/ghl-api-client.js';
 import {
   MCPSendSMSParams,
@@ -47,94 +47,216 @@ export class ConversationTools {
   constructor(private ghlClient: GHLApiClient) {}
 
   /**
-   * Get tool definitions for all conversation operations
+   * Get all conversation tool definitions for MCP server
    */
-  getToolDefinitions(): any[] {
+  getToolDefinitions(): Tool[] {
     return [
       {
         name: 'send_sms',
         description: 'Send an SMS message to a contact in GoHighLevel',
         inputSchema: {
-          contactId: z.string().describe('The unique ID of the contact to send SMS to'),
-          message: z.string().max(1600).describe('The SMS message content to send'),
-          fromNumber: z.string().optional().describe('Optional: Phone number to send from (must be configured in GHL)')
+          type: 'object',
+          properties: {
+            contactId: {
+              type: 'string',
+              description: 'The unique ID of the contact to send SMS to'
+            },
+            message: {
+              type: 'string',
+              description: 'The SMS message content to send',
+              maxLength: 1600
+            },
+            fromNumber: {
+              type: 'string',
+              description: 'Optional: Phone number to send from (must be configured in GHL)'
+            }
+          },
+          required: ['contactId', 'message']
         }
       },
       {
         name: 'send_email',
-        description: `Send an email message to a contact in GoHighLevel.
-        
-IMPORTANT: Use the 'html' parameter for all email content (works for both plain text and HTML).
-The GHL API requires the 'html' parameter for email bodies - the 'message' parameter is not reliably processed.
-
-Examples:
-- Plain text: { html: "Hello, this is a plain text email" }
-- HTML: { html: "<p>Hello, this is <strong>HTML</strong> email</p>" }
-
-Parameters:
-- contactId: The GHL contact ID to send email to
-- subject: Email subject line
-- html: Email body content (plain text or HTML) - REQUIRED`,
+        description: 'Send an email message to a contact in GoHighLevel',
         inputSchema: {
-          contactId: z.string().describe('The unique ID of the contact to send email to'),
-          subject: z.string().describe('Email subject line'),
-          html: z.string().describe('Email body (can be plain text or HTML - this parameter is required by GHL API)'),
-          message: z.string().optional().describe('Plain text fallback (optional, not reliably processed by GHL API)'),
-          emailFrom: z.string().email().optional().describe('Optional: Email address to send from (must be configured in GHL)'),
-          attachments: z.array(z.string()).optional().describe('Optional: Array of attachment URLs'),
-          emailCc: z.array(z.string()).optional().describe('Optional: Array of CC email addresses'),
-          emailBcc: z.array(z.string()).optional().describe('Optional: Array of BCC email addresses')
+          type: 'object',
+          properties: {
+            contactId: {
+              type: 'string',
+              description: 'The unique ID of the contact to send email to'
+            },
+            subject: {
+              type: 'string',
+              description: 'Email subject line'
+            },
+            message: {
+              type: 'string',
+              description: 'Plain text email content'
+            },
+            html: {
+              type: 'string',
+              description: 'HTML email content (optional, takes precedence over message)'
+            },
+            emailFrom: {
+              type: 'string',
+              description: 'Optional: Email address to send from (must be configured in GHL)',
+              format: 'email'
+            },
+            attachments: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional: Array of attachment URLs'
+            },
+            emailCc: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional: Array of CC email addresses'
+            },
+            emailBcc: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional: Array of BCC email addresses'
+            }
+          },
+          required: ['contactId', 'subject']
         }
       },
       {
         name: 'search_conversations',
         description: 'Search conversations in GoHighLevel with various filters',
         inputSchema: {
-          contactId: z.string().optional().describe('Filter conversations for a specific contact'),
-          query: z.string().optional().describe('Search query to filter conversations'),
-          status: z.enum(['all', 'read', 'unread', 'starred', 'recents']).optional().describe('Filter conversations by read status (default: all)'),
-          limit: z.number().min(1).max(100).optional().describe('Maximum number of conversations to return (default: 20, max: 100)'),
-          assignedTo: z.string().optional().describe('Filter by user ID assigned to conversations')
+          type: 'object',
+          properties: {
+            contactId: {
+              type: 'string',
+              description: 'Filter conversations for a specific contact'
+            },
+            query: {
+              type: 'string',
+              description: 'Search query to filter conversations'
+            },
+            status: {
+              type: 'string',
+              enum: ['all', 'read', 'unread', 'starred', 'recents'],
+              description: 'Filter conversations by read status',
+              default: 'all'
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of conversations to return (default: 20, max: 100)',
+              minimum: 1,
+              maximum: 100,
+              default: 20
+            },
+            assignedTo: {
+              type: 'string',
+              description: 'Filter by user ID assigned to conversations'
+            }
+          }
         }
       },
       {
         name: 'get_conversation',
         description: 'Get detailed conversation information including message history',
         inputSchema: {
-          conversationId: z.string().describe('The unique ID of the conversation to retrieve'),
-          limit: z.number().min(1).max(100).optional().describe('Maximum number of messages to return (default: 20)'),
-          messageTypes: z.array(z.enum(['TYPE_SMS', 'TYPE_EMAIL', 'TYPE_CALL', 'TYPE_FACEBOOK', 'TYPE_INSTAGRAM', 'TYPE_WHATSAPP', 'TYPE_LIVE_CHAT'])).optional().describe('Filter messages by type (optional)')
+          type: 'object',
+          properties: {
+            conversationId: {
+              type: 'string',
+              description: 'The unique ID of the conversation to retrieve'
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of messages to return (default: 20)',
+              minimum: 1,
+              maximum: 100,
+              default: 20
+            },
+            messageTypes: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: [
+                  'TYPE_SMS', 'TYPE_EMAIL', 'TYPE_CALL', 'TYPE_FACEBOOK',
+                  'TYPE_INSTAGRAM', 'TYPE_WHATSAPP', 'TYPE_LIVE_CHAT'
+                ]
+              },
+              description: 'Filter messages by type (optional)'
+            }
+          },
+          required: ['conversationId']
         }
       },
       {
         name: 'create_conversation',
         description: 'Create a new conversation with a contact',
         inputSchema: {
-          contactId: z.string().describe('The unique ID of the contact to create conversation with')
+          type: 'object',
+          properties: {
+            contactId: {
+              type: 'string',
+              description: 'The unique ID of the contact to create conversation with'
+            }
+          },
+          required: ['contactId']
         }
       },
       {
         name: 'update_conversation',
         description: 'Update conversation properties (star, mark read, etc.)',
         inputSchema: {
-          conversationId: z.string().describe('The unique ID of the conversation to update'),
-          starred: z.boolean().optional().describe('Star or unstar the conversation'),
-          unreadCount: z.number().min(0).optional().describe('Set the unread message count (0 to mark as read)')
+          type: 'object',
+          properties: {
+            conversationId: {
+              type: 'string',
+              description: 'The unique ID of the conversation to update'
+            },
+            starred: {
+              type: 'boolean',
+              description: 'Star or unstar the conversation'
+            },
+            unreadCount: {
+              type: 'number',
+              description: 'Set the unread message count (0 to mark as read)',
+              minimum: 0
+            }
+          },
+          required: ['conversationId']
         }
       },
       {
         name: 'get_recent_messages',
         description: 'Get recent messages across all conversations for monitoring',
         inputSchema: {
-          limit: z.number().min(1).max(50).optional().describe('Maximum number of conversations to check (default: 10)'),
-          status: z.enum(['all', 'unread']).optional().describe('Filter by conversation status (default: unread)')
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of conversations to check (default: 10)',
+              minimum: 1,
+              maximum: 50,
+              default: 10
+            },
+            status: {
+              type: 'string',
+              enum: ['all', 'unread'],
+              description: 'Filter by conversation status',
+              default: 'unread'
+            }
+          }
         }
       },
       {
         name: 'delete_conversation',
         description: 'Delete a conversation permanently',
         inputSchema: {
-          conversationId: z.string().describe('The unique ID of the conversation to delete')
+          type: 'object',
+          properties: {
+            conversationId: {
+              type: 'string',
+              description: 'The unique ID of the conversation to delete'
+            }
+          },
+          required: ['conversationId']
         }
       },
       
@@ -143,55 +265,84 @@ Parameters:
         name: 'get_email_message',
         description: 'Get detailed email message information by email message ID',
         inputSchema: {
-          emailMessageId: z.string().describe('The unique ID of the email message to retrieve')
+          type: 'object',
+          properties: {
+            emailMessageId: {
+              type: 'string',
+              description: 'The unique ID of the email message to retrieve'
+            }
+          },
+          required: ['emailMessageId']
         }
       },
       {
         name: 'get_message',
         description: 'Get detailed message information by message ID',
         inputSchema: {
-          messageId: z.string().describe('The unique ID of the message to retrieve')
+          type: 'object',
+          properties: {
+            messageId: {
+              type: 'string',
+              description: 'The unique ID of the message to retrieve'
+            }
+          },
+          required: ['messageId']
         }
       },
       {
         name: 'upload_message_attachments',
         description: 'Upload file attachments for use in messages',
         inputSchema: {
-          conversationId: z.string().describe('The conversation ID to upload attachments for'),
-          attachmentUrls: z.array(z.string()).describe('Array of file URLs to upload as attachments')
+          type: 'object',
+          properties: {
+            conversationId: {
+              type: 'string',
+              description: 'The conversation ID to upload attachments for'
+            },
+            attachmentUrls: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of file URLs to upload as attachments'
+            }
+          },
+          required: ['conversationId', 'attachmentUrls']
         }
       },
       {
         name: 'update_message_status',
-        description: `Update the status of a message in GoHighLevel.
-
-IMPORTANT REQUIREMENTS & LIMITATIONS:
-
-Configuration Requirements:
-- Requires an active conversation provider (SMS service like Twilio, Bandwidth)
-- Provider must be properly configured in GHL account
-- API key needs write permissions for messages
-
-Message Type Limitations:
-- Email messages: Status is typically read-only (cannot be updated)
-- SMS messages: Requires active SMS provider configuration
-- Call logs: May work if provider is configured
-
-Common Errors:
-- "No conversation provider found" (403): SMS provider not configured
-- "No message found" (401): Message type doesn't support status updates (usually emails)
-
-Best Practice: Use get_message first to verify the message exists and check its type before attempting status updates.`,
+        description: 'Update the delivery status of a message',
         inputSchema: {
-          messageId: z.string().describe('The unique ID of the message to update'),
-          status: z.enum(['delivered', 'failed', 'pending', 'read']).describe('New status for the message'),
-          error: z.object({
-            code: z.string().optional(),
-            type: z.string().optional(),
-            message: z.string().optional()
-          }).optional().describe('Error details if status is failed'),
-          emailMessageId: z.string().optional().describe('Email message ID if updating email status'),
-          recipients: z.array(z.string()).optional().describe('Email delivery status for additional recipients')
+          type: 'object',
+          properties: {
+            messageId: {
+              type: 'string',
+              description: 'The unique ID of the message to update'
+            },
+            status: {
+              type: 'string',
+              enum: ['delivered', 'failed', 'pending', 'read'],
+              description: 'New status for the message'
+            },
+            error: {
+              type: 'object',
+              description: 'Error details if status is failed',
+              properties: {
+                code: { type: 'string' },
+                type: { type: 'string' },
+                message: { type: 'string' }
+              }
+            },
+            emailMessageId: {
+              type: 'string',
+              description: 'Email message ID if updating email status'
+            },
+            recipients: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Email delivery status for additional recipients'
+            }
+          },
+          required: ['messageId', 'status']
         }
       },
       
@@ -200,39 +351,127 @@ Best Practice: Use get_message first to verify the message exists and check its 
         name: 'add_inbound_message',
         description: 'Manually add an inbound message to a conversation',
         inputSchema: {
-          type: z.enum(['SMS', 'Email', 'WhatsApp', 'GMB', 'IG', 'FB', 'Custom', 'WebChat', 'Live_Chat', 'Call']).describe('Type of inbound message to add'),
-          conversationId: z.string().describe('The conversation to add the message to'),
-          conversationProviderId: z.string().describe('Conversation provider ID for the message'),
-          message: z.string().optional().describe('Message content (for text-based messages)'),
-          attachments: z.array(z.string()).optional().describe('Array of attachment URLs'),
-          html: z.string().optional().describe('HTML content for email messages'),
-          subject: z.string().optional().describe('Subject line for email messages'),
-          emailFrom: z.string().optional().describe('From email address'),
-          emailTo: z.string().optional().describe('To email address'),
-          emailCc: z.array(z.string()).optional().describe('CC email addresses'),
-          emailBcc: z.array(z.string()).optional().describe('BCC email addresses'),
-          emailMessageId: z.string().optional().describe('Email message ID for threading'),
-          altId: z.string().optional().describe('External provider message ID'),
-          date: z.string().optional().describe('Date of the message (ISO format)'),
-          call: z.object({
-            to: z.string().optional().describe('Called number'),
-            from: z.string().optional().describe('Caller number'),
-            status: z.enum(['pending', 'completed', 'answered', 'busy', 'no-answer', 'failed', 'canceled', 'voicemail']).optional().describe('Call status')
-          }).optional().describe('Call details for call-type messages')
+          type: 'object',
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['SMS', 'Email', 'WhatsApp', 'GMB', 'IG', 'FB', 'Custom', 'WebChat', 'Live_Chat', 'Call'],
+              description: 'Type of inbound message to add'
+            },
+            conversationId: {
+              type: 'string',
+              description: 'The conversation to add the message to'
+            },
+            conversationProviderId: {
+              type: 'string',
+              description: 'Conversation provider ID for the message'
+            },
+            message: {
+              type: 'string',
+              description: 'Message content (for text-based messages)'
+            },
+            attachments: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of attachment URLs'
+            },
+            html: {
+              type: 'string',
+              description: 'HTML content for email messages'
+            },
+            subject: {
+              type: 'string',
+              description: 'Subject line for email messages'
+            },
+            emailFrom: {
+              type: 'string',
+              description: 'From email address'
+            },
+            emailTo: {
+              type: 'string',
+              description: 'To email address'
+            },
+            emailCc: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'CC email addresses'
+            },
+            emailBcc: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'BCC email addresses'
+            },
+            emailMessageId: {
+              type: 'string',
+              description: 'Email message ID for threading'
+            },
+            altId: {
+              type: 'string',
+              description: 'External provider message ID'
+            },
+            date: {
+              type: 'string',
+              description: 'Date of the message (ISO format)'
+            },
+            call: {
+              type: 'object',
+              description: 'Call details for call-type messages',
+              properties: {
+                to: { type: 'string', description: 'Called number' },
+                from: { type: 'string', description: 'Caller number' },
+                status: { 
+                  type: 'string', 
+                  enum: ['pending', 'completed', 'answered', 'busy', 'no-answer', 'failed', 'canceled', 'voicemail'],
+                  description: 'Call status'
+                }
+              }
+            }
+          },
+          required: ['type', 'conversationId', 'conversationProviderId']
         }
       },
       {
         name: 'add_outbound_call',
         description: 'Manually add an outbound call record to a conversation',
         inputSchema: {
-          conversationId: z.string().describe('The conversation to add the call to'),
-          conversationProviderId: z.string().describe('Conversation provider ID for the call'),
-          to: z.string().describe('Called phone number'),
-          from: z.string().describe('Caller phone number'),
-          status: z.enum(['pending', 'completed', 'answered', 'busy', 'no-answer', 'failed', 'canceled', 'voicemail']).describe('Call completion status'),
-          attachments: z.array(z.string()).optional().describe('Array of attachment URLs'),
-          altId: z.string().optional().describe('External provider call ID'),
-          date: z.string().optional().describe('Date of the call (ISO format)')
+          type: 'object',
+          properties: {
+            conversationId: {
+              type: 'string',
+              description: 'The conversation to add the call to'
+            },
+            conversationProviderId: {
+              type: 'string',
+              description: 'Conversation provider ID for the call'
+            },
+            to: {
+              type: 'string',
+              description: 'Called phone number'
+            },
+            from: {
+              type: 'string',
+              description: 'Caller phone number'
+            },
+            status: {
+              type: 'string',
+              enum: ['pending', 'completed', 'answered', 'busy', 'no-answer', 'failed', 'canceled', 'voicemail'],
+              description: 'Call completion status'
+            },
+            attachments: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of attachment URLs'
+            },
+            altId: {
+              type: 'string',
+              description: 'External provider call ID'
+            },
+            date: {
+              type: 'string',
+              description: 'Date of the call (ISO format)'
+            }
+          },
+          required: ['conversationId', 'conversationProviderId', 'to', 'from', 'status']
         }
       },
       
@@ -241,21 +480,42 @@ Best Practice: Use get_message first to verify the message exists and check its 
         name: 'get_message_recording',
         description: 'Get call recording audio for a message',
         inputSchema: {
-          messageId: z.string().describe('The unique ID of the call message to get recording for')
+          type: 'object',
+          properties: {
+            messageId: {
+              type: 'string',
+              description: 'The unique ID of the call message to get recording for'
+            }
+          },
+          required: ['messageId']
         }
       },
       {
         name: 'get_message_transcription',
         description: 'Get call transcription text for a message',
         inputSchema: {
-          messageId: z.string().describe('The unique ID of the call message to get transcription for')
+          type: 'object',
+          properties: {
+            messageId: {
+              type: 'string',
+              description: 'The unique ID of the call message to get transcription for'
+            }
+          },
+          required: ['messageId']
         }
       },
       {
         name: 'download_transcription',
         description: 'Download call transcription as a text file',
         inputSchema: {
-          messageId: z.string().describe('The unique ID of the call message to download transcription for')
+          type: 'object',
+          properties: {
+            messageId: {
+              type: 'string',
+              description: 'The unique ID of the call message to download transcription for'
+            }
+          },
+          required: ['messageId']
         }
       },
       
@@ -264,14 +524,28 @@ Best Practice: Use get_message first to verify the message exists and check its 
         name: 'cancel_scheduled_message',
         description: 'Cancel a scheduled message before it is sent',
         inputSchema: {
-          messageId: z.string().describe('The unique ID of the scheduled message to cancel')
+          type: 'object',
+          properties: {
+            messageId: {
+              type: 'string',
+              description: 'The unique ID of the scheduled message to cancel'
+            }
+          },
+          required: ['messageId']
         }
       },
       {
         name: 'cancel_scheduled_email',
         description: 'Cancel a scheduled email before it is sent',
         inputSchema: {
-          emailMessageId: z.string().describe('The unique ID of the scheduled email to cancel')
+          type: 'object',
+          properties: {
+            emailMessageId: {
+              type: 'string',
+              description: 'The unique ID of the scheduled email to cancel'
+            }
+          },
+          required: ['emailMessageId']
         }
       },
       
@@ -280,9 +554,22 @@ Best Practice: Use get_message first to verify the message exists and check its 
         name: 'live_chat_typing',
         description: 'Send typing indicator for live chat conversations',
         inputSchema: {
-          visitorId: z.string().describe('Unique visitor ID for the live chat session'),
-          conversationId: z.string().describe('The conversation ID for the live chat'),
-          isTyping: z.boolean().describe('Whether the agent is currently typing')
+          type: 'object',
+          properties: {
+            visitorId: {
+              type: 'string',
+              description: 'Unique visitor ID for the live chat session'
+            },
+            conversationId: {
+              type: 'string',
+              description: 'The conversation ID for the live chat'
+            },
+            isTyping: {
+              type: 'boolean',
+              description: 'Whether the agent is currently typing'
+            }
+          },
+          required: ['visitorId', 'conversationId', 'isTyping']
         }
       }
     ];
@@ -637,99 +924,8 @@ Best Practice: Use get_message first to verify the message exists and check its 
         success: true,
         message: `Message status updated to ${params.status} successfully`
       };
-    } catch (error: any) {
-      const messageId = params.messageId || 'unknown';
-      
-      // Handle "No conversation provider" error (403)
-      if (
-        error.message?.includes('(403)') &&
-        error.message?.includes('No conversation provider found')
-      ) {
-        throw new Error(`Cannot update message status: No conversation provider configured.
-
-This message exists but requires an active SMS/messaging provider to update its status.
-
-Possible reasons:
-1. No SMS provider (Twilio, Bandwidth, etc.) is configured in GHL
-2. The provider that sent this message is no longer active
-3. Account doesn't have messaging provider permissions
-
-To fix this:
-- Go to GHL Settings > Phone Numbers or Integrations
-- Configure an SMS provider (Twilio, Bandwidth, etc.)
-- Ensure the provider is active and properly connected
-
-Message ID: ${messageId}
-Attempted status: ${params.status}
-
-Note: You can retrieve this message using get_message, but status updates require an active messaging provider.
-
-Original error: ${error.message}`);
-      }
-      
-      // Handle "No message found" error for emails (401)
-      if (
-        error.message?.includes('(401)') &&
-        error.message?.includes('No message found')
-      ) {
-        throw new Error(`Cannot update message status: Message exists but status updates are not supported.
-
-This typically happens with email messages, which have read-only status via the GHL API.
-
-Possible reasons:
-1. Email message status cannot be modified via API
-2. This message type doesn't support status updates
-3. Status updates only work for SMS/call messages with active providers
-
-Message ID: ${messageId}
-Attempted status: ${params.status}
-
-Note: You can retrieve this message using get_email_message or get_message, but status modification is restricted.
-
-Original error: ${error.message}`);
-      }
-      
-      // Handle general 403 (permission denied)
-      if (error.message?.includes('(403)')) {
-        throw new Error(`Permission denied: Cannot update message status.
-
-Your API key or account may lack permission to modify message status.
-
-Please check:
-- API key has write permissions for messages
-- Account has messaging/conversation permissions
-- Provider configuration is active
-
-Message ID: ${messageId}
-
-Original error: ${error.message}`);
-      }
-      
-      // Handle 401 (unauthorized)
-      if (error.message?.includes('(401)')) {
-        throw new Error(`Authentication error: Unable to update message status.
-
-Please verify:
-- API key is valid and not expired
-- API key has correct permissions
-- Message ID is correct: ${messageId}
-
-Original error: ${error.message}`);
-      }
-      
-      // Handle 404 (message truly doesn't exist)
-      if (error.message?.includes('(404)')) {
-        throw new Error(`Message not found: ${messageId}
-
-The message may have been deleted or the ID is incorrect.
-
-Original error: ${error.message}`);
-      }
-      
-      // Generic fallback
-      throw new Error(`Failed to update message status for message ${messageId}: ${error.message || error}
-
-Attempted status: ${params.status}`);
+    } catch (error) {
+      throw new Error(`Failed to update message status: ${error}`);
     }
   }
 
@@ -762,24 +958,7 @@ Attempted status: ${params.status}`);
         conversationId: result.conversationId,
         message: `Inbound message added successfully to conversation ${params.conversationId}`
       };
-    } catch (error: any) {
-      // Check if it's a 500 error related to call configuration (when type is 'Call')
-      if (params.type === 'Call' && (error.message?.includes('(500)') || error.message?.includes('Internal server error'))) {
-        throw new Error(`Call functionality is not configured for this GHL account.
-
-Possible reasons:
-1. No phone number is set up in GHL
-2. Call provider not configured
-3. Account doesn't have calling permissions
-
-To fix this:
-- Go to GHL Settings > Phone Numbers
-- Set up a phone number or calling provider
-- Ensure your account has calling capabilities enabled
-
-Original error: ${error.message || 'Internal server error'}`);
-      }
-      
+    } catch (error) {
       throw new Error(`Failed to add inbound message: ${error}`);
     }
   }
@@ -809,24 +988,7 @@ Original error: ${error.message || 'Internal server error'}`);
         conversationId: result.conversationId,
         message: `Outbound call added successfully to conversation ${params.conversationId}`
       };
-    } catch (error: any) {
-      // Check if it's a 500 error related to call configuration
-      if (error.message?.includes('(500)') || error.message?.includes('Internal server error')) {
-        throw new Error(`Call functionality is not configured for this GHL account.
-
-Possible reasons:
-1. No phone number is set up in GHL
-2. Call provider not configured
-3. Account doesn't have calling permissions
-
-To fix this:
-- Go to GHL Settings > Phone Numbers
-- Set up a phone number or calling provider
-- Ensure your account has calling capabilities enabled
-
-Original error: ${error.message || 'Internal server error'}`);
-      }
-      
+    } catch (error) {
       throw new Error(`Failed to add outbound call: ${error}`);
     }
   }
@@ -842,26 +1004,7 @@ Original error: ${error.message || 'Internal server error'}`);
         contentType: recording.contentType,
         message: `Retrieved call recording for message ${params.messageId}`
       };
-    } catch (error: any) {
-      // Check if it's a 500 error related to call configuration
-      if (error.message?.includes('(500)') || error.message?.includes('Internal server error')) {
-        throw new Error(`Call functionality is not configured for this GHL account.
-
-Possible reasons:
-1. No phone number is set up in GHL
-2. Call provider not configured
-3. Account doesn't have calling permissions
-4. The message ID provided is not a call message
-
-To fix this:
-- Go to GHL Settings > Phone Numbers
-- Set up a phone number or calling provider
-- Ensure your account has calling capabilities enabled
-- Verify the message ID is for a call (not SMS/Email)
-
-Original error: ${error.message || 'Internal server error'}`);
-      }
-      
+    } catch (error) {
       throw new Error(`Failed to get message recording: ${error}`);
     }
   }
@@ -876,28 +1019,7 @@ Original error: ${error.message || 'Internal server error'}`);
         transcriptions: transcriptionData.transcriptions,
         message: `Retrieved call transcription for message ${params.messageId}`
       };
-    } catch (error: any) {
-      // Check if it's a 500 error related to call configuration
-      if (error.message?.includes('(500)') || error.message?.includes('Internal server error')) {
-        throw new Error(`Call functionality is not configured for this GHL account.
-
-Possible reasons:
-1. No phone number is set up in GHL
-2. Call provider not configured
-3. Account doesn't have calling permissions
-4. The message ID provided is not a call message
-5. Call transcription not enabled for this account
-
-To fix this:
-- Go to GHL Settings > Phone Numbers
-- Set up a phone number or calling provider
-- Ensure your account has calling capabilities enabled
-- Enable call transcription in your GHL account settings
-- Verify the message ID is for a call (not SMS/Email)
-
-Original error: ${error.message || 'Internal server error'}`);
-      }
-      
+    } catch (error) {
       throw new Error(`Failed to get message transcription: ${error}`);
     }
   }

@@ -626,8 +626,8 @@ class GHLMCPHttpServer {
       // Test GHL API connection
       await this.testGHLConnection();
 
-      // Start HTTP server with error handling
-      const server = this.app.listen(this.port, "0.0.0.0", () => {
+      // Start HTTP server
+      this.app.listen(this.port, "0.0.0.0", () => {
         console.log("✅ GoHighLevel MCP HTTP Server started successfully!");
         console.log(`🌐 Server running on: http://0.0.0.0:${this.port}`);
         console.log(`🔗 MCP Endpoint: http://0.0.0.0:${this.port}/mcp`);
@@ -684,23 +684,6 @@ class GHLMCPHttpServer {
         console.log("   CALCULATOR: safe math calculations with functions");
         console.log("=========================================\n");
       });
-
-      // Handle port already in use error
-      server.on("error", (error: any) => {
-        if (error.code === "EADDRINUSE") {
-          console.error(`\n❌ ERROR: Port ${this.port} is already in use!`);
-          console.error(`\n💡 Solutions:`);
-          console.error(`   1. Kill the process using port ${this.port}:`);
-          console.error(`      lsof -ti :${this.port} | xargs kill -9`);
-          console.error(`   2. Or change the port in .env file (MCP_SERVER_PORT)`);
-          console.error(`\n🔍 Check what's using the port:`);
-          console.error(`   lsof -i :${this.port}\n`);
-        } else {
-          console.error("\n❌ Server error:", error);
-        }
-        process.exit(1);
-      });
-
     } catch (error) {
       console.error("❌ Failed to start GHL MCP HTTP Server:", error);
       process.exit(1);

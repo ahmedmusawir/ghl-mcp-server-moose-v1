@@ -1,9 +1,9 @@
 /**
- * GoHighLevel Opportunity Management Tools
- * Implements all opportunity/pipeline management functionality for the MCP server
+ * MCP Opportunity Tools for GoHighLevel Integration
+ * Exposes opportunity management capabilities to Claude Desktop
  */
 
-import { z } from "zod";
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { GHLApiClient } from '../clients/ghl-api-client.js';
 import {
   MCPSearchOpportunitiesParams,
@@ -26,213 +26,257 @@ export class OpportunityTools {
   constructor(private ghlClient: GHLApiClient) {}
 
   /**
-   * Get tool definitions for all opportunity operations
+   * Get all opportunity tool definitions for MCP server
    */
-  getToolDefinitions(): any[] {
+  getToolDefinitions(): Tool[] {
     return [
       {
         name: 'search_opportunities',
-        description: `Search and filter opportunities in GoHighLevel with advanced filtering.
-
-Filter Options:
-- By pipeline: Filter opportunities in specific sales pipeline
-- By stage: Filter by pipeline stage (e.g., "Qualified", "Proposal Sent")
-- By contact: Get all opportunities for a specific contact
-- By assigned user: Get opportunities assigned to specific team member
-- By status: Filter by open, won, lost, or abandoned
-
-Pagination:
-- Use limit parameter for result size (default: 20, max: 100)
-
-Use Cases:
-- Find all open opportunities in Q4 pipeline
-- Get opportunities assigned to specific sales rep
-- List all won deals for a contact
-- Review abandoned opportunities for follow-up`,
+        description: 'Search for opportunities in GoHighLevel CRM using various filters like pipeline, stage, contact, status, etc.',
         inputSchema: {
-          query: z.string().optional().describe('General search query (searches name, contact info)'),
-          pipelineId: z.string().optional().describe('Filter by specific pipeline ID'),
-          pipelineStageId: z.string().optional().describe('Filter by specific pipeline stage ID'),
-          contactId: z.string().optional().describe('Filter by specific contact ID'),
-          status: z.enum(['open', 'won', 'lost', 'abandoned', 'all']).optional().describe('Filter by opportunity status'),
-          assignedTo: z.string().optional().describe('Filter by assigned user ID'),
-          limit: z.number().min(1).max(100).optional().describe('Maximum number of opportunities to return (default: 20, max: 100)')
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'General search query (searches name, contact info)'
+            },
+            pipelineId: {
+              type: 'string',
+              description: 'Filter by specific pipeline ID'
+            },
+            pipelineStageId: {
+              type: 'string',
+              description: 'Filter by specific pipeline stage ID'
+            },
+            contactId: {
+              type: 'string',
+              description: 'Filter by specific contact ID'
+            },
+            status: {
+              type: 'string',
+              description: 'Filter by opportunity status',
+              enum: ['open', 'won', 'lost', 'abandoned', 'all']
+            },
+            assignedTo: {
+              type: 'string',
+              description: 'Filter by assigned user ID'
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of opportunities to return (default: 20, max: 100)',
+              minimum: 1,
+              maximum: 100,
+              default: 20
+            }
+          }
         }
       },
       {
         name: 'get_pipelines',
-        description: `Get all sales pipelines configured in GoHighLevel.
-
-Returns pipeline structure including:
-- Pipeline ID and name
-- All stages within each pipeline
-- Stage IDs for creating/updating opportunities
-
-Use this tool first to discover available pipelines and stages before creating opportunities.`,
-        inputSchema: {}
+        description: 'Get all sales pipelines configured in GoHighLevel',
+        inputSchema: {
+          type: 'object',
+          properties: {}
+        }
       },
       {
         name: 'get_opportunity',
         description: 'Get detailed information about a specific opportunity by ID',
         inputSchema: {
-          opportunityId: z.string().describe('The unique ID of the opportunity to retrieve')
+          type: 'object',
+          properties: {
+            opportunityId: {
+              type: 'string',
+              description: 'The unique ID of the opportunity to retrieve'
+            }
+          },
+          required: ['opportunityId']
         }
       },
       {
         name: 'create_opportunity',
-        description: `Create a new opportunity in GoHighLevel CRM.
-
-IMPORTANT - Monetary Value:
-- GHL stores monetary values in CENTS (not dollars)
-- Example: $100.00 = 10000 cents
-- Always multiply dollar amounts by 100
-
-Required Fields:
-- name: Opportunity title
-- pipelineId: Use get_pipelines to find available pipelines
-- contactId: Must be existing contact ID
-
-Optional Fields:
-- pipelineStageId: Initial stage (defaults to first stage in pipeline)
-- monetaryValue: Deal value in cents
-- assignedTo: User ID to assign
-- status: Initial status (default: open)`,
+        description: 'Create a new opportunity in GoHighLevel CRM',
         inputSchema: {
-          name: z.string().describe('Name/title of the opportunity'),
-          pipelineId: z.string().describe('ID of the pipeline this opportunity belongs to (use get_pipelines)'),
-          contactId: z.string().describe('ID of the contact associated with this opportunity'),
-          pipelineStageId: z.string().optional().describe('Initial pipeline stage ID (defaults to first stage)'),
-          status: z.enum(['open', 'won', 'lost', 'abandoned']).optional().describe('Initial status of the opportunity (default: open)'),
-          monetaryValue: z.number().optional().describe('Monetary value in CENTS (e.g., 10000 = $100.00)'),
-          assignedTo: z.string().optional().describe('User ID to assign this opportunity to')
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Name/title of the opportunity'
+            },
+            pipelineId: {
+              type: 'string',
+              description: 'ID of the pipeline this opportunity belongs to'
+            },
+            contactId: {
+              type: 'string',
+              description: 'ID of the contact associated with this opportunity'
+            },
+            status: {
+              type: 'string',
+              description: 'Initial status of the opportunity (default: open)',
+              enum: ['open', 'won', 'lost', 'abandoned'],
+              default: 'open'
+            },
+            monetaryValue: {
+              type: 'number',
+              description: 'Monetary value of the opportunity in dollars'
+            },
+            assignedTo: {
+              type: 'string',
+              description: 'User ID to assign this opportunity to'
+            }
+          },
+          required: ['name', 'pipelineId', 'contactId']
         }
       },
       {
         name: 'update_opportunity_status',
-        description: `Update the status of an opportunity (won, lost, etc.).
-
-Status Options:
-- open: Active opportunity in pipeline
-- won: Deal closed successfully
-- lost: Deal lost to competitor or declined
-- abandoned: Opportunity no longer pursued
-
-Best Practices:
-- Provide wonReason when marking as won
-- Provide lostReason when marking as lost
-- Update pipelineStageId to move to appropriate stage`,
+        description: 'Update the status of an opportunity (won, lost, etc.)',
         inputSchema: {
-          opportunityId: z.string().describe('The unique ID of the opportunity'),
-          status: z.enum(['open', 'won', 'lost', 'abandoned']).describe('New status for the opportunity'),
-          pipelineStageId: z.string().optional().describe('Move to this pipeline stage (if changing stage)'),
-          wonReason: z.string().optional().describe('Reason for won status (recommended when status=won)'),
-          lostReason: z.string().optional().describe('Reason for lost status (recommended when status=lost)')
+          type: 'object',
+          properties: {
+            opportunityId: {
+              type: 'string',
+              description: 'The unique ID of the opportunity'
+            },
+            status: {
+              type: 'string',
+              description: 'New status for the opportunity',
+              enum: ['open', 'won', 'lost', 'abandoned']
+            }
+          },
+          required: ['opportunityId', 'status']
         }
       },
       {
         name: 'delete_opportunity',
-        description: `Delete an opportunity from GoHighLevel CRM.
-
-WARNING: This action is permanent and cannot be undone.
-
-Consider using update_opportunity_status with 'abandoned' status instead of deleting.`,
+        description: 'Delete an opportunity from GoHighLevel CRM',
         inputSchema: {
-          opportunityId: z.string().describe('The unique ID of the opportunity to delete')
+          type: 'object',
+          properties: {
+            opportunityId: {
+              type: 'string',
+              description: 'The unique ID of the opportunity to delete'
+            }
+          },
+          required: ['opportunityId']
         }
       },
       {
         name: 'update_opportunity',
-        description: `Update an existing opportunity with new details (full update).
-
-All fields except opportunityId are optional - only provide fields you want to update.
-
-IMPORTANT - Monetary Value:
-- Values must be in CENTS (not dollars)
-- Example: $250.50 = 25050 cents
-
-Use Cases:
-- Move opportunity to different pipeline stage
-- Update deal value
-- Reassign to different team member
-- Change opportunity name`,
+        description: 'Update an existing opportunity with new details (full update)',
         inputSchema: {
-          opportunityId: z.string().describe('The unique ID of the opportunity to update'),
-          name: z.string().optional().describe('Updated name/title of the opportunity'),
-          pipelineId: z.string().optional().describe('Updated pipeline ID'),
-          pipelineStageId: z.string().optional().describe('Updated pipeline stage ID'),
-          status: z.enum(['open', 'won', 'lost', 'abandoned']).optional().describe('Updated status of the opportunity'),
-          monetaryValue: z.number().optional().describe('Updated monetary value in CENTS (e.g., 25050 = $250.50)'),
-          assignedTo: z.string().optional().describe('Updated assigned user ID')
+          type: 'object',
+          properties: {
+            opportunityId: {
+              type: 'string',
+              description: 'The unique ID of the opportunity to update'
+            },
+            name: {
+              type: 'string',
+              description: 'Updated name/title of the opportunity'
+            },
+            pipelineId: {
+              type: 'string',
+              description: 'Updated pipeline ID'
+            },
+            pipelineStageId: {
+              type: 'string',
+              description: 'Updated pipeline stage ID'
+            },
+            status: {
+              type: 'string',
+              description: 'Updated status of the opportunity',
+              enum: ['open', 'won', 'lost', 'abandoned']
+            },
+            monetaryValue: {
+              type: 'number',
+              description: 'Updated monetary value in dollars'
+            },
+            assignedTo: {
+              type: 'string',
+              description: 'Updated assigned user ID'
+            }
+          },
+          required: ['opportunityId']
         }
       },
       {
         name: 'upsert_opportunity',
-        description: `Smart create or update: Creates new opportunity or updates existing one based on contact+pipeline.
-
-Upsert Logic:
-1. Checks if opportunity exists for given contact + pipeline combination
-2. If exists: Updates the existing opportunity
-3. If not exists: Creates new opportunity
-4. Returns result indicating whether created or updated
-
-IMPORTANT - Monetary Value:
-- Values must be in CENTS (not dollars)
-- Example: $500.00 = 50000 cents
-
-Use Cases:
-- Safely create opportunity without duplicate checking
-- Update deal value if opportunity exists
-- Idempotent opportunity management`,
+        description: 'Create or update an opportunity based on contact and pipeline (smart merge)',
         inputSchema: {
-          pipelineId: z.string().describe('ID of the pipeline this opportunity belongs to'),
-          contactId: z.string().describe('ID of the contact associated with this opportunity'),
-          name: z.string().optional().describe('Name/title of the opportunity'),
-          status: z.enum(['open', 'won', 'lost', 'abandoned']).optional().describe('Status of the opportunity (default: open)'),
-          pipelineStageId: z.string().optional().describe('Pipeline stage ID'),
-          monetaryValue: z.number().optional().describe('Monetary value in CENTS (e.g., 50000 = $500.00)'),
-          assignedTo: z.string().optional().describe('User ID to assign this opportunity to')
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Name/title of the opportunity'
+            },
+            pipelineId: {
+              type: 'string',
+              description: 'ID of the pipeline this opportunity belongs to'
+            },
+            contactId: {
+              type: 'string',
+              description: 'ID of the contact associated with this opportunity'
+            },
+            status: {
+              type: 'string',
+              description: 'Status of the opportunity',
+              enum: ['open', 'won', 'lost', 'abandoned'],
+              default: 'open'
+            },
+            pipelineStageId: {
+              type: 'string',
+              description: 'Pipeline stage ID'
+            },
+            monetaryValue: {
+              type: 'number',
+              description: 'Monetary value of the opportunity in dollars'
+            },
+            assignedTo: {
+              type: 'string',
+              description: 'User ID to assign this opportunity to'
+            }
+          },
+          required: ['pipelineId', 'contactId']
         }
       },
       {
         name: 'add_opportunity_followers',
-        description: `Add team members as followers to an opportunity for notifications and tracking.
-
-Followers receive:
-- Notifications when opportunity is updated
-- Stage change alerts
-- Status change notifications
-- Activity updates
-
-IMPORTANT:
-- Follower IDs are GHL user IDs (not contact IDs)
-- Multiple followers can be added in single operation
-- Duplicate followers are ignored (no error)
-
-Use Cases:
-- Add sales manager to high-value deals
-- Include team members for collaboration
-- Add account manager for customer success tracking`,
+        description: 'Add followers to an opportunity for notifications and tracking',
         inputSchema: {
-          opportunityId: z.string().describe('The unique ID of the opportunity'),
-          followers: z.array(z.string()).describe('Array of user IDs to add as followers')
+          type: 'object',
+          properties: {
+            opportunityId: {
+              type: 'string',
+              description: 'The unique ID of the opportunity'
+            },
+            followers: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of user IDs to add as followers'
+            }
+          },
+          required: ['opportunityId', 'followers']
         }
       },
       {
         name: 'remove_opportunity_followers',
-        description: `Remove team members from following an opportunity.
-
-IMPORTANT:
-- Follower IDs are GHL user IDs (not contact IDs)
-- Multiple followers can be removed in single operation
-- Removing non-existent followers is ignored (no error)
-
-Use Cases:
-- Remove team members when reassigning opportunity
-- Clean up follower list after team changes
-- Reduce notification noise for completed deals`,
+        description: 'Remove followers from an opportunity',
         inputSchema: {
-          opportunityId: z.string().describe('The unique ID of the opportunity'),
-          followers: z.array(z.string()).describe('Array of user IDs to remove as followers')
+          type: 'object',
+          properties: {
+            opportunityId: {
+              type: 'string',
+              description: 'The unique ID of the opportunity'
+            },
+            followers: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of user IDs to remove as followers'
+            }
+          },
+          required: ['opportunityId', 'followers']
         }
       }
     ];
@@ -414,43 +458,7 @@ Use Cases:
         opportunity: response.data,
         message: `Opportunity created successfully with ID: ${response.data.id}`
       };
-    } catch (error: any) {
-      // Handle invalid pipeline or stage
-      if (error.message?.includes('pipeline') || error.message?.includes('stage') || error.message?.includes('(400)')) {
-        throw new Error(`Invalid pipeline or stage configuration.
-
-Possible issues:
-1. Pipeline ID doesn't exist for this location
-2. Stage ID doesn't belong to the specified pipeline
-3. Pipeline is archived or deleted
-
-Use get_pipelines tool to see available pipelines and stages.
-
-Original error: ${error.message || error}`);
-      }
-      
-      // Handle missing contact
-      if (error.message?.includes('contact') || error.message?.includes('(404)')) {
-        throw new Error(`Contact not found: ${params.contactId}
-
-Opportunities must be associated with an existing contact.
-Use search_contacts or create_contact first.
-
-Original error: ${error.message || error}`);
-      }
-      
-      // Handle permission errors
-      if (error.message?.includes('(403)') || error.message?.includes('permission') || error.message?.includes('unauthorized')) {
-        throw new Error(`Permission denied: Cannot create opportunities.
-
-Please check:
-- API key has opportunity management permissions
-- User has access to this pipeline
-- Location settings allow opportunity creation
-
-Original error: ${error.message || error}`);
-      }
-      
+    } catch (error) {
       throw new Error(`Failed to create opportunity: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -471,33 +479,7 @@ Original error: ${error.message || error}`);
         success: true,
         message: `Opportunity status updated to ${status}`
       };
-    } catch (error: any) {
-      // Handle status update conflicts
-      if (error.message?.includes('(409)') || error.message?.includes('status') || error.message?.includes('conflict')) {
-        throw new Error(`Cannot update opportunity status.
-
-Possible reasons:
-1. Opportunity is already in final state (won/lost)
-2. Status change not allowed from current stage
-3. Required fields missing for status change (e.g., won/lost reason)
-4. Pipeline workflow rules prevent this status change
-
-Current status: ${status}
-Check pipeline workflow rules in GHL settings.
-
-Original error: ${error.message || error}`);
-      }
-      
-      // Handle opportunity not found
-      if (error.message?.includes('(404)') || error.message?.includes('not found')) {
-        throw new Error(`Opportunity not found: ${opportunityId}
-
-The opportunity may have been deleted or the ID is incorrect.
-Use search_opportunities to find the correct opportunity ID.
-
-Original error: ${error.message || error}`);
-      }
-      
+    } catch (error) {
       throw new Error(`Failed to update opportunity status: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
