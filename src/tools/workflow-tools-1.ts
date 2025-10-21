@@ -1,30 +1,26 @@
-import { z } from "zod";
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { GHLApiClient } from '../clients/ghl-api-client.js';
+import { 
+  MCPGetWorkflowsParams
+} from '../types/ghl-types.js';
 
 export class WorkflowTools {
   constructor(private apiClient: GHLApiClient) {}
 
-  getToolDefinitions(): any[] {
+  getTools(): Tool[] {
     return [
       {
         name: 'ghl_get_workflows',
-        description: `Retrieve all workflows for a location.
-
-Discover automation sequences and workflow configurations.
-
-Use Cases:
-- List all available workflows
-- Discover automation options
-- View workflow statuses
-- Audit automation setup
-
-Workflows represent automation sequences triggered by various events.
-
-Returns: Array of workflows with status and configuration.
-
-Related Tools: Contact and opportunity tools for workflow triggers`,
+        description: 'Retrieve all workflows for a location. Workflows represent automation sequences that can be triggered by various events in the system.',
         inputSchema: {
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: {
+              type: 'string',
+              description: 'The location ID to get workflows for. If not provided, uses the default location from configuration.'
+            }
+          },
+          additionalProperties: false
         }
       }
     ];
@@ -34,7 +30,7 @@ Related Tools: Contact and opportunity tools for workflow triggers`,
     try {
       switch (name) {
         case 'ghl_get_workflows':
-          return await this.getWorkflows(params);
+          return await this.getWorkflows(params as MCPGetWorkflowsParams);
         
         default:
           throw new Error(`Unknown workflow tool: ${name}`);
@@ -50,7 +46,7 @@ Related Tools: Contact and opportunity tools for workflow triggers`,
   /**
    * Get all workflows for a location
    */
-  private async getWorkflows(params: any): Promise<any> {
+  private async getWorkflows(params: MCPGetWorkflowsParams): Promise<any> {
     try {
       const result = await this.apiClient.getWorkflows({
         locationId: params.locationId || ''

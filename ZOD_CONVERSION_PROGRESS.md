@@ -1,13 +1,13 @@
 # GoHighLevel MCP Server - Zod Schema Conversion Progress
 
-**Last Updated:** 2025-10-21 1:05 PM
+**Last Updated:** 2025-10-21 1:30 PM
 
 ---
 
 ## 📊 Overall Progress
 
-**Total Tools Converted: 69/136 (51%)**
-**Total Tools in System: 155 tools**
+**Total Tools Converted: 80/155 (52%)**
+**Total Tools in System: 166 tools**
 
 ---
 
@@ -150,21 +150,56 @@
 
 ---
 
+### **Block 4: Custom Fields, Workflows & Surveys (11 tools)** ✅
+
+#### Custom Field V2 Tools (8 tools) ✅
+**File:** `src/tools/custom-field-v2-tools.ts`
+**Backup:** `src/tools/custom-field-v2-tools-1.ts`
+
+**Field Management (5 tools):**
+1. ✅ ghl_get_custom_field_by_id
+2. ✅ ghl_create_custom_field
+3. ✅ ghl_update_custom_field
+4. ✅ ghl_delete_custom_field
+5. ✅ ghl_get_custom_fields_by_object_key
+
+**Folder Management (3 tools):**
+6. ✅ ghl_create_custom_field_folder
+7. ✅ ghl_update_custom_field_folder
+8. ✅ ghl_delete_custom_field_folder
+
+#### Workflow Management Tools (1 tool) ✅
+**File:** `src/tools/workflow-tools.ts`
+**Backup:** `src/tools/workflow-tools-1.ts`
+
+**Converted Tools:**
+1. ✅ ghl_get_workflows
+
+#### Survey Management Tools (2 tools) ✅
+**File:** `src/tools/survey-tools.ts`
+**Backup:** `src/tools/survey-tools-1.ts`
+
+**Converted Tools:**
+1. ✅ ghl_get_surveys
+2. ✅ ghl_get_survey_submissions
+
+---
+
 ## 🔧 Server Integration Status
 
 ### HTTP Server (`src/http-server.ts`) ✅
-- ✅ Imports added for all new tools (including Object & Association)
+- ✅ Imports added for all new tools (including Custom Fields V2, Workflows, Surveys)
 - ✅ Tool instances initialized
 - ✅ Tools registered with MCP server
 - ✅ Health check endpoint updated
 - ✅ Startup display updated with all tools
-- ✅ **Dynamic total count added** (shows 155 tools)
+- ✅ **Dynamic total count added** (shows 166 tools)
 - **Backup:** `src/http-server-2.ts`
 
 ### STDIO Server (`src/stdio-server.ts`) ✅
-- ✅ Imports added for all new tools (including Object & Association)
+- ✅ Imports added for all new tools (including Custom Fields V2, Workflows, Surveys)
 - ✅ Tool instances initialized
-- ✅ Register functions created (registerObjectTools, registerAssociationTools)
+- ✅ Register functions created (registerCustomFieldV2Tools, registerWorkflowTools, registerSurveyTools)
 - ✅ Tools registered with MCP server
 - **Backup:** `src/stdio-server-2.ts`
 
@@ -252,6 +287,9 @@ src/tools/social-media-tools-backup-*.ts
 src/tools/media-tools-1.ts
 src/tools/object-tools-1.ts
 src/tools/association-tools-1.ts
+src/tools/custom-field-v2-tools-1.ts
+src/tools/workflow-tools-1.ts
+src/tools/survey-tools-1.ts
 src/http-server-2.ts
 src/stdio-server-2.ts
 ```
@@ -265,6 +303,9 @@ src/tools/social-media-tools.ts (17 tools converted)
 src/tools/media-tools.ts (3 tools converted)
 src/tools/object-tools.ts (9 tools converted)
 src/tools/association-tools.ts (10 tools converted)
+src/tools/custom-field-v2-tools.ts (8 tools converted)
+src/tools/workflow-tools.ts (1 tool converted)
+src/tools/survey-tools.ts (2 tools converted)
 src/http-server.ts (updated with all new tools)
 src/stdio-server.ts (updated with all new tools)
 ```
@@ -279,7 +320,7 @@ npm run build
 # Exit code: 0
 ```
 
-**Total Tools Registered:** 155
+**Total Tools Registered:** 166
 - Contact: 32
 - Conversation: 21
 - Blog: 7
@@ -290,8 +331,11 @@ npm run build
 - **Email Verification: 1** ← CONVERTED
 - **Social Media: 17** ← CONVERTED
 - **Media: 3** ← CONVERTED
-- **Object: 9** ← NEW
-- **Association: 10** ← NEW
+- **Object: 9** ← CONVERTED
+- **Association: 10** ← CONVERTED
+- **Custom Fields V2: 8** ← NEW
+- **Workflow: 1** ← NEW
+- **Survey: 2** ← NEW
 - Utility: 2
 
 ---
@@ -318,13 +362,13 @@ npm run build
 
 ## 🎉 Success Metrics
 
-- ✅ **69 tools successfully converted to Zod schemas (51% complete)**
+- ✅ **80 tools successfully converted to Zod schemas (52% complete)**
 - ✅ All builds passing
 - ✅ Servers updated and integrated
-- ✅ Dynamic tool counting implemented (155 tools total)
+- ✅ Dynamic tool counting implemented (166 tools total)
 - ✅ Comprehensive documentation added to all tools
 - ✅ All backups created for safety
-- ✅ Custom Objects and Association Management tools fully integrated
+- ✅ Custom Objects, Associations, Custom Fields V2, Workflows, and Surveys fully integrated
 
 ---
 

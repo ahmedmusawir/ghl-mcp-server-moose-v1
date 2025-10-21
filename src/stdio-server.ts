@@ -28,6 +28,9 @@ import { SocialMediaTools } from "./tools/social-media-tools.js";
 import { MediaTools } from "./tools/media-tools.js";
 import { ObjectTools } from "./tools/object-tools.js";
 import { AssociationTools } from "./tools/association-tools.js";
+import { CustomFieldV2Tools } from "./tools/custom-field-v2-tools.js";
+import { WorkflowTools } from "./tools/workflow-tools.js";
+import { SurveyTools } from "./tools/survey-tools.js";
 import { registerUtilityTools } from "./tools/utility-tools.js";
 import { GHLConfig } from "./types/ghl-types.js";
 
@@ -525,6 +528,69 @@ function registerAssociationTools(
 }
 
 /**
+ * Register Custom Field V2 Tools
+ */
+function registerCustomFieldV2Tools(
+  server: McpServer,
+  customFieldV2Tools: CustomFieldV2Tools
+): void {
+  const toolDefinitions = customFieldV2Tools.getToolDefinitions();
+  for (const tool of toolDefinitions) {
+    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
+      try {
+        const result = await customFieldV2Tools.executeCustomFieldV2Tool(tool.name, params);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+      }
+    });
+  }
+}
+
+/**
+ * Register Workflow Tools
+ */
+function registerWorkflowTools(
+  server: McpServer,
+  workflowTools: WorkflowTools
+): void {
+  const toolDefinitions = workflowTools.getToolDefinitions();
+  for (const tool of toolDefinitions) {
+    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
+      try {
+        const result = await workflowTools.executeWorkflowTool(tool.name, params);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+      }
+    });
+  }
+}
+
+/**
+ * Register Survey Tools
+ */
+function registerSurveyTools(
+  server: McpServer,
+  surveyTools: SurveyTools
+): void {
+  const toolDefinitions = surveyTools.getToolDefinitions();
+  for (const tool of toolDefinitions) {
+    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
+      try {
+        const result = await surveyTools.executeSurveyTool(tool.name, params);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+      }
+    });
+  }
+}
+
+/**
  * Main entry point
  */
 async function main() {
@@ -551,6 +617,9 @@ async function main() {
     const mediaTools = new MediaTools(ghlClient);
     const objectTools = new ObjectTools(ghlClient);
     const associationTools = new AssociationTools(ghlClient);
+    const customFieldV2Tools = new CustomFieldV2Tools(ghlClient);
+    const workflowTools = new WorkflowTools(ghlClient);
+    const surveyTools = new SurveyTools(ghlClient);
 
     // Register all tools
     registerContactTools(server, contactTools);
@@ -565,6 +634,9 @@ async function main() {
     registerMediaTools(server, mediaTools);
     registerObjectTools(server, objectTools);
     registerAssociationTools(server, associationTools);
+    registerCustomFieldV2Tools(server, customFieldV2Tools);
+    registerWorkflowTools(server, workflowTools);
+    registerSurveyTools(server, surveyTools);
     registerUtilityTools(server);
 
     // Start STDIO transport

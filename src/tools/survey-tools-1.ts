@@ -1,61 +1,77 @@
-import { z } from "zod";
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { GHLApiClient } from '../clients/ghl-api-client.js';
+import { 
+  MCPGetSurveysParams,
+  MCPGetSurveySubmissionsParams
+} from '../types/ghl-types.js';
 
 export class SurveyTools {
   constructor(private apiClient: GHLApiClient) {}
 
-  getToolDefinitions(): any[] {
+  getTools(): Tool[] {
     return [
       {
         name: 'ghl_get_surveys',
-        description: `Retrieve all surveys for a location.
-
-List surveys used to collect information from contacts.
-
-Use Cases:
-- List all available surveys
-- Discover survey forms
-- View survey configurations
-- Prepare for submission analysis
-
-Surveys collect information through forms and questionnaires.
-
-Returns: Array of surveys with pagination.
-
-Related Tools: ghl_get_survey_submissions`,
+        description: 'Retrieve all surveys for a location. Surveys are used to collect information from contacts through forms and questionnaires.',
         inputSchema: {
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
-          skip: z.number().min(0).optional().describe('Number of records to skip for pagination (default: 0)'),
-          limit: z.number().min(1).max(50).optional().describe('Maximum surveys to return (max: 50, default: 10)'),
-          type: z.string().optional().describe('Filter surveys by type (e.g., "folder")')
+          type: 'object',
+          properties: {
+            locationId: {
+              type: 'string',
+              description: 'The location ID to get surveys for. If not provided, uses the default location from configuration.'
+            },
+            skip: {
+              type: 'number',
+              description: 'Number of records to skip for pagination (default: 0)'
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of surveys to return (max: 50, default: 10)'
+            },
+            type: {
+              type: 'string',
+              description: 'Filter surveys by type (e.g., "folder")'
+            }
+          },
+          additionalProperties: false
         }
       },
       {
         name: 'ghl_get_survey_submissions',
-        description: `Retrieve survey submissions with filtering.
-
-Analyze responses from contacts who completed surveys.
-
-Use Cases:
-- View survey responses
-- Analyze submission data
-- Track survey completion
-- Search submissions by contact
-- Filter by date range
-
-Advanced filtering by survey ID, contact info, and date range.
-
-Returns: Array of submissions with contact and response data.
-
-Related Tools: ghl_get_surveys`,
+        description: 'Retrieve survey submissions with advanced filtering and pagination. Get responses from contacts who have completed surveys.',
         inputSchema: {
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
-          page: z.number().min(1).optional().describe('Page number for pagination (default: 1)'),
-          limit: z.number().min(1).max(100).optional().describe('Submissions per page (max: 100, default: 20)'),
-          surveyId: z.string().optional().describe('Filter by specific survey ID'),
-          q: z.string().optional().describe('Search by contact ID, name, email, or phone'),
-          startAt: z.string().optional().describe('Start date (YYYY-MM-DD format)'),
-          endAt: z.string().optional().describe('End date (YYYY-MM-DD format)')
+          type: 'object',
+          properties: {
+            locationId: {
+              type: 'string',
+              description: 'The location ID to get submissions for. If not provided, uses the default location from configuration.'
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)'
+            },
+            limit: {
+              type: 'number',
+              description: 'Number of submissions per page (max: 100, default: 20)'
+            },
+            surveyId: {
+              type: 'string',
+              description: 'Filter submissions by specific survey ID'
+            },
+            q: {
+              type: 'string',
+              description: 'Search by contact ID, name, email, or phone number'
+            },
+            startAt: {
+              type: 'string',
+              description: 'Start date for filtering submissions (YYYY-MM-DD format)'
+            },
+            endAt: {
+              type: 'string',
+              description: 'End date for filtering submissions (YYYY-MM-DD format)'
+            }
+          },
+          additionalProperties: false
         }
       }
     ];
@@ -65,10 +81,10 @@ Related Tools: ghl_get_surveys`,
     try {
       switch (name) {
         case 'ghl_get_surveys':
-          return await this.getSurveys(params);
+          return await this.getSurveys(params as MCPGetSurveysParams);
         
         case 'ghl_get_survey_submissions':
-          return await this.getSurveySubmissions(params);
+          return await this.getSurveySubmissions(params as MCPGetSurveySubmissionsParams);
         
         default:
           throw new Error(`Unknown survey tool: ${name}`);
@@ -84,7 +100,7 @@ Related Tools: ghl_get_surveys`,
   /**
    * Get all surveys for a location
    */
-  private async getSurveys(params: any): Promise<any> {
+  private async getSurveys(params: MCPGetSurveysParams): Promise<any> {
     try {
       const result = await this.apiClient.getSurveys({
         locationId: params.locationId || '',
@@ -121,7 +137,7 @@ Related Tools: ghl_get_surveys`,
   /**
    * Get survey submissions with filtering
    */
-  private async getSurveySubmissions(params: any): Promise<any> {
+  private async getSurveySubmissions(params: MCPGetSurveySubmissionsParams): Promise<any> {
     try {
       const result = await this.apiClient.getSurveySubmissions({
         locationId: params.locationId || '',

@@ -1,277 +1,214 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { z } from "zod";
 import { GHLApiClient } from '../clients/ghl-api-client.js';
-import {
-  MCPV2CreateCustomFieldParams,
-  MCPV2UpdateCustomFieldParams,
-  MCPV2GetCustomFieldByIdParams,
-  MCPV2DeleteCustomFieldParams,
-  MCPV2GetCustomFieldsByObjectKeyParams,
-  MCPV2CreateCustomFieldFolderParams,
-  MCPV2UpdateCustomFieldFolderParams,
-  MCPV2DeleteCustomFieldFolderParams
-} from '../types/ghl-types.js';
 
 export class CustomFieldV2Tools {
   constructor(private apiClient: GHLApiClient) {}
 
-  getTools(): Tool[] {
+  getToolDefinitions(): any[] {
     return [
       // Custom Field Management Tools
       {
         name: 'ghl_get_custom_field_by_id',
-        description: 'Get a custom field or folder by its ID. Supports custom objects and company (business) fields.',
+        description: `Get a custom field or folder by its ID.
+
+Retrieve detailed information about a specific custom field or folder.
+
+Use Cases:
+- View field configuration
+- Get folder details
+- Verify field settings
+- Inspect field properties
+
+Supports custom objects and company (business) fields.
+
+Returns: Field or folder details with all configuration.
+
+Related Tools: ghl_get_custom_fields_by_object_key, ghl_update_custom_field`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The ID of the custom field or folder to retrieve'
-            }
-          },
-          required: ['id']
+          id: z.string().describe('The ID of the custom field or folder to retrieve')
         }
       },
       {
         name: 'ghl_create_custom_field',
-        description: 'Create a new custom field for custom objects or company (business). Supports various field types including text, number, options, date, file upload, etc.',
+        description: `Create a new custom field for custom objects or company.
+
+Add custom fields to collect specific data for your business needs.
+
+Field Types Available:
+- TEXT, LARGE_TEXT - Text input fields
+- NUMERICAL, PHONE, MONETORY - Number/currency fields
+- EMAIL - Email validation field
+- DATE - Date picker
+- CHECKBOX, SINGLE_OPTIONS, MULTIPLE_OPTIONS - Selection fields
+- RADIO, TEXTBOX_LIST - Advanced selection
+- FILE_UPLOAD - File attachment field
+
+Use Cases:
+- Add pet breed field to pet objects
+- Create custom contact fields
+- Build form fields for data collection
+- Organize fields in folders
+
+Examples:
+- Text field: dataType="TEXT", fieldKey="custom_object.pet.breed"
+- Dropdown: dataType="SINGLE_OPTIONS", options=[{key:"dog", label:"Dog"}]
+- File upload: dataType="FILE_UPLOAD", acceptedFormats=".pdf", maxFileLimit=5
+
+Returns: Created field with ID and configuration.
+
+Related Tools: ghl_update_custom_field, ghl_get_custom_fields_by_object_key`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            },
-            name: {
-              type: 'string',
-              description: 'Field name (optional for some field types)'
-            },
-            description: {
-              type: 'string',
-              description: 'Description of the field'
-            },
-            placeholder: {
-              type: 'string',
-              description: 'Placeholder text for the field'
-            },
-            showInForms: {
-              type: 'boolean',
-              description: 'Whether the field should be shown in forms',
-              default: true
-            },
-            options: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  key: {
-                    type: 'string',
-                    description: 'Key of the option'
-                  },
-                  label: {
-                    type: 'string',
-                    description: 'Label of the option'
-                  },
-                  url: {
-                    type: 'string',
-                    description: 'URL associated with the option (only for RADIO type)'
-                  }
-                },
-                required: ['key', 'label']
-              },
-              description: 'Options for the field (required for SINGLE_OPTIONS, MULTIPLE_OPTIONS, RADIO, CHECKBOX, TEXTBOX_LIST types)'
-            },
-            acceptedFormats: {
-              type: 'string',
-              enum: ['.pdf', '.docx', '.doc', '.jpg', '.jpeg', '.png', '.gif', '.csv', '.xlsx', '.xls', 'all'],
-              description: 'Allowed file formats for uploads (only for FILE_UPLOAD type)'
-            },
-            dataType: {
-              type: 'string',
-              enum: ['TEXT', 'LARGE_TEXT', 'NUMERICAL', 'PHONE', 'MONETORY', 'CHECKBOX', 'SINGLE_OPTIONS', 'MULTIPLE_OPTIONS', 'DATE', 'TEXTBOX_LIST', 'FILE_UPLOAD', 'RADIO', 'EMAIL'],
-              description: 'Type of field to create'
-            },
-            fieldKey: {
-              type: 'string',
-              description: 'Field key. Format: "custom_object.{objectKey}.{fieldKey}" for custom objects. Example: "custom_object.pet.name"'
-            },
-            objectKey: {
-              type: 'string',
-              description: 'The object key. Format: "custom_object.{objectKey}" for custom objects. Example: "custom_object.pet"'
-            },
-            maxFileLimit: {
-              type: 'number',
-              description: 'Maximum file limit for uploads (only for FILE_UPLOAD type)'
-            },
-            allowCustomOption: {
-              type: 'boolean',
-              description: 'Allow users to add custom option values for RADIO type fields'
-            },
-            parentId: {
-              type: 'string',
-              description: 'ID of the parent folder for organization'
-            }
-          },
-          required: ['dataType', 'fieldKey', 'objectKey', 'parentId']
+          dataType: z.enum(['TEXT', 'LARGE_TEXT', 'NUMERICAL', 'PHONE', 'MONETORY', 'CHECKBOX', 'SINGLE_OPTIONS', 'MULTIPLE_OPTIONS', 'DATE', 'TEXTBOX_LIST', 'FILE_UPLOAD', 'RADIO', 'EMAIL']).describe('Type of field to create'),
+          fieldKey: z.string().describe('Field key. Format: "custom_object.{objectKey}.{fieldKey}" (e.g., "custom_object.pet.name")'),
+          objectKey: z.string().describe('Object key. Format: "custom_object.{objectKey}" (e.g., "custom_object.pet")'),
+          parentId: z.string().describe('ID of the parent folder for organization'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          name: z.string().optional().describe('Field name (optional for some field types)'),
+          description: z.string().optional().describe('Description of the field'),
+          placeholder: z.string().optional().describe('Placeholder text for the field'),
+          showInForms: z.boolean().optional().describe('Whether the field should be shown in forms (default: true)'),
+          options: z.array(z.object({
+            key: z.string().describe('Key of the option'),
+            label: z.string().describe('Label of the option'),
+            url: z.string().optional().describe('URL associated with the option (RADIO type only)')
+          })).optional().describe('Options for SINGLE_OPTIONS, MULTIPLE_OPTIONS, RADIO, CHECKBOX, TEXTBOX_LIST types'),
+          acceptedFormats: z.enum(['.pdf', '.docx', '.doc', '.jpg', '.jpeg', '.png', '.gif', '.csv', '.xlsx', '.xls', 'all']).optional().describe('Allowed file formats (FILE_UPLOAD type only)'),
+          maxFileLimit: z.number().optional().describe('Maximum file limit for uploads (FILE_UPLOAD type only)'),
+          allowCustomOption: z.boolean().optional().describe('Allow custom option values (RADIO type only)')
         }
       },
       {
         name: 'ghl_update_custom_field',
-        description: 'Update an existing custom field by ID. Can modify name, description, options, and other properties.',
+        description: `Update an existing custom field by ID.
+
+Modify field properties including name, description, options, and settings.
+
+Use Cases:
+- Update field labels
+- Modify dropdown options
+- Change file upload limits
+- Update field descriptions
+
+⚠️ Note: When updating options, provide ALL options you want to keep (replaces existing).
+
+Returns: Updated field configuration.
+
+Related Tools: ghl_get_custom_field_by_id, ghl_create_custom_field`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The ID of the custom field to update'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            },
-            name: {
-              type: 'string',
-              description: 'Updated field name'
-            },
-            description: {
-              type: 'string',
-              description: 'Updated description of the field'
-            },
-            placeholder: {
-              type: 'string',
-              description: 'Updated placeholder text for the field'
-            },
-            showInForms: {
-              type: 'boolean',
-              description: 'Whether the field should be shown in forms'
-            },
-            options: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  key: {
-                    type: 'string',
-                    description: 'Key of the option'
-                  },
-                  label: {
-                    type: 'string',
-                    description: 'Label of the option'
-                  },
-                  url: {
-                    type: 'string',
-                    description: 'URL associated with the option (only for RADIO type)'
-                  }
-                },
-                required: ['key', 'label']
-              },
-              description: 'Updated options (replaces all existing options - include all options you want to keep)'
-            },
-            acceptedFormats: {
-              type: 'string',
-              enum: ['.pdf', '.docx', '.doc', '.jpg', '.jpeg', '.png', '.gif', '.csv', '.xlsx', '.xls', 'all'],
-              description: 'Updated allowed file formats for uploads'
-            },
-            maxFileLimit: {
-              type: 'number',
-              description: 'Updated maximum file limit for uploads'
-            }
-          },
-          required: ['id']
+          id: z.string().describe('The ID of the custom field to update'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          name: z.string().optional().describe('Updated field name'),
+          description: z.string().optional().describe('Updated description'),
+          placeholder: z.string().optional().describe('Updated placeholder text'),
+          showInForms: z.boolean().optional().describe('Whether field should be shown in forms'),
+          options: z.array(z.object({
+            key: z.string().describe('Key of the option'),
+            label: z.string().describe('Label of the option'),
+            url: z.string().optional().describe('URL (RADIO type only)')
+          })).optional().describe('Updated options (replaces ALL existing - include all you want to keep)'),
+          acceptedFormats: z.enum(['.pdf', '.docx', '.doc', '.jpg', '.jpeg', '.png', '.gif', '.csv', '.xlsx', '.xls', 'all']).optional().describe('Updated file formats'),
+          maxFileLimit: z.number().optional().describe('Updated max file limit')
         }
       },
       {
         name: 'ghl_delete_custom_field',
-        description: 'Delete a custom field by ID. This will permanently remove the field and its data.',
+        description: `Delete a custom field by ID.
+
+⚠️ WARNING: This is permanent and cannot be undone!
+⚠️ All data stored in this field will be lost!
+
+Use Cases:
+- Remove unused fields
+- Clean up test fields
+- Reorganize field structure
+
+Related Tools: ghl_get_custom_field_by_id, ghl_get_custom_fields_by_object_key`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The ID of the custom field to delete'
-            }
-          },
-          required: ['id']
+          id: z.string().describe('The ID of the custom field to delete')
         }
       },
       {
         name: 'ghl_get_custom_fields_by_object_key',
-        description: 'Get all custom fields and folders for a specific object key (e.g., custom object or company).',
+        description: `Get all custom fields and folders for a specific object.
+
+Retrieve complete field structure for custom objects or company.
+
+Use Cases:
+- List all fields for an object
+- View field organization
+- Discover available fields
+- Prepare for data entry
+
+Returns: All fields and folders with complete configuration.
+
+Related Tools: ghl_get_custom_field_by_id, ghl_create_custom_field`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            objectKey: {
-              type: 'string',
-              description: 'Object key to get fields for. Format: "custom_object.{objectKey}" for custom objects. Example: "custom_object.pet"'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            }
-          },
-          required: ['objectKey']
+          objectKey: z.string().describe('Object key. Format: "custom_object.{objectKey}" (e.g., "custom_object.pet")'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       // Custom Field Folder Management Tools
       {
         name: 'ghl_create_custom_field_folder',
-        description: 'Create a new custom field folder for organizing fields within an object.',
+        description: `Create a new custom field folder.
+
+Organize custom fields into folders for better structure.
+
+Use Cases:
+- Group related fields together
+- Organize fields by category
+- Improve field management
+- Create logical field sections
+
+Examples:
+- "Pet Details" folder for pet-related fields
+- "Contact Info" folder for contact fields
+
+Returns: Created folder with ID.
+
+Related Tools: ghl_update_custom_field_folder, ghl_delete_custom_field_folder`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            objectKey: {
-              type: 'string',
-              description: 'Object key for the folder. Format: "custom_object.{objectKey}" for custom objects. Example: "custom_object.pet"'
-            },
-            name: {
-              type: 'string',
-              description: 'Name of the folder'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            }
-          },
-          required: ['objectKey', 'name']
+          objectKey: z.string().describe('Object key. Format: "custom_object.{objectKey}" (e.g., "custom_object.pet")'),
+          name: z.string().describe('Name of the folder'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
         name: 'ghl_update_custom_field_folder',
-        description: 'Update the name of an existing custom field folder.',
+        description: `Update the name of an existing custom field folder.
+
+Rename folders to better reflect their contents.
+
+Use Cases:
+- Rename folders for clarity
+- Update folder organization
+- Improve field structure
+
+Returns: Updated folder configuration.
+
+Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_key`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The ID of the folder to update'
-            },
-            name: {
-              type: 'string',
-              description: 'New name for the folder'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            }
-          },
-          required: ['id', 'name']
+          id: z.string().describe('The ID of the folder to update'),
+          name: z.string().describe('New name for the folder'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
         name: 'ghl_delete_custom_field_folder',
-        description: 'Delete a custom field folder. This will also affect any fields within the folder.',
+        description: `Delete a custom field folder.
+
+⚠️ WARNING: This may affect fields within the folder!
+⚠️ Fields may be moved or reorganized!
+
+Use Cases:
+- Remove empty folders
+- Reorganize field structure
+- Clean up folder hierarchy
+
+Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_key`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The ID of the folder to delete'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            }
-          },
-          required: ['id']
+          id: z.string().describe('The ID of the folder to delete'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       }
     ];
@@ -281,8 +218,7 @@ export class CustomFieldV2Tools {
     try {
       switch (name) {
         case 'ghl_get_custom_field_by_id': {
-          const params: MCPV2GetCustomFieldByIdParams = args;
-          const result = await this.apiClient.getCustomFieldV2ById(params.id);
+          const result = await this.apiClient.getCustomFieldV2ById(args.id);
           return {
             success: true,
             data: result.data,
@@ -291,40 +227,38 @@ export class CustomFieldV2Tools {
         }
 
         case 'ghl_create_custom_field': {
-          const params: MCPV2CreateCustomFieldParams = args;
           const result = await this.apiClient.createCustomFieldV2({
-            locationId: params.locationId || '',
-            name: params.name,
-            description: params.description,
-            placeholder: params.placeholder,
-            showInForms: params.showInForms ?? true,
-            options: params.options,
-            acceptedFormats: params.acceptedFormats,
-            dataType: params.dataType,
-            fieldKey: params.fieldKey,
-            objectKey: params.objectKey,
-            maxFileLimit: params.maxFileLimit,
-            allowCustomOption: params.allowCustomOption,
-            parentId: params.parentId
+            locationId: args.locationId || '',
+            name: args.name,
+            description: args.description,
+            placeholder: args.placeholder,
+            showInForms: args.showInForms ?? true,
+            options: args.options,
+            acceptedFormats: args.acceptedFormats,
+            dataType: args.dataType,
+            fieldKey: args.fieldKey,
+            objectKey: args.objectKey,
+            maxFileLimit: args.maxFileLimit,
+            allowCustomOption: args.allowCustomOption,
+            parentId: args.parentId
           });
           return {
             success: true,
             data: result.data,
-            message: `Custom field '${params.fieldKey}' created successfully`
+            message: `Custom field '${args.fieldKey}' created successfully`
           };
         }
 
         case 'ghl_update_custom_field': {
-          const params: MCPV2UpdateCustomFieldParams = args;
-          const result = await this.apiClient.updateCustomFieldV2(params.id, {
-            locationId: params.locationId || '',
-            name: params.name,
-            description: params.description,
-            placeholder: params.placeholder,
-            showInForms: params.showInForms ?? true,
-            options: params.options,
-            acceptedFormats: params.acceptedFormats,
-            maxFileLimit: params.maxFileLimit
+          const result = await this.apiClient.updateCustomFieldV2(args.id, {
+            locationId: args.locationId || '',
+            name: args.name,
+            description: args.description,
+            placeholder: args.placeholder,
+            showInForms: args.showInForms ?? true,
+            options: args.options,
+            acceptedFormats: args.acceptedFormats,
+            maxFileLimit: args.maxFileLimit
           });
           return {
             success: true,
@@ -334,8 +268,7 @@ export class CustomFieldV2Tools {
         }
 
         case 'ghl_delete_custom_field': {
-          const params: MCPV2DeleteCustomFieldParams = args;
-          const result = await this.apiClient.deleteCustomFieldV2(params.id);
+          const result = await this.apiClient.deleteCustomFieldV2(args.id);
           return {
             success: true,
             data: result.data,
@@ -344,50 +277,46 @@ export class CustomFieldV2Tools {
         }
 
         case 'ghl_get_custom_fields_by_object_key': {
-          const params: MCPV2GetCustomFieldsByObjectKeyParams = args;
           const result = await this.apiClient.getCustomFieldsV2ByObjectKey({
-            objectKey: params.objectKey,
-            locationId: params.locationId || ''
+            objectKey: args.objectKey,
+            locationId: args.locationId || ''
           });
           return {
             success: true,
             data: result.data,
-            message: `Retrieved ${result.data?.fields?.length || 0} fields and ${result.data?.folders?.length || 0} folders for object '${params.objectKey}'`
+            message: `Retrieved ${result.data?.fields?.length || 0} fields and ${result.data?.folders?.length || 0} folders for object '${args.objectKey}'`
           };
         }
 
         case 'ghl_create_custom_field_folder': {
-          const params: MCPV2CreateCustomFieldFolderParams = args;
           const result = await this.apiClient.createCustomFieldV2Folder({
-            objectKey: params.objectKey,
-            name: params.name,
-            locationId: params.locationId || ''
+            objectKey: args.objectKey,
+            name: args.name,
+            locationId: args.locationId || ''
           });
           return {
             success: true,
             data: result.data,
-            message: `Custom field folder '${params.name}' created successfully`
+            message: `Custom field folder '${args.name}' created successfully`
           };
         }
 
         case 'ghl_update_custom_field_folder': {
-          const params: MCPV2UpdateCustomFieldFolderParams = args;
-          const result = await this.apiClient.updateCustomFieldV2Folder(params.id, {
-            name: params.name,
-            locationId: params.locationId || ''
+          const result = await this.apiClient.updateCustomFieldV2Folder(args.id, {
+            name: args.name,
+            locationId: args.locationId || ''
           });
           return {
             success: true,
             data: result.data,
-            message: `Custom field folder updated to '${params.name}'`
+            message: `Custom field folder updated to '${args.name}'`
           };
         }
 
         case 'ghl_delete_custom_field_folder': {
-          const params: MCPV2DeleteCustomFieldFolderParams = args;
           const result = await this.apiClient.deleteCustomFieldV2Folder({
-            id: params.id,
-            locationId: params.locationId || ''
+            id: args.id,
+            locationId: args.locationId || ''
           });
           return {
             success: true,

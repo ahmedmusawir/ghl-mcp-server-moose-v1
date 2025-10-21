@@ -23,6 +23,9 @@ import { SocialMediaTools } from "./tools/social-media-tools";
 import { MediaTools } from "./tools/media-tools";
 import { ObjectTools } from "./tools/object-tools";
 import { AssociationTools } from "./tools/association-tools";
+import { CustomFieldV2Tools } from "./tools/custom-field-v2-tools";
+import { WorkflowTools } from "./tools/workflow-tools";
+import { SurveyTools } from "./tools/survey-tools";
 import { registerUtilityTools } from "./tools/utility-tools";
 import { GHLConfig } from "./types/ghl-types";
 
@@ -48,6 +51,9 @@ class GHLMCPHttpServer {
   private mediaTools: MediaTools;
   private objectTools: ObjectTools;
   private associationTools: AssociationTools;
+  private customFieldV2Tools: CustomFieldV2Tools;
+  private workflowTools: WorkflowTools;
+  private surveyTools: SurveyTools;
   private port: number;
 
   constructor() {
@@ -81,6 +87,9 @@ class GHLMCPHttpServer {
     this.mediaTools = new MediaTools(this.ghlClient);
     this.objectTools = new ObjectTools(this.ghlClient);
     this.associationTools = new AssociationTools(this.ghlClient);
+    this.customFieldV2Tools = new CustomFieldV2Tools(this.ghlClient);
+    this.workflowTools = new WorkflowTools(this.ghlClient);
+    this.surveyTools = new SurveyTools(this.ghlClient);
 
     // Setup MCP handlers
     this.registerTools();
@@ -682,8 +691,62 @@ class GHLMCPHttpServer {
       );
     }
 
+    // Register custom field V2 tools
+    const customFieldV2ToolDefinitions = this.customFieldV2Tools.getToolDefinitions();
+    for (const tool of customFieldV2ToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.customFieldV2Tools.executeCustomFieldV2Tool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
+    // Register workflow tools
+    const workflowToolDefinitions = this.workflowTools.getToolDefinitions();
+    for (const tool of workflowToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.workflowTools.executeWorkflowTool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
+    // Register survey tools
+    const surveyToolDefinitions = this.surveyTools.getToolDefinitions();
+    for (const tool of surveyToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.surveyTools.executeSurveyTool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
     console.log(
-      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact + ${conversationToolDefinitions.length} conversation + ${blogToolDefinitions.length} blog + ${opportunityToolDefinitions.length} opportunity + ${calendarToolDefinitions.length} calendar + ${locationToolDefinitions.length} location + ${emailToolDefinitions.length} email + ${emailISVToolDefinitions.length} email verification + ${socialMediaToolDefinitions.length} social media + ${mediaToolDefinitions.length} media + ${objectToolDefinitions.length} object + ${associationToolDefinitions.length} association + 2 utility tools`
+      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact + ${conversationToolDefinitions.length} conversation + ${blogToolDefinitions.length} blog + ${opportunityToolDefinitions.length} opportunity + ${calendarToolDefinitions.length} calendar + ${locationToolDefinitions.length} location + ${emailToolDefinitions.length} email + ${emailISVToolDefinitions.length} email verification + ${socialMediaToolDefinitions.length} social media + ${mediaToolDefinitions.length} media + ${objectToolDefinitions.length} object + ${associationToolDefinitions.length} association + ${customFieldV2ToolDefinitions.length} custom fields + ${workflowToolDefinitions.length} workflow + ${surveyToolDefinitions.length} survey + 2 utility tools`
     );
   }
 
@@ -711,6 +774,9 @@ class GHLMCPHttpServer {
           media: this.mediaTools.getToolDefinitions().length,
           object: this.objectTools.getToolDefinitions().length,
           association: this.associationTools.getToolDefinitions().length,
+          customFieldsV2: this.customFieldV2Tools.getToolDefinitions().length,
+          workflow: this.workflowTools.getToolDefinitions().length,
+          survey: this.surveyTools.getToolDefinitions().length,
           utility: 2,
           total: 
             this.contactTools.getToolDefinitions().length + 
@@ -725,6 +791,9 @@ class GHLMCPHttpServer {
             this.mediaTools.getToolDefinitions().length +
             this.objectTools.getToolDefinitions().length +
             this.associationTools.getToolDefinitions().length +
+            this.customFieldV2Tools.getToolDefinitions().length +
+            this.workflowTools.getToolDefinitions().length +
+            this.surveyTools.getToolDefinitions().length +
             2,
         },
       });
@@ -968,6 +1037,19 @@ class GHLMCPHttpServer {
         console.log("   ADVANCED: relationship mapping between objects (contacts, custom objects, opportunities)");
         console.log("   USE CASES: student-teacher links, pet-owner connections, ticket-product associations");
         console.log("");
+        console.log("🔧 CUSTOM FIELDS V2 (8 tools):");
+        console.log("   FIELDS: get by ID, create, update, delete custom fields");
+        console.log("   DISCOVERY: get fields by object key");
+        console.log("   FOLDERS: create, update, delete field folders");
+        console.log("   FIELD TYPES: text, number, date, options, file upload, etc.");
+        console.log("");
+        console.log("⚡ WORKFLOW MANAGEMENT (1 tool):");
+        console.log("   DISCOVERY: get workflows for automation");
+        console.log("");
+        console.log("📊 SURVEY MANAGEMENT (2 tools):");
+        console.log("   SURVEYS: get surveys");
+        console.log("   SUBMISSIONS: get survey submissions with filtering");
+        console.log("");
         console.log("🛠️  UTILITY TOOLS (2 tools):");
         console.log("   DATE/TIME: calculate future datetime for GHL API");
         console.log("   CALCULATOR: safe math calculations with functions");
@@ -987,6 +1069,9 @@ class GHLMCPHttpServer {
           this.mediaTools.getToolDefinitions().length +
           this.objectTools.getToolDefinitions().length +
           this.associationTools.getToolDefinitions().length +
+          this.customFieldV2Tools.getToolDefinitions().length +
+          this.workflowTools.getToolDefinitions().length +
+          this.surveyTools.getToolDefinitions().length +
           2; // utility tools
         
         console.log(`\n🎯 TOTAL TOOLS AVAILABLE: ${totalTools}`);
