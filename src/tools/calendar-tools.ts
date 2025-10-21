@@ -1,1341 +1,1135 @@
 /**
- * MCP Calendar Tools for GoHighLevel Integration
- * Exposes calendar and appointment management capabilities to Claude Desktop
+ * GoHighLevel Calendar & Appointments Tools
+ * Implements all calendar and appointment management functionality for the MCP server
  */
 
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { z } from "zod";
 import { GHLApiClient } from '../clients/ghl-api-client.js';
-import {
-  MCPGetCalendarsParams,
-  MCPCreateCalendarParams,
-  MCPUpdateCalendarParams,
-  MCPGetCalendarEventsParams,
-  MCPGetFreeSlotsParams,
-  MCPCreateAppointmentParams,
-  MCPUpdateAppointmentParams,
-  MCPCreateBlockSlotParams,
-  MCPUpdateBlockSlotParams,
-  GHLCalendar,
-  GHLGetCalendarsResponse,
-  GHLGetCalendarGroupsResponse,
-  GHLGetCalendarEventsResponse,
-  GHLGetFreeSlotsResponse,
-  GHLCalendarEvent,
-  GHLBlockSlotResponse,
-  MCPCreateCalendarGroupParams,
-  MCPValidateGroupSlugParams,
-  MCPUpdateCalendarGroupParams,
-  MCPDeleteCalendarGroupParams,
-  MCPDisableCalendarGroupParams,
-  MCPGetAppointmentNotesParams,
-  MCPCreateAppointmentNoteParams,
-  MCPUpdateAppointmentNoteParams,
-  MCPDeleteAppointmentNoteParams,
-  MCPGetCalendarResourcesParams,
-  MCPCreateCalendarResourceParams,
-  MCPGetCalendarResourceParams,
-  MCPUpdateCalendarResourceParams,
-  MCPDeleteCalendarResourceParams,
-  MCPGetCalendarNotificationsParams,
-  MCPCreateCalendarNotificationParams,
-  MCPGetCalendarNotificationParams,
-  MCPUpdateCalendarNotificationParams,
-  MCPDeleteCalendarNotificationParams,
-  MCPGetBlockedSlotsParams
-} from '../types/ghl-types.js';
 
 /**
  * Calendar Tools Class
- * Implements MCP tools for calendar and appointment management
+ * Provides comprehensive calendar and appointment management capabilities
  */
 export class CalendarTools {
   constructor(private ghlClient: GHLApiClient) {}
 
   /**
-   * Get all calendar tool definitions for MCP server
+   * Get tool definitions for all calendar operations
    */
-  getToolDefinitions(): Tool[] {
+  getToolDefinitions(): any[] {
     return [
+      // Calendar Management (5 tools)
       {
         name: 'get_calendar_groups',
-        description: 'Get all calendar groups in the GoHighLevel location',
-        inputSchema: {
-          type: 'object',
-          properties: {}
-        }
+        description: `Get all calendar groups in GoHighLevel.
+
+Calendar groups organize multiple calendars together (e.g., "Sales Team", "Support Team").
+
+Use Cases:
+- Discover available calendar groups before filtering calendars
+- List all calendar organizational structures
+- Find group IDs for calendar filtering
+
+Returns: Array of calendar groups with IDs, names, and metadata.
+
+Related Tools: get_calendars (use groupId to filter)`,
+        inputSchema: {}
       },
       {
         name: 'get_calendars',
-        description: 'Get all calendars in the GoHighLevel location with optional filtering',
+        description: `Get calendars from GoHighLevel, optionally filtered by calendar group.
+
+Use Cases:
+- List all available calendars in the location
+- Filter calendars by specific group
+- Find calendar IDs for appointment booking
+- Discover calendar settings and availability
+
+Parameters:
+- groupId: (optional) Filter calendars belonging to specific group
+
+Returns: Array of calendars with IDs, names, settings, and availability rules.
+
+Related Tools: get_calendar_groups, create_appointment, get_free_slots`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            groupId: {
-              type: 'string',
-              description: 'Filter calendars by group ID'
-            },
-            showDrafted: {
-              type: 'boolean',
-              description: 'Include draft calendars (default: true)',
-              default: true
-            }
-          }
+          groupId: z.string().optional().describe('Optional: Filter calendars by calendar group ID')
         }
       },
       {
         name: 'create_calendar',
-        description: 'Create a new calendar in GoHighLevel',
+        description: `Create a new calendar in GoHighLevel.
+
+IMPORTANT: Requires admin/calendar management permissions.
+
+Use Cases:
+- Set up new service calendars (consultations, demos, support)
+- Create team member calendars
+- Configure appointment booking calendars
+
+Required Parameters:
+- name: Calendar display name
+- description: What this calendar is for
+
+Optional Parameters:
+- groupId: Assign to specific calendar group
+- meetingLocation: Where meetings take place
+- slotDuration: Default appointment length in minutes
+- slotInterval: Booking interval in minutes
+
+Returns: Created calendar with ID and settings.
+
+Related Tools: get_calendar_groups (to find groupId), update_calendar`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            name: {
-              type: 'string',
-              description: 'Name of the calendar'
-            },
-            description: {
-              type: 'string',
-              description: 'Description of the calendar'
-            },
-            calendarType: {
-              type: 'string',
-              description: 'Type of calendar to create',
-              enum: ['round_robin', 'event', 'class_booking', 'collective', 'service_booking', 'personal'],
-              default: 'event'
-            },
-            groupId: {
-              type: 'string',
-              description: 'Calendar group ID to organize the calendar'
-            },
-            slotDuration: {
-              type: 'number',
-              description: 'Duration of appointment slots in minutes (default: 30)',
-              default: 30
-            },
-            slotDurationUnit: {
-              type: 'string',
-              description: 'Unit for slot duration',
-              enum: ['mins', 'hours'],
-              default: 'mins'
-            },
-            autoConfirm: {
-              type: 'boolean',
-              description: 'Automatically confirm appointments (default: true)',
-              default: true
-            },
-            allowReschedule: {
-              type: 'boolean',
-              description: 'Allow clients to reschedule appointments (default: true)',
-              default: true
-            },
-            allowCancellation: {
-              type: 'boolean',
-              description: 'Allow clients to cancel appointments (default: true)',
-              default: true
-            },
-            isActive: {
-              type: 'boolean',
-              description: 'Make calendar active immediately (default: true)',
-              default: true
-            }
-          },
-          required: ['name', 'calendarType']
-        }
-      },
-      {
-        name: 'get_calendar',
-        description: 'Get detailed information about a specific calendar by ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: {
-              type: 'string',
-              description: 'The unique ID of the calendar to retrieve'
-            }
-          },
-          required: ['calendarId']
+          name: z.string().describe('Calendar name (e.g., "Sales Consultations")'),
+          description: z.string().describe('Calendar description/purpose'),
+          groupId: z.string().optional().describe('Optional: Calendar group ID to assign this calendar to'),
+          meetingLocation: z.string().optional().describe('Optional: Default meeting location (address, Zoom link, etc.)'),
+          slotDuration: z.number().optional().describe('Optional: Default appointment duration in minutes (e.g., 30, 60)'),
+          slotInterval: z.number().optional().describe('Optional: Booking interval in minutes (e.g., 15, 30)')
         }
       },
       {
         name: 'update_calendar',
-        description: 'Update an existing calendar in GoHighLevel',
+        description: `Update an existing calendar's settings in GoHighLevel.
+
+IMPORTANT: Requires admin/calendar management permissions.
+
+Use Cases:
+- Change calendar name or description
+- Update meeting location
+- Modify slot duration or intervals
+- Reassign to different calendar group
+
+Parameters:
+- calendarId: ID of calendar to update
+- All other fields are optional - only provide fields you want to change
+
+Returns: Updated calendar with new settings.
+
+Related Tools: get_calendars (to find calendarId), delete_calendar`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: {
-              type: 'string',
-              description: 'The unique ID of the calendar to update'
-            },
-            name: {
-              type: 'string',
-              description: 'Updated name of the calendar'
-            },
-            description: {
-              type: 'string',
-              description: 'Updated description of the calendar'
-            },
-            slotDuration: {
-              type: 'number',
-              description: 'Updated duration of appointment slots in minutes'
-            },
-            autoConfirm: {
-              type: 'boolean',
-              description: 'Updated auto-confirm setting'
-            },
-            allowReschedule: {
-              type: 'boolean',
-              description: 'Updated reschedule permission setting'
-            },
-            allowCancellation: {
-              type: 'boolean',
-              description: 'Updated cancellation permission setting'
-            },
-            isActive: {
-              type: 'boolean',
-              description: 'Updated active status'
-            }
-          },
-          required: ['calendarId']
+          calendarId: z.string().describe('The unique ID of the calendar to update'),
+          name: z.string().optional().describe('Optional: New calendar name'),
+          description: z.string().optional().describe('Optional: New calendar description'),
+          groupId: z.string().optional().describe('Optional: Move to different calendar group'),
+          meetingLocation: z.string().optional().describe('Optional: Update meeting location'),
+          slotDuration: z.number().optional().describe('Optional: Update appointment duration in minutes'),
+          slotInterval: z.number().optional().describe('Optional: Update booking interval in minutes')
         }
       },
       {
         name: 'delete_calendar',
-        description: 'Delete a calendar from GoHighLevel',
+        description: `Delete a calendar from GoHighLevel.
+
+⚠️ WARNING: This action is permanent and cannot be undone!
+⚠️ All appointments in this calendar will be affected!
+
+IMPORTANT: Requires admin/calendar management permissions.
+
+Use Cases:
+- Remove obsolete calendars
+- Clean up test calendars
+- Decommission service calendars
+
+Before deleting:
+1. Verify no active appointments (use get_calendar_events)
+2. Notify team members using this calendar
+3. Consider disabling instead of deleting
+
+Parameters:
+- calendarId: ID of calendar to permanently delete
+
+Related Tools: get_calendars (to find calendarId), get_calendar_events (to check for appointments)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: {
-              type: 'string',
-              description: 'The unique ID of the calendar to delete'
-            }
-          },
-          required: ['calendarId']
+          calendarId: z.string().describe('The unique ID of the calendar to permanently delete')
         }
       },
+
+      // Appointment Booking (7 tools)
       {
         name: 'get_calendar_events',
-        description: 'Get appointments/events from calendars within a date range',
+        description: `Get events/appointments from a calendar within a date range.
+
+Use Cases:
+- View scheduled appointments for a calendar
+- Check calendar availability
+- Find appointments within specific timeframe
+- Audit appointment history
+
+Required Parameters:
+- calendarId: Which calendar to query
+- startTime: Start of date range (ISO 8601 format)
+- endTime: End of date range (ISO 8601 format)
+
+Date Format: Use ISO 8601 format (e.g., "2025-10-20T09:00:00Z")
+
+Returns: Array of appointments/events with details (time, contact, status, etc.)
+
+Related Tools: get_calendars (to find calendarId), get_free_slots, create_appointment`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            startTime: {
-              type: 'string',
-              description: 'Start time in milliseconds or ISO date (e.g., "2024-01-01" or "1704067200000")'
-            },
-            endTime: {
-              type: 'string',
-              description: 'End time in milliseconds or ISO date (e.g., "2024-01-31" or "1706745599999")'
-            },
-            calendarId: {
-              type: 'string',
-              description: 'Filter events by specific calendar ID'
-            },
-            userId: {
-              type: 'string',
-              description: 'Filter events by assigned user ID'
-            },
-            groupId: {
-              type: 'string',
-              description: 'Filter events by calendar group ID'
-            }
-          },
-          required: ['startTime', 'endTime']
+          calendarId: z.string().describe('The unique ID of the calendar to query'),
+          startTime: z.string().describe('Start of date range in ISO 8601 format (e.g., "2025-10-20T09:00:00Z")'),
+          endTime: z.string().describe('End of date range in ISO 8601 format (e.g., "2025-10-21T17:00:00Z")')
         }
       },
       {
         name: 'get_free_slots',
-        description: 'Get available time slots for booking appointments on a specific calendar',
+        description: `Check available time slots for booking appointments on a calendar.
+
+Use Cases:
+- Find available appointment times before booking
+- Show customers available slots
+- Check calendar availability
+- Plan appointment scheduling
+
+Required Parameters:
+- calendarId: Which calendar to check
+- startDate: Start of availability check (YYYY-MM-DD format)
+- endDate: End of availability check (YYYY-MM-DD format)
+- timezone: Timezone for availability (e.g., "America/New_York", "UTC")
+
+IMPORTANT - Timezone:
+- Use standard IANA timezone format
+- Examples: "America/New_York", "Europe/London", "Asia/Tokyo", "UTC"
+- Invalid timezone will cause 400 error
+
+Returns: Array of available time slots with start/end times.
+
+Related Tools: create_appointment (book a slot), get_calendar_events`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: {
-              type: 'string',
-              description: 'The calendar ID to check availability for'
-            },
-            startDate: {
-              type: 'string',
-              description: 'Start date for availability check (YYYY-MM-DD format or milliseconds)'
-            },
-            endDate: {
-              type: 'string',
-              description: 'End date for availability check (YYYY-MM-DD format or milliseconds)'
-            },
-            timezone: {
-              type: 'string',
-              description: 'Timezone for the results (e.g., "America/New_York")'
-            },
-            userId: {
-              type: 'string',
-              description: 'Specific user ID to check availability for'
-            }
-          },
-          required: ['calendarId', 'startDate', 'endDate']
+          calendarId: z.string().describe('The unique ID of the calendar to check availability'),
+          startDate: z.string().describe('Start date for availability check (YYYY-MM-DD format, e.g., "2025-10-20")'),
+          endDate: z.string().describe('End date for availability check (YYYY-MM-DD format, e.g., "2025-10-27")'),
+          timezone: z.string().describe('Timezone for availability (IANA format, e.g., "America/New_York", "UTC")')
         }
       },
       {
         name: 'create_appointment',
-        description: 'Create a new appointment/booking in GoHighLevel',
+        description: `Book a new appointment on a calendar.
+
+IMPORTANT: Check availability first using get_free_slots to avoid conflicts!
+
+Use Cases:
+- Book customer appointments
+- Schedule consultations
+- Reserve calendar time slots
+
+Required Parameters:
+- calendarId: Which calendar to book on
+- startTime: Appointment start (ISO 8601 format)
+- endTime: Appointment end (ISO 8601 format)
+- contactId: GHL contact ID for the appointment
+
+Optional Parameters:
+- title: Appointment title/subject
+- appointmentStatus: Status (confirmed, showed, noshow, cancelled)
+- assignedUserId: Assign to specific team member
+
+Date Format: Use ISO 8601 format (e.g., "2025-10-20T14:00:00Z")
+
+Returns: Created appointment with ID and details.
+
+Related Tools: get_free_slots (check availability first), get_calendars, search_contacts`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: {
-              type: 'string',
-              description: 'The calendar ID to book the appointment in'
-            },
-            contactId: {
-              type: 'string',
-              description: 'The contact ID for whom to book the appointment'
-            },
-            startTime: {
-              type: 'string',
-              description: 'Start time in ISO format (e.g., "2024-01-15T10:00:00-05:00")'
-            },
-            endTime: {
-              type: 'string',
-              description: 'End time in ISO format (optional, will be calculated from slot duration if not provided)'
-            },
-            title: {
-              type: 'string',
-              description: 'Title/subject of the appointment'
-            },
-            appointmentStatus: {
-              type: 'string',
-              description: 'Initial status of the appointment',
-              enum: ['new', 'confirmed'],
-              default: 'confirmed'
-            },
-            assignedUserId: {
-              type: 'string',
-              description: 'User ID to assign this appointment to'
-            },
-            address: {
-              type: 'string',
-              description: 'Meeting location or address'
-            },
-            meetingLocationType: {
-              type: 'string',
-              description: 'Type of meeting location',
-              enum: ['custom', 'zoom', 'gmeet', 'phone', 'address'],
-              default: 'custom'
-            },
-            ignoreDateRange: {
-              type: 'boolean',
-              description: 'Ignore minimum scheduling notice and date range restrictions',
-              default: false
-            },
-            toNotify: {
-              type: 'boolean',
-              description: 'Send notifications for this appointment',
-              default: true
-            }
-          },
-          required: ['calendarId', 'contactId', 'startTime']
+          calendarId: z.string().describe('The unique ID of the calendar to book on'),
+          contactId: z.string().describe('The GHL contact ID for this appointment'),
+          startTime: z.string().describe('Appointment start time in ISO 8601 format (e.g., "2025-10-20T14:00:00Z")'),
+          endTime: z.string().describe('Appointment end time in ISO 8601 format (e.g., "2025-10-20T15:00:00Z")'),
+          title: z.string().optional().describe('Optional: Appointment title/subject'),
+          appointmentStatus: z.enum(['confirmed', 'showed', 'noshow', 'cancelled']).optional().describe('Optional: Appointment status'),
+          assignedUserId: z.string().optional().describe('Optional: Assign to specific team member (user ID)')
         }
       },
       {
         name: 'get_appointment',
-        description: 'Get detailed information about a specific appointment by ID',
+        description: `Get details of a specific appointment by ID.
+
+Use Cases:
+- View appointment details
+- Check appointment status
+- Verify booking information
+- Get contact and calendar info
+
+Parameters:
+- eventId: The unique appointment/event ID
+
+Returns: Full appointment details including contact, calendar, time, status, etc.
+
+Related Tools: get_calendar_events (to find eventId), update_appointment, delete_appointment`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            appointmentId: {
-              type: 'string',
-              description: 'The unique ID of the appointment to retrieve'
-            }
-          },
-          required: ['appointmentId']
+          eventId: z.string().describe('The unique ID of the appointment/event to retrieve')
         }
       },
       {
         name: 'update_appointment',
-        description: 'Update an existing appointment in GoHighLevel',
+        description: `Update an existing appointment's details.
+
+Use Cases:
+- Reschedule appointment to different time
+- Change appointment status
+- Update appointment title
+- Reassign to different team member
+
+Parameters:
+- eventId: The appointment ID to update
+- All other fields are optional - only provide fields you want to change
+
+IMPORTANT: When rescheduling, check availability with get_free_slots first!
+
+Returns: Updated appointment with new details.
+
+Related Tools: get_appointment (to find eventId), get_free_slots (when rescheduling), delete_appointment`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            appointmentId: {
-              type: 'string',
-              description: 'The unique ID of the appointment to update'
-            },
-            title: {
-              type: 'string',
-              description: 'Updated title/subject of the appointment'
-            },
-            appointmentStatus: {
-              type: 'string',
-              description: 'Updated status of the appointment',
-              enum: ['new', 'confirmed', 'cancelled', 'showed', 'noshow']
-            },
-            assignedUserId: {
-              type: 'string',
-              description: 'Updated assigned user ID'
-            },
-            address: {
-              type: 'string',
-              description: 'Updated meeting location or address'
-            },
-            startTime: {
-              type: 'string',
-              description: 'Updated start time in ISO format'
-            },
-            endTime: {
-              type: 'string',
-              description: 'Updated end time in ISO format'
-            },
-            toNotify: {
-              type: 'boolean',
-              description: 'Send notifications for this update',
-              default: true
-            }
-          },
-          required: ['appointmentId']
+          eventId: z.string().describe('The unique ID of the appointment to update'),
+          startTime: z.string().optional().describe('Optional: New start time in ISO 8601 format'),
+          endTime: z.string().optional().describe('Optional: New end time in ISO 8601 format'),
+          title: z.string().optional().describe('Optional: New appointment title'),
+          appointmentStatus: z.enum(['confirmed', 'showed', 'noshow', 'cancelled']).optional().describe('Optional: New appointment status'),
+          assignedUserId: z.string().optional().describe('Optional: Reassign to different team member')
         }
       },
       {
         name: 'delete_appointment',
-        description: 'Cancel/delete an appointment from GoHighLevel',
+        description: `Cancel/delete an appointment.
+
+⚠️ WARNING: This action is permanent and cannot be undone!
+
+Use Cases:
+- Cancel appointments
+- Remove no-shows
+- Clean up cancelled bookings
+
+IMPORTANT: Consider updating status to 'cancelled' instead of deleting for record-keeping.
+
+Parameters:
+- eventId: The appointment ID to delete
+
+Alternative: Use update_appointment with status='cancelled' to keep records.
+
+Related Tools: get_appointment (to find eventId), update_appointment (to cancel without deleting)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            appointmentId: {
-              type: 'string',
-              description: 'The unique ID of the appointment to delete'
-            }
-          },
-          required: ['appointmentId']
+          eventId: z.string().describe('The unique ID of the appointment to delete')
         }
       },
+
+      // Schedule Control (2 tools)
       {
         name: 'create_block_slot',
-        description: 'Create a blocked time slot to prevent bookings during specific times',
+        description: `Block time on a calendar to prevent bookings.
+
+Use Cases:
+- Block lunch breaks
+- Reserve time for internal meetings
+- Block holidays or time off
+- Prevent bookings during specific hours
+
+Required Parameters:
+- calendarId: Which calendar to block time on
+- startTime: When the block starts (ISO 8601 format)
+- endTime: When the block ends (ISO 8601 format)
+
+Optional Parameters:
+- title: Description of the block (e.g., "Lunch Break", "Team Meeting")
+- assignedUserId: Assign block to specific team member
+
+Date Format: Use ISO 8601 format (e.g., "2025-10-20T12:00:00Z")
+
+Returns: Created block slot with ID and details.
+
+Related Tools: update_block_slot, get_calendar_events (to view blocks), delete_appointment (to remove blocks)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            startTime: {
-              type: 'string',
-              description: 'Start time of the block in ISO format (e.g., "2024-01-15T10:00:00-05:00")'
-            },
-            endTime: {
-              type: 'string',
-              description: 'End time of the block in ISO format (e.g., "2024-01-15T12:00:00-05:00")'
-            },
-            title: {
-              type: 'string',
-              description: 'Title/reason for the block (e.g., "Lunch Break", "Meeting")'
-            },
-            calendarId: {
-              type: 'string',
-              description: 'Specific calendar to block (optional, blocks all if not specified)'
-            },
-            assignedUserId: {
-              type: 'string',
-              description: 'User ID to apply the block for'
-            }
-          },
-          required: ['startTime', 'endTime']
+          calendarId: z.string().describe('The unique ID of the calendar to block time on'),
+          startTime: z.string().describe('Block start time in ISO 8601 format (e.g., "2025-10-20T12:00:00Z")'),
+          endTime: z.string().describe('Block end time in ISO 8601 format (e.g., "2025-10-20T13:00:00Z")'),
+          title: z.string().optional().describe('Optional: Description of the block (e.g., "Lunch Break")'),
+          assignedUserId: z.string().optional().describe('Optional: Assign to specific team member (user ID)')
         }
       },
       {
         name: 'update_block_slot',
-        description: 'Update an existing blocked time slot',
+        description: `Update an existing blocked time slot.
+
+Use Cases:
+- Reschedule blocked time
+- Change block duration
+- Update block description
+- Reassign block to different team member
+
+Parameters:
+- eventId: The block slot ID to update
+- All other fields are optional - only provide fields you want to change
+
+Date Format: Use ISO 8601 format for startTime and endTime (e.g., "2025-10-20T12:00:00Z")
+
+Returns: Updated block slot with new details.
+
+Related Tools: create_block_slot, get_calendar_events (to find eventId), delete_appointment (to remove block)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            blockSlotId: {
-              type: 'string',
-              description: 'The unique ID of the block slot to update'
-            },
-            startTime: {
-              type: 'string',
-              description: 'Updated start time in ISO format'
-            },
-            endTime: {
-              type: 'string',
-              description: 'Updated end time in ISO format'
-            },
-            title: {
-              type: 'string',
-              description: 'Updated title/reason for the block'
-            },
-            calendarId: {
-              type: 'string',
-              description: 'Updated calendar ID for the block'
-            },
-            assignedUserId: {
-              type: 'string',
-              description: 'Updated assigned user ID'
-            }
-          },
-          required: ['blockSlotId']
-        }
-      },
-      {
-        name: 'create_calendar_group',
-        description: 'Create a new calendar group',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', description: 'Group name' },
-            description: { type: 'string', description: 'Group description' },
-            slug: { type: 'string', description: 'URL slug for the group' },
-            isActive: { type: 'boolean', description: 'Whether group is active', default: true }
-          },
-          required: ['name', 'description', 'slug']
-        }
-      },
-      {
-        name: 'validate_group_slug',
-        description: 'Validate if a calendar group slug is available',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            slug: { type: 'string', description: 'Slug to validate' },
-            locationId: { type: 'string', description: 'Location ID' }
-          },
-          required: ['slug']
-        }
-      },
-      {
-        name: 'update_calendar_group',
-        description: 'Update calendar group details',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            groupId: { type: 'string', description: 'Calendar group ID' },
-            name: { type: 'string', description: 'Group name' },
-            description: { type: 'string', description: 'Group description' },
-            slug: { type: 'string', description: 'URL slug for the group' }
-          },
-          required: ['groupId', 'name', 'description', 'slug']
-        }
-      },
-      {
-        name: 'delete_calendar_group',
-        description: 'Delete a calendar group',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            groupId: { type: 'string', description: 'Calendar group ID' }
-          },
-          required: ['groupId']
-        }
-      },
-      {
-        name: 'disable_calendar_group',
-        description: 'Enable or disable a calendar group',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            groupId: { type: 'string', description: 'Calendar group ID' },
-            isActive: { type: 'boolean', description: 'Whether to enable (true) or disable (false) the group' }
-          },
-          required: ['groupId', 'isActive']
-        }
-      },
-      {
-        name: 'get_appointment_notes',
-        description: 'Get notes for an appointment',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            appointmentId: { type: 'string', description: 'Appointment ID' },
-            limit: { type: 'number', description: 'Maximum number of notes to return', default: 10 },
-            offset: { type: 'number', description: 'Number of notes to skip', default: 0 }
-          },
-          required: ['appointmentId']
-        }
-      },
-      {
-        name: 'create_appointment_note',
-        description: 'Create a note for an appointment',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            appointmentId: { type: 'string', description: 'Appointment ID' },
-            body: { type: 'string', description: 'Note content' },
-            userId: { type: 'string', description: 'User ID creating the note' }
-          },
-          required: ['appointmentId', 'body']
-        }
-      },
-      {
-        name: 'update_appointment_note',
-        description: 'Update an appointment note',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            appointmentId: { type: 'string', description: 'Appointment ID' },
-            noteId: { type: 'string', description: 'Note ID' },
-            body: { type: 'string', description: 'Updated note content' },
-            userId: { type: 'string', description: 'User ID updating the note' }
-          },
-          required: ['appointmentId', 'noteId', 'body']
-        }
-      },
-      {
-        name: 'delete_appointment_note',
-        description: 'Delete an appointment note',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            appointmentId: { type: 'string', description: 'Appointment ID' },
-            noteId: { type: 'string', description: 'Note ID' }
-          },
-          required: ['appointmentId', 'noteId']
-        }
-      },
-      {
-        name: 'get_calendar_resources_equipments',
-        description: 'Get calendar equipment resources',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            limit: { type: 'number', description: 'Maximum number to return', default: 20 },
-            skip: { type: 'number', description: 'Number to skip', default: 0 }
-          }
-        }
-      },
-      {
-        name: 'create_calendar_resource_equipment',
-        description: 'Create a calendar equipment resource',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', description: 'Equipment name' },
-            description: { type: 'string', description: 'Equipment description' },
-            quantity: { type: 'number', description: 'Total quantity available' },
-            outOfService: { type: 'number', description: 'Number currently out of service' },
-            capacity: { type: 'number', description: 'Capacity per unit' },
-            calendarIds: { type: 'array', items: { type: 'string' }, description: 'Associated calendar IDs' }
-          },
-          required: ['name', 'description', 'quantity', 'outOfService', 'capacity', 'calendarIds']
-        }
-      },
-      {
-        name: 'get_calendar_resource_equipment',
-        description: 'Get specific equipment resource details',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            resourceId: { type: 'string', description: 'Equipment resource ID' }
-          },
-          required: ['resourceId']
-        }
-      },
-      {
-        name: 'update_calendar_resource_equipment',
-        description: 'Update equipment resource details',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            resourceId: { type: 'string', description: 'Equipment resource ID' },
-            name: { type: 'string', description: 'Equipment name' },
-            description: { type: 'string', description: 'Equipment description' },
-            quantity: { type: 'number', description: 'Total quantity available' },
-            outOfService: { type: 'number', description: 'Number currently out of service' },
-            capacity: { type: 'number', description: 'Capacity per unit' },
-            calendarIds: { type: 'array', items: { type: 'string' }, description: 'Associated calendar IDs' },
-            isActive: { type: 'boolean', description: 'Whether resource is active' }
-          },
-          required: ['resourceId']
-        }
-      },
-      {
-        name: 'delete_calendar_resource_equipment',
-        description: 'Delete an equipment resource',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            resourceId: { type: 'string', description: 'Equipment resource ID' }
-          },
-          required: ['resourceId']
-        }
-      },
-      {
-        name: 'get_calendar_resources_rooms',
-        description: 'Get calendar room resources',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            limit: { type: 'number', description: 'Maximum number to return', default: 20 },
-            skip: { type: 'number', description: 'Number to skip', default: 0 }
-          }
-        }
-      },
-      {
-        name: 'create_calendar_resource_room',
-        description: 'Create a calendar room resource',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', description: 'Room name' },
-            description: { type: 'string', description: 'Room description' },
-            quantity: { type: 'number', description: 'Total quantity available' },
-            outOfService: { type: 'number', description: 'Number currently out of service' },
-            capacity: { type: 'number', description: 'Room capacity' },
-            calendarIds: { type: 'array', items: { type: 'string' }, description: 'Associated calendar IDs' }
-          },
-          required: ['name', 'description', 'quantity', 'outOfService', 'capacity', 'calendarIds']
-        }
-      },
-      {
-        name: 'get_calendar_resource_room',
-        description: 'Get specific room resource details',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            resourceId: { type: 'string', description: 'Room resource ID' }
-          },
-          required: ['resourceId']
-        }
-      },
-      {
-        name: 'update_calendar_resource_room',
-        description: 'Update room resource details',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            resourceId: { type: 'string', description: 'Room resource ID' },
-            name: { type: 'string', description: 'Room name' },
-            description: { type: 'string', description: 'Room description' },
-            quantity: { type: 'number', description: 'Total quantity available' },
-            outOfService: { type: 'number', description: 'Number currently out of service' },
-            capacity: { type: 'number', description: 'Room capacity' },
-            calendarIds: { type: 'array', items: { type: 'string' }, description: 'Associated calendar IDs' },
-            isActive: { type: 'boolean', description: 'Whether resource is active' }
-          },
-          required: ['resourceId']
-        }
-      },
-      {
-        name: 'delete_calendar_resource_room',
-        description: 'Delete a room resource',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            resourceId: { type: 'string', description: 'Room resource ID' }
-          },
-          required: ['resourceId']
-        }
-      },
-      {
-        name: 'get_calendar_notifications',
-        description: 'Get calendar notifications',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: { type: 'string', description: 'Calendar ID' },
-            isActive: { type: 'boolean', description: 'Filter by active status' },
-            deleted: { type: 'boolean', description: 'Include deleted notifications' },
-            limit: { type: 'number', description: 'Maximum number to return' },
-            skip: { type: 'number', description: 'Number to skip' }
-          },
-          required: ['calendarId']
-        }
-      },
-      {
-        name: 'create_calendar_notifications',
-        description: 'Create calendar notifications',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: { type: 'string', description: 'Calendar ID' },
-            notifications: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  receiverType: { type: 'string', enum: ['contact', 'guest', 'assignedUser', 'emails'], description: 'Who receives the notification' },
-                  channel: { type: 'string', enum: ['email', 'inApp'], description: 'Notification channel' },
-                  notificationType: { type: 'string', enum: ['booked', 'confirmation', 'cancellation', 'reminder', 'followup', 'reschedule'], description: 'Type of notification' },
-                  isActive: { type: 'boolean', description: 'Whether notification is active' },
-                  templateId: { type: 'string', description: 'Template ID' },
-                  body: { type: 'string', description: 'Notification body' },
-                  subject: { type: 'string', description: 'Notification subject' }
-                },
-                required: ['receiverType', 'channel', 'notificationType']
-              },
-              description: 'Array of notification configurations'
-            }
-          },
-          required: ['calendarId', 'notifications']
-        }
-      },
-      {
-        name: 'get_calendar_notification',
-        description: 'Get specific calendar notification',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: { type: 'string', description: 'Calendar ID' },
-            notificationId: { type: 'string', description: 'Notification ID' }
-          },
-          required: ['calendarId', 'notificationId']
-        }
-      },
-      {
-        name: 'update_calendar_notification',
-        description: 'Update calendar notification',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: { type: 'string', description: 'Calendar ID' },
-            notificationId: { type: 'string', description: 'Notification ID' },
-            receiverType: { type: 'string', enum: ['contact', 'guest', 'assignedUser', 'emails'], description: 'Who receives the notification' },
-            channel: { type: 'string', enum: ['email', 'inApp'], description: 'Notification channel' },
-            notificationType: { type: 'string', enum: ['booked', 'confirmation', 'cancellation', 'reminder', 'followup', 'reschedule'], description: 'Type of notification' },
-            isActive: { type: 'boolean', description: 'Whether notification is active' },
-            deleted: { type: 'boolean', description: 'Whether notification is deleted' },
-            templateId: { type: 'string', description: 'Template ID' },
-            body: { type: 'string', description: 'Notification body' },
-            subject: { type: 'string', description: 'Notification subject' }
-          },
-          required: ['calendarId', 'notificationId']
-        }
-      },
-      {
-        name: 'delete_calendar_notification',
-        description: 'Delete calendar notification',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            calendarId: { type: 'string', description: 'Calendar ID' },
-            notificationId: { type: 'string', description: 'Notification ID' }
-          },
-          required: ['calendarId', 'notificationId']
-        }
-      },
-      {
-        name: 'get_blocked_slots',
-        description: 'Get blocked time slots for a location',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            userId: { type: 'string', description: 'Filter by user ID' },
-            calendarId: { type: 'string', description: 'Filter by calendar ID' },
-            groupId: { type: 'string', description: 'Filter by group ID' },
-            startTime: { type: 'string', description: 'Start time for the query range' },
-            endTime: { type: 'string', description: 'End time for the query range' }
-          },
-          required: ['startTime', 'endTime']
+          eventId: z.string().describe('The unique ID of the block slot to update'),
+          startTime: z.string().optional().describe('Optional: New start time in ISO 8601 format'),
+          endTime: z.string().optional().describe('Optional: New end time in ISO 8601 format'),
+          title: z.string().optional().describe('Optional: New description for the block'),
+          assignedUserId: z.string().optional().describe('Optional: Reassign to different team member')
         }
       }
     ];
   }
 
   /**
-   * Execute calendar tool based on tool name and arguments
+   * Execute a calendar tool with the given parameters
    */
-  async executeTool(name: string, args: any): Promise<any> {
-    switch (name) {
-      case 'get_calendar_groups':
-        return this.getCalendarGroups();
-      
-      case 'get_calendars':
-        return this.getCalendars(args as MCPGetCalendarsParams);
-      
-      case 'create_calendar':
-        return this.createCalendar(args as MCPCreateCalendarParams);
-      
-      case 'get_calendar':
-        return this.getCalendar(args.calendarId);
-      
-      case 'update_calendar':
-        return this.updateCalendar(args as MCPUpdateCalendarParams);
-      
-      case 'delete_calendar':
-        return this.deleteCalendar(args.calendarId);
-      
-      case 'get_calendar_events':
-        return this.getCalendarEvents(args as MCPGetCalendarEventsParams);
-      
-      case 'get_free_slots':
-        return this.getFreeSlots(args as MCPGetFreeSlotsParams);
-      
-      case 'create_appointment':
-        return this.createAppointment(args as MCPCreateAppointmentParams);
-      
-      case 'get_appointment':
-        return this.getAppointment(args.appointmentId);
-      
-      case 'update_appointment':
-        return this.updateAppointment(args as MCPUpdateAppointmentParams);
-      
-      case 'delete_appointment':
-        return this.deleteAppointment(args.appointmentId);
-      
-      case 'create_block_slot':
-        return this.createBlockSlot(args as MCPCreateBlockSlotParams);
-      
-      case 'update_block_slot':
-        return this.updateBlockSlot(args as MCPUpdateBlockSlotParams);
-      
-      case 'create_calendar_group':
-        return this.createCalendarGroup(args as MCPCreateCalendarGroupParams);
-      
-      case 'validate_group_slug':
-        return this.validateGroupSlug(args as MCPValidateGroupSlugParams);
-      
-      case 'update_calendar_group':
-        return this.updateCalendarGroup(args as MCPUpdateCalendarGroupParams);
-      
-      case 'delete_calendar_group':
-        return this.deleteCalendarGroup(args as MCPDeleteCalendarGroupParams);
-      
-      case 'disable_calendar_group':
-        return this.disableCalendarGroup(args as MCPDisableCalendarGroupParams);
-      
-      case 'get_appointment_notes':
-        return this.getAppointmentNotes(args as MCPGetAppointmentNotesParams);
-      
-      case 'create_appointment_note':
-        return this.createAppointmentNote(args as MCPCreateAppointmentNoteParams);
-      
-      case 'update_appointment_note':
-        return this.updateAppointmentNote(args as MCPUpdateAppointmentNoteParams);
-      
-      case 'delete_appointment_note':
-        return this.deleteAppointmentNote(args as MCPDeleteAppointmentNoteParams);
-      
-      case 'get_calendar_resources_equipments':
-        return this.getCalendarResourcesEquipments(args as MCPGetCalendarResourcesParams);
-      
-      case 'create_calendar_resource_equipment':
-        return this.createCalendarResourceEquipment(args as MCPCreateCalendarResourceParams);
-      
-      case 'get_calendar_resource_equipment':
-        return this.getCalendarResourceEquipment(args as MCPGetCalendarResourceParams);
-      
-      case 'update_calendar_resource_equipment':
-        return this.updateCalendarResourceEquipment(args as MCPUpdateCalendarResourceParams);
-      
-      case 'delete_calendar_resource_equipment':
-        return this.deleteCalendarResourceEquipment(args as MCPDeleteCalendarResourceParams);
-      
-      case 'get_calendar_resources_rooms':
-        return this.getCalendarResourcesRooms(args as MCPGetCalendarResourcesParams);
-      
-      case 'create_calendar_resource_room':
-        return this.createCalendarResourceRoom(args as MCPCreateCalendarResourceParams);
-      
-      case 'get_calendar_resource_room':
-        return this.getCalendarResourceRoom(args as MCPGetCalendarResourceParams);
-      
-      case 'update_calendar_resource_room':
-        return this.updateCalendarResourceRoom(args as MCPUpdateCalendarResourceParams);
-      
-      case 'delete_calendar_resource_room':
-        return this.deleteCalendarResourceRoom(args as MCPDeleteCalendarResourceParams);
-      
-      case 'get_calendar_notifications':
-        return this.getCalendarNotifications(args as MCPGetCalendarNotificationsParams);
-      
-      case 'create_calendar_notifications':
-        return this.createCalendarNotifications(args as MCPCreateCalendarNotificationParams);
-      
-      case 'get_calendar_notification':
-        return this.getCalendarNotification(args as MCPGetCalendarNotificationParams);
-      
-      case 'update_calendar_notification':
-        return this.updateCalendarNotification(args as MCPUpdateCalendarNotificationParams);
-      
-      case 'delete_calendar_notification':
-        return this.deleteCalendarNotification(args as MCPDeleteCalendarNotificationParams);
-      
-      case 'get_blocked_slots':
-        return this.getBlockedSlots(args as MCPGetBlockedSlotsParams);
-      
-      default:
-        throw new Error(`Unknown calendar tool: ${name}`);
+  async executeTool(toolName: string, params: any): Promise<any> {
+    try {
+      switch (toolName) {
+        // Calendar Management
+        case 'get_calendar_groups':
+          return await this.getCalendarGroups();
+        case 'get_calendars':
+          return await this.getCalendars(params.groupId);
+        case 'create_calendar':
+          return await this.createCalendar(params);
+        case 'update_calendar':
+          return await this.updateCalendar(params);
+        case 'delete_calendar':
+          return await this.deleteCalendar(params.calendarId);
+        
+        // Appointment Booking
+        case 'get_calendar_events':
+          return await this.getCalendarEvents(params);
+        case 'get_free_slots':
+          return await this.getFreeSlots(params);
+        case 'create_appointment':
+          return await this.createAppointment(params);
+        case 'get_appointment':
+          return await this.getAppointment(params.eventId);
+        case 'update_appointment':
+          return await this.updateAppointment(params);
+        case 'delete_appointment':
+          return await this.deleteAppointment(params.eventId);
+        
+        // Schedule Control
+        case 'create_block_slot':
+          return await this.createBlockSlot(params);
+        case 'update_block_slot':
+          return await this.updateBlockSlot(params);
+        
+        default:
+          throw new Error(`Unknown tool: ${toolName}`);
+      }
+    } catch (error) {
+      throw error;
     }
   }
 
   /**
-   * GET CALENDAR GROUPS
+   * CALENDAR MANAGEMENT METHODS
    */
-  private async getCalendarGroups(): Promise<{ success: boolean; groups: any[]; message: string }> {
+
+  /**
+   * Get all calendar groups
+   */
+  private async getCalendarGroups(): Promise<any> {
     try {
       const response = await this.ghlClient.getCalendarGroups();
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      return response.data;
+    } catch (error: any) {
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot access calendar groups.
+
+Please check:
+- API key has calendar read permissions
+- User has access to calendars in this location
+- Location has calendars feature enabled
+
+Original error: ${error.message || error}`);
       }
 
-      const data = response.data as GHLGetCalendarGroupsResponse;
-      const groups = Array.isArray(data.groups) ? data.groups : [];
-      
-      return {
-        success: true,
-        groups,
-        message: `Retrieved ${groups.length} calendar groups`
-      };
-    } catch (error) {
-      process.stderr.write(`[GHL MCP] Get calendar groups error: ${JSON.stringify(error, null, 2)}\n`);
-      throw new Error(`Failed to get calendar groups: ${error instanceof Error ? error.message : String(error)}`);
+      // Configuration errors
+      if (error.message?.includes('(500)')) {
+        throw new Error(`Calendar service error: The calendar system may not be properly configured.
+
+Please verify:
+- Calendars feature is enabled for this location
+- Calendar settings are configured in GHL dashboard
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to get calendar groups: ${error.message || error}`);
     }
   }
 
   /**
-   * GET CALENDARS
+   * Get calendars, optionally filtered by group
    */
-  private async getCalendars(params: MCPGetCalendarsParams = {}): Promise<{ success: boolean; calendars: GHLCalendar[]; message: string }> {
+  private async getCalendars(groupId?: string): Promise<any> {
     try {
-      const response = await this.ghlClient.getCalendars(params);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      const response = await this.ghlClient.getCalendars(groupId ? { groupId } : undefined);
+      return response.data;
+    } catch (error: any) {
+      // Group not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Calendar group not found: ${groupId}
+
+The specified group ID doesn't exist or has been deleted.
+Use get_calendar_groups tool to see available groups.
+
+Original error: ${error.message || error}`);
       }
 
-      const data = response.data as GHLGetCalendarsResponse;
-      const calendars = Array.isArray(data.calendars) ? data.calendars : [];
-      
-      return {
-        success: true,
-        calendars,
-        message: `Retrieved ${calendars.length} calendars`
-      };
-    } catch (error) {
-      throw new Error(`Failed to get calendars: ${error instanceof Error ? error.message : String(error)}`);
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot access calendars.
+
+Please check:
+- API key has calendar read permissions
+- User has access to calendars in this location
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to get calendars: ${error.message || error}`);
     }
   }
 
   /**
-   * CREATE CALENDAR
+   * Create a new calendar
    */
-  private async createCalendar(params: MCPCreateCalendarParams): Promise<{ success: boolean; calendar: GHLCalendar; message: string }> {
+  private async createCalendar(params: any): Promise<any> {
     try {
-      const calendarData = {
-        locationId: this.ghlClient.getConfig().locationId,
-        name: params.name,
-        description: params.description,
-        calendarType: params.calendarType,
-        groupId: params.groupId,
-        teamMembers: params.teamMembers,
-        slotDuration: params.slotDuration || 30,
-        slotDurationUnit: params.slotDurationUnit || 'mins',
-        autoConfirm: params.autoConfirm !== undefined ? params.autoConfirm : true,
-        allowReschedule: params.allowReschedule !== undefined ? params.allowReschedule : true,
-        allowCancellation: params.allowCancellation !== undefined ? params.allowCancellation : true,
-        isActive: params.isActive !== undefined ? params.isActive : true
-      };
+      const response = await this.ghlClient.createCalendar(params);
+      return response.data;
+    } catch (error: any) {
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot create calendars.
 
-      const response = await this.ghlClient.createCalendar(calendarData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+This operation requires admin or calendar management permissions.
+
+Please check:
+- API key has calendar write/admin permissions
+- User role allows calendar creation
+- Location plan includes calendar management
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        calendar: response.data.calendar,
-        message: `Calendar created successfully with ID: ${response.data.calendar.id}`
-      };
-    } catch (error) {
-      throw new Error(`Failed to create calendar: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Validation errors
+      if (error.message?.includes('(400)')) {
+        throw new Error(`Invalid calendar data: ${error.message}
+
+Common issues:
+- Missing required fields (name, description)
+- Invalid groupId (use get_calendar_groups to verify)
+- Invalid slot duration or interval values
+- Name already in use
+
+Original error: ${error.message || error}`);
+      }
+
+      // Group not found
+      if (error.message?.includes('(404)') && params.groupId) {
+        throw new Error(`Calendar group not found: ${params.groupId}
+
+The specified group ID doesn't exist.
+Use get_calendar_groups tool to find valid group IDs.
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to create calendar: ${error.message || error}`);
     }
   }
 
   /**
-   * GET CALENDAR BY ID
+   * Update an existing calendar
    */
-  private async getCalendar(calendarId: string): Promise<{ success: boolean; calendar: GHLCalendar; message: string }> {
-    try {
-      const response = await this.ghlClient.getCalendar(calendarId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        calendar: response.data.calendar,
-        message: 'Calendar retrieved successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to get calendar: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * UPDATE CALENDAR
-   */
-  private async updateCalendar(params: MCPUpdateCalendarParams): Promise<{ success: boolean; calendar: GHLCalendar; message: string }> {
+  private async updateCalendar(params: any): Promise<any> {
     try {
       const { calendarId, ...updateData } = params;
-      
       const response = await this.ghlClient.updateCalendar(calendarId, updateData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      return response.data;
+    } catch (error: any) {
+      // Calendar not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Calendar not found: ${params.calendarId}
+
+The calendar may have been deleted or the ID is incorrect.
+Use get_calendars tool to find valid calendar IDs.
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        calendar: response.data.calendar,
-        message: 'Calendar updated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to update calendar: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot update calendar.
+
+This operation requires admin or calendar management permissions.
+
+Please check:
+- API key has calendar write/admin permissions
+- User has permission to modify this calendar
+- Calendar is not system-protected
+
+Original error: ${error.message || error}`);
+      }
+
+      // Validation errors
+      if (error.message?.includes('(400)')) {
+        throw new Error(`Invalid update data: ${error.message}
+
+Common issues:
+- Invalid groupId (use get_calendar_groups to verify)
+- Invalid slot duration or interval values
+- Name conflicts with existing calendar
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to update calendar: ${error.message || error}`);
     }
   }
 
   /**
-   * DELETE CALENDAR
+   * Delete a calendar
    */
-  private async deleteCalendar(calendarId: string): Promise<{ success: boolean; message: string }> {
+  private async deleteCalendar(calendarId: string): Promise<any> {
     try {
       const response = await this.ghlClient.deleteCalendar(calendarId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      return response.data;
+    } catch (error: any) {
+      // Calendar not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Calendar not found: ${calendarId}
+
+The calendar may have already been deleted or the ID is incorrect.
+Use get_calendars tool to verify calendar exists.
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        message: 'Calendar deleted successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to delete calendar: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot delete calendar.
+
+This operation requires admin permissions.
+
+Please check:
+- API key has calendar admin permissions
+- User has permission to delete calendars
+- Calendar is not system-protected
+
+Original error: ${error.message || error}`);
+      }
+
+      // Calendar has active appointments
+      if (error.message?.includes('(409)')) {
+        throw new Error(`Cannot delete calendar: Active appointments exist.
+
+This calendar has scheduled appointments and cannot be deleted.
+
+Options:
+1. Cancel all appointments first (use get_calendar_events to find them)
+2. Disable the calendar instead of deleting
+3. Wait until all appointments are completed
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to delete calendar: ${error.message || error}`);
     }
   }
 
   /**
-   * GET CALENDAR EVENTS
+   * APPOINTMENT BOOKING METHODS
    */
-  private async getCalendarEvents(params: MCPGetCalendarEventsParams): Promise<{ success: boolean; events: GHLCalendarEvent[]; message: string }> {
+
+  /**
+   * Get calendar events within a date range
+   */
+  private async getCalendarEvents(params: any): Promise<any> {
     try {
-      // Convert date strings to milliseconds if needed
+      // Convert ISO dates to milliseconds for GHL API
       const startTime = this.convertToMilliseconds(params.startTime);
       const endTime = this.convertToMilliseconds(params.endTime);
 
-      const eventParams = {
+      const response = await this.ghlClient.getCalendarEvents({
         locationId: this.ghlClient.getConfig().locationId,
-        startTime,
-        endTime,
-        userId: params.userId,
         calendarId: params.calendarId,
-        groupId: params.groupId
-      };
+        startTime: startTime,
+        endTime: endTime
+      });
+      return response.data;
+    } catch (error: any) {
+      // Calendar not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Calendar not found: ${params.calendarId}
 
-      const response = await this.ghlClient.getCalendarEvents(eventParams);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+The calendar may have been deleted or the ID is incorrect.
+Use get_calendars tool to find valid calendar IDs.
+
+Original error: ${error.message || error}`);
       }
 
-      const data = response.data as GHLGetCalendarEventsResponse;
-      const events = Array.isArray(data.events) ? data.events : [];
-      
-      return {
-        success: true,
-        events,
-        message: `Retrieved ${events.length} calendar events`
-      };
-    } catch (error) {
-      throw new Error(`Failed to get calendar events: ${error instanceof Error ? error.message : String(error)}`);
+      // Invalid date/time format
+      if (error.message?.includes('(400)') && error.message?.includes('time')) {
+        throw new Error(`Invalid date/time format: ${error.message}
+
+Date/time must be in ISO 8601 format.
+Examples:
+- "2025-10-20T09:00:00Z" (UTC)
+- "2025-10-20T14:00:00-05:00" (with timezone offset)
+
+Original error: ${error.message || error}`);
+      }
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot access calendar events.
+
+Please check:
+- API key has calendar read permissions
+- User has access to this calendar
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to get calendar events: ${error.message || error}`);
     }
   }
 
   /**
-   * GET FREE SLOTS
+   * Get available time slots for booking
    */
-  private async getFreeSlots(params: MCPGetFreeSlotsParams): Promise<{ success: boolean; freeSlots: any; message: string }> {
+  private async getFreeSlots(params: any): Promise<any> {
     try {
-      // Convert dates to milliseconds if needed
+      // Convert date strings to milliseconds for GHL API
       const startDate = this.convertDateToMilliseconds(params.startDate);
       const endDate = this.convertDateToMilliseconds(params.endDate);
 
-      const slotParams = {
+      const response = await this.ghlClient.getFreeSlots({
         calendarId: params.calendarId,
-        startDate,
-        endDate,
-        timezone: params.timezone,
-        userId: params.userId
-      };
+        startDate: startDate,
+        endDate: endDate,
+        timezone: params.timezone
+      });
+      return response.data;
+    } catch (error: any) {
+      // Calendar not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Calendar not found: ${params.calendarId}
 
-      const response = await this.ghlClient.getFreeSlots(slotParams);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+The calendar may have been deleted or the ID is incorrect.
+Use get_calendars tool to find valid calendar IDs.
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        freeSlots: response.data,
-        message: 'Free slots retrieved successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to get free slots: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Invalid timezone
+      if (error.message?.includes('(400)') && (error.message?.includes('timezone') || error.message?.includes('time zone'))) {
+        throw new Error(`Invalid timezone: ${params.timezone}
+
+Use standard IANA timezone format.
+Examples:
+- "America/New_York"
+- "Europe/London"
+- "Asia/Tokyo"
+- "UTC"
+
+Original error: ${error.message || error}`);
+      }
+
+      // Invalid date format
+      if (error.message?.includes('(400)') && error.message?.includes('date')) {
+        throw new Error(`Invalid date format: ${error.message}
+
+Date must be in YYYY-MM-DD format.
+Examples: "2025-10-20", "2025-12-31"
+
+Original error: ${error.message || error}`);
+      }
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot check calendar availability.
+
+Please check:
+- API key has calendar read permissions
+- User has access to this calendar
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to get free slots: ${error.message || error}`);
     }
   }
 
   /**
-   * CREATE APPOINTMENT
+   * Create a new appointment
    */
-  private async createAppointment(params: MCPCreateAppointmentParams): Promise<{ success: boolean; appointment: GHLCalendarEvent; message: string }> {
+  private async createAppointment(params: any): Promise<any> {
     try {
-      const appointmentData = {
-        calendarId: params.calendarId,
-        locationId: this.ghlClient.getConfig().locationId,
-        contactId: params.contactId,
-        startTime: params.startTime,
-        endTime: params.endTime,
-        title: params.title,
-        appointmentStatus: params.appointmentStatus || 'confirmed',
-        assignedUserId: params.assignedUserId,
-        address: params.address,
-        meetingLocationType: params.meetingLocationType,
-        ignoreDateRange: params.ignoreDateRange,
-        toNotify: params.toNotify !== undefined ? params.toNotify : true
-      };
+      const response = await this.ghlClient.createAppointment(params);
+      return response.data;
+    } catch (error: any) {
+      // Appointment conflict (slot already booked)
+      if (error.message?.includes('(409)')) {
+        throw new Error(`Appointment conflict: Time slot is already booked.
 
-      const response = await this.ghlClient.createAppointment(appointmentData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+The requested time slot is not available.
+
+Solutions:
+1. Use get_free_slots tool to find available times
+2. Choose a different time slot
+3. Check calendar availability before booking
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        appointment: response.data,
-        message: `Appointment created successfully with ID: ${response.data.id}`
-      };
-    } catch (error) {
-      throw new Error(`Failed to create appointment: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Calendar not found
+      if (error.message?.includes('(404)') && error.message?.includes('calendar')) {
+        throw new Error(`Calendar not found: ${params.calendarId}
+
+The calendar may have been deleted or the ID is incorrect.
+Use get_calendars tool to find valid calendar IDs.
+
+Original error: ${error.message || error}`);
+      }
+
+      // Contact not found
+      if (error.message?.includes('(404)') && error.message?.includes('contact')) {
+        throw new Error(`Contact not found: ${params.contactId}
+
+The contact ID doesn't exist or has been deleted.
+Use search_contacts tool to find valid contact IDs.
+
+Original error: ${error.message || error}`);
+      }
+
+      // Invalid date/time format
+      if (error.message?.includes('(400)') && error.message?.includes('time')) {
+        throw new Error(`Invalid date/time format: ${error.message}
+
+Use ISO 8601 format for startTime and endTime.
+Example: "2025-10-20T14:00:00Z"
+
+Original error: ${error.message || error}`);
+      }
+
+      // Validation errors
+      if (error.message?.includes('(400)')) {
+        throw new Error(`Invalid appointment data: ${error.message}
+
+Common issues:
+- Missing required fields (calendarId, contactId, startTime, endTime)
+- Invalid time range (endTime must be after startTime)
+- Invalid status value
+- Invalid assignedUserId
+
+Original error: ${error.message || error}`);
+      }
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot create appointments.
+
+Please check:
+- API key has calendar write permissions
+- User has permission to book on this calendar
+- Calendar allows public booking
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to create appointment: ${error.message || error}`);
     }
   }
 
   /**
-   * GET APPOINTMENT BY ID
+   * Get a specific appointment by ID
    */
-  private async getAppointment(appointmentId: string): Promise<{ success: boolean; appointment: GHLCalendarEvent; message: string }> {
+  private async getAppointment(eventId: string): Promise<any> {
     try {
-      const response = await this.ghlClient.getAppointment(appointmentId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      const response = await this.ghlClient.getAppointment(eventId);
+      return response.data;
+    } catch (error: any) {
+      // Appointment not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Appointment not found: ${eventId}
+
+The appointment may have been deleted or the ID is incorrect.
+Use get_calendar_events tool to find valid appointment IDs.
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        appointment: response.data.event,
-        message: 'Appointment retrieved successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to get appointment: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot access this appointment.
+
+Please check:
+- API key has calendar read permissions
+- User has access to this appointment
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to get appointment: ${error.message || error}`);
     }
   }
 
   /**
-   * UPDATE APPOINTMENT
+   * Update an existing appointment
    */
-  private async updateAppointment(params: MCPUpdateAppointmentParams): Promise<{ success: boolean; appointment: GHLCalendarEvent; message: string }> {
+  private async updateAppointment(params: any): Promise<any> {
     try {
-      const { appointmentId, ...updateData } = params;
-      
-      const response = await this.ghlClient.updateAppointment(appointmentId, updateData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      const { eventId, ...updateData } = params;
+      const response = await this.ghlClient.updateAppointment(eventId, updateData);
+      return response.data;
+    } catch (error: any) {
+      // Appointment not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Appointment not found: ${params.eventId}
+
+The appointment may have been deleted or the ID is incorrect.
+Use get_calendar_events tool to find valid appointment IDs.
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        appointment: response.data,
-        message: 'Appointment updated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to update appointment: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Appointment conflict (when rescheduling)
+      if (error.message?.includes('(409)')) {
+        throw new Error(`Appointment conflict: New time slot is already booked.
+
+When rescheduling, the new time slot must be available.
+
+Solutions:
+1. Use get_free_slots tool to find available times
+2. Choose a different time slot
+
+Original error: ${error.message || error}`);
+      }
+
+      // Invalid date/time format
+      if (error.message?.includes('(400)') && error.message?.includes('time')) {
+        throw new Error(`Invalid date/time format: ${error.message}
+
+Use ISO 8601 format for startTime and endTime.
+Example: "2025-10-20T14:00:00Z"
+
+Original error: ${error.message || error}`);
+      }
+
+      // Validation errors
+      if (error.message?.includes('(400)')) {
+        throw new Error(`Invalid update data: ${error.message}
+
+Common issues:
+- Invalid time range (endTime must be after startTime)
+- Invalid status value
+- Invalid assignedUserId
+
+Original error: ${error.message || error}`);
+      }
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot update this appointment.
+
+Please check:
+- API key has calendar write permissions
+- User has permission to modify this appointment
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to update appointment: ${error.message || error}`);
     }
   }
 
   /**
-   * DELETE APPOINTMENT
+   * Delete an appointment
    */
-  private async deleteAppointment(appointmentId: string): Promise<{ success: boolean; message: string }> {
+  private async deleteAppointment(eventId: string): Promise<any> {
     try {
-      const response = await this.ghlClient.deleteAppointment(appointmentId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      const response = await this.ghlClient.deleteAppointment(eventId);
+      return response.data;
+    } catch (error: any) {
+      // Appointment not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Appointment not found: ${eventId}
+
+The appointment may have already been deleted or the ID is incorrect.
+Use get_calendar_events tool to verify appointment exists.
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        message: 'Appointment deleted successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to delete appointment: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot delete this appointment.
+
+Please check:
+- API key has calendar write/delete permissions
+- User has permission to cancel this appointment
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to delete appointment: ${error.message || error}`);
     }
   }
 
   /**
-   * CREATE BLOCK SLOT
+   * SCHEDULE CONTROL METHODS
    */
-  private async createBlockSlot(params: MCPCreateBlockSlotParams): Promise<{ success: boolean; blockSlot: GHLBlockSlotResponse; message: string }> {
-    try {
-      const blockSlotData = {
-        locationId: this.ghlClient.getConfig().locationId,
-        startTime: params.startTime,
-        endTime: params.endTime,
-        title: params.title,
-        calendarId: params.calendarId,
-        assignedUserId: params.assignedUserId
-      };
-
-      const response = await this.ghlClient.createBlockSlot(blockSlotData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        blockSlot: response.data,
-        message: `Block slot created successfully with ID: ${response.data.id}`
-      };
-    } catch (error) {
-      throw new Error(`Failed to create block slot: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 
   /**
-   * UPDATE BLOCK SLOT
+   * Create a block slot to prevent bookings
    */
-  private async updateBlockSlot(params: MCPUpdateBlockSlotParams): Promise<{ success: boolean; blockSlot: GHLBlockSlotResponse; message: string }> {
+  private async createBlockSlot(params: any): Promise<any> {
     try {
-      const { blockSlotId, ...updateData } = params;
-      
-      const response = await this.ghlClient.updateBlockSlot(blockSlotId, updateData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      const response = await this.ghlClient.createBlockSlot(params);
+      return response.data;
+    } catch (error: any) {
+      // Calendar not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Calendar not found: ${params.calendarId}
+
+The calendar may have been deleted or the ID is incorrect.
+Use get_calendars tool to find valid calendar IDs.
+
+Original error: ${error.message || error}`);
       }
-      
-      return {
-        success: true,
-        blockSlot: response.data,
-        message: 'Block slot updated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to update block slot: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Time conflict with existing block or appointment
+      if (error.message?.includes('(409)')) {
+        throw new Error(`Time conflict: The specified time overlaps with existing block or appointment.
+
+The time slot you're trying to block is already occupied.
+
+Solutions:
+1. Use get_calendar_events to see existing blocks/appointments
+2. Choose a different time slot
+3. Delete conflicting block/appointment first
+
+Original error: ${error.message || error}`);
+      }
+
+      // Invalid date/time format
+      if (error.message?.includes('(400)') && error.message?.includes('time')) {
+        throw new Error(`Invalid date/time format: ${error.message}
+
+Use ISO 8601 format for startTime and endTime.
+Example: "2025-10-20T12:00:00Z"
+
+Original error: ${error.message || error}`);
+      }
+
+      // Validation errors
+      if (error.message?.includes('(400)')) {
+        throw new Error(`Invalid block slot data: ${error.message}
+
+Common issues:
+- Missing required fields (calendarId, startTime, endTime)
+- Invalid time range (endTime must be after startTime)
+- Invalid assignedUserId
+
+Original error: ${error.message || error}`);
+      }
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot create block slots.
+
+Please check:
+- API key has calendar write permissions
+- User has permission to block time on this calendar
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to create block slot: ${error.message || error}`);
     }
   }
 
   /**
-   * Helper method to convert date string to milliseconds
+   * Update an existing block slot
+   */
+  private async updateBlockSlot(params: any): Promise<any> {
+    try {
+      const { eventId, ...updateData } = params;
+      const response = await this.ghlClient.updateBlockSlot(eventId, updateData);
+      return response.data;
+    } catch (error: any) {
+      // Block slot not found
+      if (error.message?.includes('(404)')) {
+        throw new Error(`Block slot not found: ${params.eventId}
+
+The block slot may have been deleted or the ID is incorrect.
+Use get_calendar_events tool to find valid block slot IDs.
+
+Original error: ${error.message || error}`);
+      }
+
+      // Time conflict when rescheduling
+      if (error.message?.includes('(409)')) {
+        throw new Error(`Time conflict: New time overlaps with existing block or appointment.
+
+When rescheduling a block, the new time must be available.
+
+Solutions:
+1. Use get_calendar_events to check for conflicts
+2. Choose a different time slot
+
+Original error: ${error.message || error}`);
+      }
+
+      // Invalid date/time format
+      if (error.message?.includes('(400)') && error.message?.includes('time')) {
+        throw new Error(`Invalid date/time format: ${error.message}
+
+Use ISO 8601 format for startTime and endTime.
+Example: "2025-10-20T12:00:00Z"
+
+Original error: ${error.message || error}`);
+      }
+
+      // Validation errors
+      if (error.message?.includes('(400)')) {
+        throw new Error(`Invalid update data: ${error.message}
+
+Common issues:
+- Invalid time range (endTime must be after startTime)
+- Invalid assignedUserId
+
+Original error: ${error.message || error}`);
+      }
+
+      // Permission errors
+      if (error.message?.includes('(401)') || error.message?.includes('(403)')) {
+        throw new Error(`Permission denied: Cannot update this block slot.
+
+Please check:
+- API key has calendar write permissions
+- User has permission to modify blocks on this calendar
+
+Original error: ${error.message || error}`);
+      }
+
+      throw new Error(`Failed to update block slot: ${error.message || error}`);
+    }
+  }
+
+  /**
+   * HELPER METHODS
+   */
+
+  /**
+   * Convert date string to milliseconds for GHL API
+   * GHL API expects timestamps in milliseconds, not ISO 8601
+   * Used for: getCalendarEvents (startTime/endTime)
    */
   private convertToMilliseconds(dateString: string): string {
     // If already in milliseconds, return as is
@@ -1354,7 +1148,9 @@ export class CalendarTools {
   }
 
   /**
-   * Helper method to convert date string to milliseconds for date-only values
+   * Convert date string to milliseconds for date-only values
+   * Returns number instead of string
+   * Used for: getFreeSlots (startDate/endDate)
    */
   private convertDateToMilliseconds(dateString: string): number {
     // If already in milliseconds, parse and return
@@ -1371,590 +1167,4 @@ export class CalendarTools {
     // Fallback to current time
     return Date.now();
   }
-
-  /**
-   * CREATE CALENDAR GROUP
-   */
-  private async createCalendarGroup(params: MCPCreateCalendarGroupParams): Promise<{ success: boolean; group: any; message: string }> {
-    try {
-      const groupData = {
-        locationId: this.ghlClient.getConfig().locationId,
-        name: params.name,
-        description: params.description,
-        slug: params.slug
-      };
-
-      const response = await this.ghlClient.createCalendarGroup(groupData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        group: response.data,
-        message: `Calendar group created successfully with slug: ${params.slug}`
-      };
-    } catch (error) {
-      throw new Error(`Failed to create calendar group: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * VALIDATE GROUP SLUG
-   */
-  private async validateGroupSlug(params: MCPValidateGroupSlugParams): Promise<{ success: boolean; available?: boolean; message: string }> {
-    try {
-      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
-      const response = await this.ghlClient.validateCalendarGroupSlug(params.slug, locationId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        available: response.data.available,
-        message: response.data.available ? 'Slug is available' : 'Slug is not available'
-      };
-    } catch (error) {
-      throw new Error(`Failed to validate group slug: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * UPDATE CALENDAR GROUP
-   */
-  private async updateCalendarGroup(params: MCPUpdateCalendarGroupParams): Promise<{ success: boolean; group: any; message: string }> {
-    try {
-      const { groupId, ...updateData } = params;
-      const response = await this.ghlClient.updateCalendarGroup(groupId, updateData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        group: response.data,
-        message: 'Calendar group updated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to update calendar group: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * DELETE CALENDAR GROUP
-   */
-  private async deleteCalendarGroup(params: MCPDeleteCalendarGroupParams): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await this.ghlClient.deleteCalendarGroup(params.groupId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        message: 'Calendar group deleted successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to delete calendar group: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * DISABLE CALENDAR GROUP
-   */
-  private async disableCalendarGroup(params: MCPDisableCalendarGroupParams): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await this.ghlClient.disableCalendarGroup(params.groupId, params.isActive);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        message: `Calendar group ${params.isActive ? 'enabled' : 'disabled'} successfully`
-      };
-    } catch (error) {
-      throw new Error(`Failed to disable calendar group: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * GET APPOINTMENT NOTES
-   */
-  private async getAppointmentNotes(params: MCPGetAppointmentNotesParams): Promise<{ success: boolean; notes: any[]; message: string }> {
-    try {
-      const response = await this.ghlClient.getAppointmentNotes(params.appointmentId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-
-      const notes = Array.isArray(response.data.notes) ? response.data.notes : [];
-      
-      return {
-        success: true,
-        notes,
-        message: `Retrieved ${notes.length} appointment notes`
-      };
-    } catch (error) {
-      throw new Error(`Failed to get appointment notes: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * CREATE APPOINTMENT NOTE
-   */
-  private async createAppointmentNote(params: MCPCreateAppointmentNoteParams): Promise<{ success: boolean; note: any; message: string }> {
-    try {
-      const { appointmentId, ...noteData } = params;
-      const response = await this.ghlClient.createAppointmentNote(appointmentId, noteData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        note: response.data,
-        message: 'Appointment note created successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to create appointment note: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * UPDATE APPOINTMENT NOTE
-   */
-  private async updateAppointmentNote(params: MCPUpdateAppointmentNoteParams): Promise<{ success: boolean; note: any; message: string }> {
-    try {
-      const { appointmentId, noteId, ...updateData } = params;
-      const response = await this.ghlClient.updateAppointmentNote(appointmentId, noteId, updateData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        note: response.data,
-        message: 'Appointment note updated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to update appointment note: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * DELETE APPOINTMENT NOTE
-   */
-  private async deleteAppointmentNote(params: MCPDeleteAppointmentNoteParams): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await this.ghlClient.deleteAppointmentNote(params.appointmentId, params.noteId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        message: 'Appointment note deleted successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to delete appointment note: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * GET CALENDAR RESOURCES - EQUIPMENTS
-   */
-  private async getCalendarResourcesEquipments(params: MCPGetCalendarResourcesParams): Promise<{ success: boolean; resources: any[]; message: string }> {
-    try {
-      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
-      const response = await this.ghlClient.getCalendarResources('equipments', params.limit, params.skip, locationId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-
-      const resources = Array.isArray(response.data) ? response.data : [];
-      
-      return {
-        success: true,
-        resources,
-        message: `Retrieved ${resources.length} equipment resources`
-      };
-    } catch (error) {
-      throw new Error(`Failed to get equipment resources: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * CREATE CALENDAR RESOURCE - EQUIPMENT
-   */
-  private async createCalendarResourceEquipment(params: MCPCreateCalendarResourceParams): Promise<{ success: boolean; resource: any; message: string }> {
-    try {
-      const resourceData = {
-        ...params,
-        locationId: params.locationId || this.ghlClient.getConfig().locationId
-      };
-      const response = await this.ghlClient.createCalendarResource('equipments', resourceData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        resource: response.data,
-        message: 'Equipment resource created successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to create equipment resource: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * GET CALENDAR RESOURCE - EQUIPMENT
-   */
-  private async getCalendarResourceEquipment(params: MCPGetCalendarResourceParams): Promise<{ success: boolean; resource: any; message: string }> {
-    try {
-      const response = await this.ghlClient.getCalendarResource('equipments', params.resourceId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        resource: response.data,
-        message: 'Equipment resource retrieved successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to get equipment resource: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * UPDATE CALENDAR RESOURCE - EQUIPMENT
-   */
-  private async updateCalendarResourceEquipment(params: MCPUpdateCalendarResourceParams): Promise<{ success: boolean; resource: any; message: string }> {
-    try {
-      const { resourceId, ...updateData } = params;
-      const response = await this.ghlClient.updateCalendarResource('equipments', resourceId, updateData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        resource: response.data,
-        message: 'Equipment resource updated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to update equipment resource: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * DELETE CALENDAR RESOURCE - EQUIPMENT
-   */
-  private async deleteCalendarResourceEquipment(params: MCPDeleteCalendarResourceParams): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await this.ghlClient.deleteCalendarResource('equipments', params.resourceId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        message: 'Equipment resource deleted successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to delete equipment resource: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * GET CALENDAR RESOURCES - ROOMS
-   */
-  private async getCalendarResourcesRooms(params: MCPGetCalendarResourcesParams): Promise<{ success: boolean; resources: any[]; message: string }> {
-    try {
-      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
-      const response = await this.ghlClient.getCalendarResources('rooms', params.limit, params.skip, locationId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-
-      const resources = Array.isArray(response.data) ? response.data : [];
-      
-      return {
-        success: true,
-        resources,
-        message: `Retrieved ${resources.length} room resources`
-      };
-    } catch (error) {
-      throw new Error(`Failed to get room resources: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * CREATE CALENDAR RESOURCE - ROOM
-   */
-  private async createCalendarResourceRoom(params: MCPCreateCalendarResourceParams): Promise<{ success: boolean; resource: any; message: string }> {
-    try {
-      const resourceData = {
-        ...params,
-        locationId: params.locationId || this.ghlClient.getConfig().locationId
-      };
-      const response = await this.ghlClient.createCalendarResource('rooms', resourceData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        resource: response.data,
-        message: 'Room resource created successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to create room resource: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * GET CALENDAR RESOURCE - ROOM
-   */
-  private async getCalendarResourceRoom(params: MCPGetCalendarResourceParams): Promise<{ success: boolean; resource: any; message: string }> {
-    try {
-      const response = await this.ghlClient.getCalendarResource('rooms', params.resourceId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        resource: response.data,
-        message: 'Room resource retrieved successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to get room resource: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * UPDATE CALENDAR RESOURCE - ROOM
-   */
-  private async updateCalendarResourceRoom(params: MCPUpdateCalendarResourceParams): Promise<{ success: boolean; resource: any; message: string }> {
-    try {
-      const { resourceId, ...updateData } = params;
-      const response = await this.ghlClient.updateCalendarResource('rooms', resourceId, updateData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        resource: response.data,
-        message: 'Room resource updated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to update room resource: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * DELETE CALENDAR RESOURCE - ROOM
-   */
-  private async deleteCalendarResourceRoom(params: MCPDeleteCalendarResourceParams): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await this.ghlClient.deleteCalendarResource('rooms', params.resourceId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        message: 'Room resource deleted successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to delete room resource: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * GET CALENDAR NOTIFICATIONS
-   */
-  private async getCalendarNotifications(params: MCPGetCalendarNotificationsParams): Promise<{ success: boolean; notifications: any[]; message: string }> {
-    try {
-      const response = await this.ghlClient.getCalendarNotifications(params.calendarId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-
-      const notifications = Array.isArray(response.data) ? response.data : [];
-      
-      return {
-        success: true,
-        notifications,
-        message: `Retrieved ${notifications.length} calendar notifications`
-      };
-    } catch (error) {
-      throw new Error(`Failed to get calendar notifications: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * CREATE CALENDAR NOTIFICATIONS
-   */
-  private async createCalendarNotifications(params: MCPCreateCalendarNotificationParams): Promise<{ success: boolean; message: string }> {
-    try {
-      const { calendarId, notifications } = params;
-      const response = await this.ghlClient.createCalendarNotifications(calendarId, notifications);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        message: 'Calendar notifications created successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to create calendar notifications: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * GET CALENDAR NOTIFICATION
-   */
-  private async getCalendarNotification(params: MCPGetCalendarNotificationParams): Promise<{ success: boolean; notification: any; message: string }> {
-    try {
-      const response = await this.ghlClient.getCalendarNotification(params.calendarId, params.notificationId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        notification: response.data,
-        message: 'Calendar notification retrieved successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to get calendar notification: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * UPDATE CALENDAR NOTIFICATION
-   */
-  private async updateCalendarNotification(params: MCPUpdateCalendarNotificationParams): Promise<{ success: boolean; message: string }> {
-    try {
-      const { calendarId, notificationId, ...updateData } = params;
-      const response = await this.ghlClient.updateCalendarNotification(calendarId, notificationId, updateData);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        message: 'Calendar notification updated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to update calendar notification: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * DELETE CALENDAR NOTIFICATION
-   */
-  private async deleteCalendarNotification(params: MCPDeleteCalendarNotificationParams): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await this.ghlClient.deleteCalendarNotification(params.calendarId, params.notificationId);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-      
-      return {
-        success: true,
-        message: 'Calendar notification deleted successfully'
-      };
-    } catch (error) {
-      throw new Error(`Failed to delete calendar notification: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * GET BLOCKED SLOTS
-   */
-  private async getBlockedSlots(params: MCPGetBlockedSlotsParams): Promise<{ success: boolean; slots: any[]; message: string }> {
-    try {
-      const eventParams = {
-        locationId: this.ghlClient.getConfig().locationId,
-        startTime: params.startTime,
-        endTime: params.endTime,
-        userId: params.userId,
-        calendarId: params.calendarId,
-        groupId: params.groupId
-      };
-
-      const response = await this.ghlClient.getBlockedSlots(eventParams);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
-      }
-
-      const slots = Array.isArray(response.data.events) ? response.data.events : [];
-      
-      return {
-        success: true,
-        slots,
-        message: `Retrieved ${slots.length} blocked time slots`
-      };
-    } catch (error) {
-      throw new Error(`Failed to get blocked slots: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-} 
+}

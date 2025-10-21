@@ -20,6 +20,7 @@ import { ContactTools } from "./tools/contact-tools.js";
 import { ConversationTools } from "./tools/conversation-tools.js";
 import { BlogTools } from "./tools/blog-tools.js";
 import { OpportunityTools } from "./tools/opportunity-tools.js";
+import { CalendarTools } from "./tools/calendar-tools.js";
 import { registerUtilityTools } from "./tools/utility-tools.js";
 import { GHLConfig } from "./types/ghl-types.js";
 
@@ -306,6 +307,70 @@ function registerOpportunityTools(
 }
 
 /**
+ * Register Calendar Tools
+ */
+function registerCalendarTools(
+  server: McpServer,
+  calendarTools: CalendarTools
+): void {
+  const toolDefinitions = calendarTools.getToolDefinitions();
+
+  for (const tool of toolDefinitions) {
+    server.tool(
+      tool.name,
+      tool.description,
+      tool.inputSchema,
+      async (params: any) => {
+        const startTime = Date.now();
+
+        try {
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(
+              () => reject(new Error("Tool execution timeout after 30s")),
+              30000
+            );
+          });
+
+          const executionPromise = calendarTools.executeTool(tool.name, params);
+
+          const result = await Promise.race([executionPromise, timeoutPromise]);
+
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify(result),
+              },
+            ],
+            structuredContent: result,
+          };
+        } catch (error) {
+          const duration = Date.now() - startTime;
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: ${errorMessage}`,
+              },
+            ],
+            structuredContent: {
+              error: errorMessage,
+              tool: tool.name,
+              params: params,
+              duration: duration,
+            },
+            isError: true,
+          };
+        }
+      }
+    );
+  }
+}
+
+/**
  * Main entry point
  */
 async function main() {
@@ -324,12 +389,14 @@ async function main() {
     const conversationTools = new ConversationTools(ghlClient);
     const blogTools = new BlogTools(ghlClient);
     const opportunityTools = new OpportunityTools(ghlClient);
+    const calendarTools = new CalendarTools(ghlClient);
 
     // Register all tools
     registerContactTools(server, contactTools);
     registerConversationTools(server, conversationTools);
     registerBlogTools(server, blogTools);
     registerOpportunityTools(server, opportunityTools);
+    registerCalendarTools(server, calendarTools);
     registerUtilityTools(server);
 
     // Start STDIO transport

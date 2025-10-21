@@ -15,6 +15,7 @@ import { ContactTools } from "./tools/contact-tools";
 import { ConversationTools } from "./tools/conversation-tools";
 import { BlogTools } from "./tools/blog-tools";
 import { OpportunityTools } from "./tools/opportunity-tools";
+import { CalendarTools } from "./tools/calendar-tools";
 import { registerUtilityTools } from "./tools/utility-tools";
 import { GHLConfig } from "./types/ghl-types";
 
@@ -32,6 +33,7 @@ class GHLMCPHttpServer {
   private conversationTools: ConversationTools;
   private blogTools: BlogTools;
   private opportunityTools: OpportunityTools;
+  private calendarTools: CalendarTools;
   private port: number;
 
   constructor() {
@@ -57,6 +59,7 @@ class GHLMCPHttpServer {
     this.conversationTools = new ConversationTools(this.ghlClient);
     this.blogTools = new BlogTools(this.ghlClient);
     this.opportunityTools = new OpportunityTools(this.ghlClient);
+    this.calendarTools = new CalendarTools(this.ghlClient);
 
     // Setup MCP handlers
     this.registerTools();
@@ -453,8 +456,87 @@ class GHLMCPHttpServer {
       );
     }
 
+    // Register calendar tools
+    const calendarToolDefinitions = this.calendarTools.getToolDefinitions();
+
+    for (const tool of calendarToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        {
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+        },
+        async (params: any) => {
+          console.log(
+            `[GHL MCP HTTP] Executing tool: ${tool.name} with params:`,
+            params
+          );
+          const startTime = Date.now();
+
+          try {
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(
+                () => reject(new Error("Tool execution timeout after 30s")),
+                30000
+              );
+            });
+
+            const executionPromise = this.calendarTools.executeTool(
+              tool.name,
+              params
+            );
+
+            const result = await Promise.race([
+              executionPromise,
+              timeoutPromise,
+            ]);
+
+            const duration = Date.now() - startTime;
+            console.log(
+              `[GHL MCP HTTP] Tool ${tool.name} succeeded in ${duration}ms`
+            );
+
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(result),
+                },
+              ],
+              structuredContent: result,
+            };
+          } catch (error) {
+            const duration = Date.now() - startTime;
+            console.error(
+              `[GHL MCP HTTP] Tool ${tool.name} failed after ${duration}ms:`,
+              error
+            );
+
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `Error: ${errorMessage}`,
+                },
+              ],
+              structuredContent: {
+                error: errorMessage,
+                tool: tool.name,
+                params: params,
+                duration: duration,
+              },
+              isError: true,
+            };
+          }
+        }
+      );
+    }
+
     console.log(
-      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact tools + ${conversationToolDefinitions.length} conversation tools + ${blogToolDefinitions.length} blog tools + ${opportunityToolDefinitions.length} opportunity tools + 2 utility tools`
+      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact tools + ${conversationToolDefinitions.length} conversation tools + ${blogToolDefinitions.length} blog tools + ${opportunityToolDefinitions.length} opportunity tools + ${calendarToolDefinitions.length} calendar tools + 2 utility tools`
     );
   }
 
@@ -474,12 +556,14 @@ class GHLMCPHttpServer {
           conversation: this.conversationTools.getToolDefinitions().length,
           blog: this.blogTools.getToolDefinitions().length,
           opportunity: this.opportunityTools.getToolDefinitions().length,
+          calendar: this.calendarTools.getToolDefinitions().length,
           utility: 2,
           total: 
             this.contactTools.getToolDefinitions().length + 
             this.conversationTools.getToolDefinitions().length + 
             this.blogTools.getToolDefinitions().length +
             this.opportunityTools.getToolDefinitions().length +
+            this.calendarTools.getToolDefinitions().length +
             2,
         },
       });
@@ -637,8 +721,9 @@ class GHLMCPHttpServer {
             this.conversationTools.getToolDefinitions().length + 
             this.blogTools.getToolDefinitions().length +
             this.opportunityTools.getToolDefinitions().length +
+            this.calendarTools.getToolDefinitions().length +
             2
-          } (32 Contact + 21 Conversation + 7 Blog + 10 Opportunity + 2 Utility)`
+          } (32 Contact + 21 Conversation + 7 Blog + 10 Opportunity + 14 Calendar + 2 Utility)`
         );
         console.log("🎯 Ready for ADK integration!");
         console.log("=========================================");
@@ -678,6 +763,11 @@ class GHLMCPHttpServer {
         console.log("   SMART: upsert (intelligent create/update)");
         console.log("   TEAM: add/remove followers");
         console.log("   DISCOVERY: get pipelines and stages");
+        console.log("");
+        console.log("📅 CALENDAR & APPOINTMENTS (14 tools):");
+        console.log("   CALENDARS: get groups, get/create/update/delete calendars");
+        console.log("   APPOINTMENTS: get events, check availability, book/update/cancel");
+        console.log("   SCHEDULING: get free slots, create/update block slots");
         console.log("");
         console.log("🛠️  UTILITY TOOLS (2 tools):");
         console.log("   DATE/TIME: calculate future datetime for GHL API");
