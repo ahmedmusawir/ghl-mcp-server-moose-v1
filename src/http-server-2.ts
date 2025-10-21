@@ -16,9 +16,6 @@ import { ConversationTools } from "./tools/conversation-tools";
 import { BlogTools } from "./tools/blog-tools";
 import { OpportunityTools } from "./tools/opportunity-tools";
 import { CalendarTools } from "./tools/calendar-tools";
-import { LocationTools } from "./tools/location-tools";
-import { EmailTools } from "./tools/email-tools";
-import { EmailISVTools } from "./tools/email-isv-tools";
 import { registerUtilityTools } from "./tools/utility-tools";
 import { GHLConfig } from "./types/ghl-types";
 
@@ -37,9 +34,6 @@ class GHLMCPHttpServer {
   private blogTools: BlogTools;
   private opportunityTools: OpportunityTools;
   private calendarTools: CalendarTools;
-  private locationTools: LocationTools;
-  private emailTools: EmailTools;
-  private emailISVTools: EmailISVTools;
   private port: number;
 
   constructor() {
@@ -66,9 +60,6 @@ class GHLMCPHttpServer {
     this.blogTools = new BlogTools(this.ghlClient);
     this.opportunityTools = new OpportunityTools(this.ghlClient);
     this.calendarTools = new CalendarTools(this.ghlClient);
-    this.locationTools = new LocationTools(this.ghlClient);
-    this.emailTools = new EmailTools(this.ghlClient);
-    this.emailISVTools = new EmailISVTools(this.ghlClient);
 
     // Setup MCP handlers
     this.registerTools();
@@ -544,62 +535,8 @@ class GHLMCPHttpServer {
       );
     }
 
-    // Register location tools
-    const locationToolDefinitions = this.locationTools.getToolDefinitions();
-    for (const tool of locationToolDefinitions) {
-      this.mcpServer.registerTool(
-        tool.name,
-        { description: tool.description, inputSchema: tool.inputSchema },
-        async (params: any) => {
-          try {
-            const result = await this.locationTools.executeTool(tool.name, params);
-            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-          }
-        }
-      );
-    }
-
-    // Register email tools
-    const emailToolDefinitions = this.emailTools.getToolDefinitions();
-    for (const tool of emailToolDefinitions) {
-      this.mcpServer.registerTool(
-        tool.name,
-        { description: tool.description, inputSchema: tool.inputSchema },
-        async (params: any) => {
-          try {
-            const result = await this.emailTools.executeTool(tool.name, params);
-            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-          }
-        }
-      );
-    }
-
-    // Register email verification tools
-    const emailISVToolDefinitions = this.emailISVTools.getToolDefinitions();
-    for (const tool of emailISVToolDefinitions) {
-      this.mcpServer.registerTool(
-        tool.name,
-        { description: tool.description, inputSchema: tool.inputSchema },
-        async (params: any) => {
-          try {
-            const result = await this.emailISVTools.executeTool(tool.name, params);
-            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-          }
-        }
-      );
-    }
-
     console.log(
-      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact + ${conversationToolDefinitions.length} conversation + ${blogToolDefinitions.length} blog + ${opportunityToolDefinitions.length} opportunity + ${calendarToolDefinitions.length} calendar + ${locationToolDefinitions.length} location + ${emailToolDefinitions.length} email + ${emailISVToolDefinitions.length} email verification + 2 utility tools`
+      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact tools + ${conversationToolDefinitions.length} conversation tools + ${blogToolDefinitions.length} blog tools + ${opportunityToolDefinitions.length} opportunity tools + ${calendarToolDefinitions.length} calendar tools + 2 utility tools`
     );
   }
 
@@ -620,9 +557,6 @@ class GHLMCPHttpServer {
           blog: this.blogTools.getToolDefinitions().length,
           opportunity: this.opportunityTools.getToolDefinitions().length,
           calendar: this.calendarTools.getToolDefinitions().length,
-          location: this.locationTools.getToolDefinitions().length,
-          email: this.emailTools.getToolDefinitions().length,
-          emailVerification: this.emailISVTools.getToolDefinitions().length,
           utility: 2,
           total: 
             this.contactTools.getToolDefinitions().length + 
@@ -630,9 +564,6 @@ class GHLMCPHttpServer {
             this.blogTools.getToolDefinitions().length +
             this.opportunityTools.getToolDefinitions().length +
             this.calendarTools.getToolDefinitions().length +
-            this.locationTools.getToolDefinitions().length +
-            this.emailTools.getToolDefinitions().length +
-            this.emailISVTools.getToolDefinitions().length +
             2,
         },
       });
@@ -837,21 +768,6 @@ class GHLMCPHttpServer {
         console.log("   CALENDARS: get groups, get/create/update/delete calendars");
         console.log("   APPOINTMENTS: get events, check availability, book/update/cancel");
         console.log("   SCHEDULING: get free slots, create/update block slots");
-        console.log("");
-        console.log("🏢 LOCATION MANAGEMENT (24 tools):");
-        console.log("   SUB-ACCOUNTS: search, get, create, update, delete locations");
-        console.log("   TAGS: get, create, update, delete location tags");
-        console.log("   CUSTOM FIELDS: get, create, update, delete custom fields");
-        console.log("   CUSTOM VALUES: get, create, update, delete custom values");
-        console.log("   TEMPLATES: get, delete location templates");
-        console.log("   SETTINGS: get timezones");
-        console.log("");
-        console.log("📧 EMAIL MARKETING (5 tools):");
-        console.log("   CAMPAIGNS: get email campaigns");
-        console.log("   TEMPLATES: create, get, update, delete email templates");
-        console.log("");
-        console.log("✅ EMAIL VERIFICATION (1 tool):");
-        console.log("   VERIFY: email deliverability and risk assessment");
         console.log("");
         console.log("🛠️  UTILITY TOOLS (2 tools):");
         console.log("   DATE/TIME: calculate future datetime for GHL API");

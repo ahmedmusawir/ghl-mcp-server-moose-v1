@@ -152,7 +152,7 @@ class GHLMCPServer {
         const emailToolDefinitions = this.emailTools.getToolDefinitions();
         const locationToolDefinitions = this.locationTools.getToolDefinitions();
         const emailISVToolDefinitions = this.emailISVTools.getToolDefinitions();
-        const socialMediaToolDefinitions = this.socialMediaTools.getTools();
+        const socialMediaToolDefinitions = this.socialMediaTools.getToolDefinitions();
         const mediaToolDefinitions = this.mediaTools.getToolDefinitions();
         const objectToolDefinitions = this.objectTools.getToolDefinitions();
         const associationToolDefinitions = this.associationTools.getTools();
@@ -647,7 +647,7 @@ class GHLMCPServer {
       const emailToolCount = this.emailTools.getToolDefinitions().length;
       const locationToolCount = this.locationTools.getToolDefinitions().length;
       const emailISVToolCount = this.emailISVTools.getToolDefinitions().length;
-      const socialMediaToolCount = this.socialMediaTools.getTools().length;
+      const socialMediaToolCount = this.socialMediaTools.getToolDefinitions().length;
       const mediaToolCount = this.mediaTools.getToolDefinitions().length;
       const objectToolCount = this.objectTools.getToolDefinitions().length;
       const associationToolCount = this.associationTools.getTools().length;

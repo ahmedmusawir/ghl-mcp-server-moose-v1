@@ -179,7 +179,7 @@ class GHLMCPHttpServer {
         const emailToolDefinitions = this.emailTools.getToolDefinitions();
         const locationToolDefinitions = this.locationTools.getToolDefinitions();
         const emailISVToolDefinitions = this.emailISVTools.getToolDefinitions();
-        const socialMediaToolDefinitions = this.socialMediaTools.getTools();
+        const socialMediaToolDefinitions = this.socialMediaTools.getToolDefinitions();
         const mediaToolDefinitions = this.mediaTools.getToolDefinitions();
         const objectToolDefinitions = this.objectTools.getToolDefinitions();
         const associationToolDefinitions = this.associationTools.getTools();
@@ -331,7 +331,7 @@ class GHLMCPHttpServer {
         const emailTools = this.emailTools.getToolDefinitions();
         const locationTools = this.locationTools.getToolDefinitions();
         const emailISVTools = this.emailISVTools.getToolDefinitions();
-        const socialMediaTools = this.socialMediaTools.getTools();
+        const socialMediaTools = this.socialMediaTools.getToolDefinitions();
         const mediaTools = this.mediaTools.getToolDefinitions();
         const objectTools = this.objectTools.getToolDefinitions();
         const associationTools = this.associationTools.getTools();
@@ -417,7 +417,7 @@ class GHLMCPHttpServer {
       email: this.emailTools.getToolDefinitions().length,
       location: this.locationTools.getToolDefinitions().length,
       emailISV: this.emailISVTools.getToolDefinitions().length,
-      socialMedia: this.socialMediaTools.getTools().length,
+      socialMedia: this.socialMediaTools.getToolDefinitions().length,
       media: this.mediaTools.getToolDefinitions().length,
       objects: this.objectTools.getToolDefinitions().length,
       associations: this.associationTools.getTools().length,
@@ -434,7 +434,7 @@ class GHLMCPHttpServer {
              this.emailTools.getToolDefinitions().length +
              this.locationTools.getToolDefinitions().length +
              this.emailISVTools.getToolDefinitions().length +
-             this.socialMediaTools.getTools().length +
+             this.socialMediaTools.getToolDefinitions().length +
              this.mediaTools.getToolDefinitions().length +
              this.objectTools.getToolDefinitions().length +
              this.associationTools.getTools().length +

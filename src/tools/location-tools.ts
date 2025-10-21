@@ -1,9 +1,14 @@
 /**
- * MCP Location Tools for GoHighLevel Integration
- * Exposes location/sub-account management capabilities to the MCP server
+ * GoHighLevel Location Management Tools
+ * Implements all location/sub-account management functionality for the MCP server
+ * 
+ * IMPORTANT: Follows lessons learned from calendar-tools fix:
+ * - Always use this.ghlClient.getConfig().locationId as fallback (never empty string)
+ * - Return response.data (unwrapped) not response
+ * - Comprehensive error handling for all HTTP codes
  */
 
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { z } from "zod";
 import { GHLApiClient } from '../clients/ghl-api-client.js';
 import {
   MCPSearchLocationsParams,
@@ -45,632 +50,874 @@ export class LocationTools {
   constructor(private ghlClient: GHLApiClient) {}
 
   /**
-   * Get all location tool definitions for MCP server
+   * Get tool definitions for all location operations
    */
-  getToolDefinitions(): Tool[] {
+  getToolDefinitions(): any[] {
     return [
       {
         name: 'search_locations',
-        description: 'Search for locations/sub-accounts in GoHighLevel with filtering options',
+        description: `Search for locations/sub-accounts in GoHighLevel with flexible filtering.
+
+Locations (also called sub-accounts) are individual business accounts within an agency. Each location has its own contacts, calendars, workflows, and settings.
+
+Use Cases:
+- Find locations by company/agency ID
+- Search for specific locations by email
+- List all locations with pagination
+- Discover location IDs for other operations
+
+Parameters:
+- companyId: (optional) Filter by specific company/agency
+- email: (optional) Search by location email address
+- skip: Pagination offset (default: 0)
+- limit: Max results to return (default: 10)
+- order: Sort order 'asc' or 'desc' (default: 'asc')
+
+Returns: Array of locations with IDs, names, contact info, and basic settings.
+
+Best Practices:
+- Use pagination for large agency accounts
+- Filter by companyId to narrow results
+- Save location IDs for subsequent operations
+
+Related Tools: get_location (get full details), create_location`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            companyId: {
-              type: 'string',
-              description: 'Company/Agency ID to filter locations'
-            },
-            skip: {
-              type: 'number',
-              description: 'Number of results to skip for pagination (default: 0)',
-              default: 0
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of locations to return (default: 10)',
-              default: 10
-            },
-            order: {
-              type: 'string',
-              enum: ['asc', 'desc'],
-              description: 'Order of results (default: asc)',
-              default: 'asc'
-            },
-            email: {
-              type: 'string',
-              description: 'Filter by email address',
-              format: 'email'
-            }
-          }
+          companyId: z.string().optional().describe('Company/Agency ID to filter locations'),
+          email: z.string().email().optional().describe('Filter by location email address'),
+          skip: z.number().optional().describe('Number of results to skip for pagination (default: 0)'),
+          limit: z.number().optional().describe('Maximum number of locations to return (default: 10, max: 100)'),
+          order: z.enum(['asc', 'desc']).optional().describe('Sort order by creation date (default: asc)')
         }
       },
       {
         name: 'get_location',
-        description: 'Get detailed information about a specific location/sub-account by ID',
+        description: `Get detailed information about a specific location/sub-account by ID.
+
+Retrieves complete location profile including business details, settings, integrations, and configuration.
+
+Use Cases:
+- Get full location details before updates
+- Verify location exists and is accessible
+- Check location settings and configuration
+- Retrieve business contact information
+
+Parameters:
+- locationId: The unique identifier for the location
+
+Returns: Complete location object with all settings, integrations, business info, and metadata.
+
+Best Practices:
+- Use this before update_location to see current values
+- Verify locationId from search_locations first
+- Check timezone and country settings for proper configuration
+
+Related Tools: search_locations (find IDs), update_location, delete_location`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The unique ID of the location to retrieve'
-            }
-          },
-          required: ['locationId']
+          locationId: z.string().describe('The unique ID of the location to retrieve')
         }
       },
       {
         name: 'create_location',
-        description: 'Create a new sub-account/location in GoHighLevel (Agency Pro plan required)',
+        description: `Create a new sub-account/location in GoHighLevel.
+
+⚠️ IMPORTANT: Requires Agency Pro plan and location creation permissions.
+
+Creates a complete new location with business details, prospect information, and optional snapshot template.
+
+Use Cases:
+- Onboard new client businesses
+- Set up new franchise locations
+- Create test/sandbox locations
+- Deploy pre-configured location templates
+
+Required Parameters:
+- name: Business/location name
+- companyId: Parent company/agency ID
+- prospectInfo: Contact details (firstName, lastName, email)
+
+Optional Parameters:
+- phone: Business phone with country code (e.g., +14155551234)
+- address, city, state, country, postalCode: Business address
+- website: Business website URL
+- timezone: Business timezone (use get_timezones for valid values)
+- snapshotId: Template to load into location
+
+Returns: Created location with generated ID and all settings.
+
+Known Limitations:
+- Account plan may limit number of locations
+- Requires specific agency permissions
+- Snapshot must be compatible with account type
+
+Best Practices:
+- Always specify timezone (defaults can cause issues)
+- Use 2-letter country codes (US, CA, GB, etc.)
+- Validate timezone with get_timezones tool first
+- Include complete address for proper localization
+
+Related Tools: get_timezones (validate timezone), update_location, delete_location`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            name: {
-              type: 'string',
-              description: 'Name of the sub-account/location'
-            },
-            companyId: {
-              type: 'string',
-              description: 'Company/Agency ID'
-            },
-            phone: {
-              type: 'string',
-              description: 'Phone number with country code (e.g., +1410039940)'
-            },
-            address: {
-              type: 'string',
-              description: 'Business address'
-            },
-            city: {
-              type: 'string',
-              description: 'City where business is located'
-            },
-            state: {
-              type: 'string',
-              description: 'State where business operates'
-            },
-            country: {
-              type: 'string',
-              description: '2-letter country code (e.g., US, CA, GB)'
-            },
-            postalCode: {
-              type: 'string',
-              description: 'Postal/ZIP code'
-            },
-            website: {
-              type: 'string',
-              description: 'Business website URL'
-            },
-            timezone: {
-              type: 'string',
-              description: 'Business timezone (e.g., US/Central)'
-            },
-            prospectInfo: {
-              type: 'object',
-              properties: {
-                firstName: { type: 'string', description: 'Prospect first name' },
-                lastName: { type: 'string', description: 'Prospect last name' },
-                email: { type: 'string', format: 'email', description: 'Prospect email' }
-              },
-              required: ['firstName', 'lastName', 'email'],
-              description: 'Prospect information for the location'
-            },
-            snapshotId: {
-              type: 'string',
-              description: 'Snapshot ID to load into the location'
-            }
-          },
-          required: ['name', 'companyId']
+          name: z.string().describe('Name of the sub-account/location (e.g., "Acme Corp - NYC")'),
+          companyId: z.string().describe('Parent company/agency ID'),
+          prospectInfo: z.object({
+            firstName: z.string().describe('Primary contact first name'),
+            lastName: z.string().describe('Primary contact last name'),
+            email: z.string().email().describe('Primary contact email address')
+          }).describe('Primary contact information for the location'),
+          phone: z.string().optional().describe('Business phone with country code (e.g., +14155551234)'),
+          address: z.string().optional().describe('Street address of the business'),
+          city: z.string().optional().describe('City where business is located'),
+          state: z.string().optional().describe('State/province (e.g., "CA", "New York")'),
+          country: z.string().optional().describe('2-letter country code (e.g., US, CA, GB)'),
+          postalCode: z.string().optional().describe('Postal/ZIP code'),
+          website: z.string().url().optional().describe('Business website URL'),
+          timezone: z.string().optional().describe('Business timezone (e.g., "America/New_York", "UTC"). Use get_timezones for valid values'),
+          snapshotId: z.string().optional().describe('Snapshot/template ID to load into the location')
         }
       },
       {
         name: 'update_location',
-        description: 'Update an existing sub-account/location in GoHighLevel',
+        description: `Update an existing sub-account/location in GoHighLevel.
+
+Modify location settings, business information, and configuration. Only provided fields will be updated.
+
+Use Cases:
+- Update business contact information
+- Change location timezone or address
+- Modify location name or website
+- Update company assignment
+
+Parameters:
+- locationId: The location to update (required)
+- name: Updated business name
+- companyId: Move to different company/agency
+- phone, address, city, state, country, postalCode: Updated business details
+- website: Updated website URL
+- timezone: Updated timezone
+
+Returns: Updated location object with all current settings.
+
+Best Practices:
+- Use get_location first to see current values
+- Only include fields you want to change
+- Validate timezone with get_timezones before updating
+- Verify companyId exists if changing parent company
+
+Related Tools: get_location (see current values), get_timezones (validate timezone)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The unique ID of the location to update'
-            },
-            name: {
-              type: 'string',
-              description: 'Updated name of the sub-account/location'
-            },
-            companyId: {
-              type: 'string',
-              description: 'Company/Agency ID'
-            },
-            phone: {
-              type: 'string',
-              description: 'Updated phone number'
-            },
-            address: {
-              type: 'string',
-              description: 'Updated business address'
-            },
-            city: {
-              type: 'string',
-              description: 'Updated city'
-            },
-            state: {
-              type: 'string',
-              description: 'Updated state'
-            },
-            country: {
-              type: 'string',
-              description: 'Updated 2-letter country code'
-            },
-            postalCode: {
-              type: 'string',
-              description: 'Updated postal/ZIP code'
-            },
-            website: {
-              type: 'string',
-              description: 'Updated website URL'
-            },
-            timezone: {
-              type: 'string',
-              description: 'Updated timezone'
-            }
-          },
-          required: ['locationId', 'companyId']
+          locationId: z.string().describe('The unique ID of the location to update'),
+          name: z.string().optional().describe('Updated name of the sub-account/location'),
+          companyId: z.string().optional().describe('Move location to different company/agency'),
+          phone: z.string().optional().describe('Updated phone number with country code'),
+          address: z.string().optional().describe('Updated street address'),
+          city: z.string().optional().describe('Updated city'),
+          state: z.string().optional().describe('Updated state/province'),
+          country: z.string().optional().describe('Updated 2-letter country code'),
+          postalCode: z.string().optional().describe('Updated postal/ZIP code'),
+          website: z.string().url().optional().describe('Updated website URL'),
+          timezone: z.string().optional().describe('Updated timezone (use get_timezones for valid values)')
         }
       },
       {
         name: 'delete_location',
-        description: 'Delete a sub-account/location from GoHighLevel',
+        description: `Delete a sub-account/location from GoHighLevel.
+
+⚠️ WARNING: This action is PERMANENT and cannot be undone!
+
+Deletes the location and optionally its associated Twilio account. All data including contacts, conversations, appointments, and workflows will be permanently removed.
+
+Use Cases:
+- Remove test/sandbox locations
+- Clean up inactive client accounts
+- Delete duplicate locations
+- Decommission closed businesses
+
+Parameters:
+- locationId: The location to delete (required)
+- deleteTwilioAccount: Whether to also delete associated Twilio account (default: false)
+
+⚠️ Data Loss Warning:
+- All contacts and their history
+- All conversations and messages
+- All appointments and calendars
+- All workflows and automations
+- All custom fields and values
+- All integrations and settings
+
+Best Practices:
+- Export important data before deletion
+- Verify locationId is correct (use get_location first)
+- Consider archiving instead of deleting
+- Only set deleteTwilioAccount=true if you're sure
+
+Related Tools: get_location (verify before delete), search_locations`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The unique ID of the location to delete'
-            },
-            deleteTwilioAccount: {
-              type: 'boolean',
-              description: 'Whether to delete associated Twilio account',
-              default: false
-            }
-          },
-          required: ['locationId', 'deleteTwilioAccount']
+          locationId: z.string().describe('The unique ID of the location to delete'),
+          deleteTwilioAccount: z.boolean().optional().describe('Whether to delete associated Twilio account (default: false)')
         }
       },
 
-      // Location Tags Tools
+      // ============================================================================
+      // TAG SYSTEM (4 tools)
+      // ============================================================================
+
       {
         name: 'get_location_tags',
-        description: 'Get all tags for a specific location',
+        description: `Get all tags for a specific location.
+
+Tags help organize and categorize contacts, opportunities, and other resources within a location.
+
+Use Cases:
+- List all available tags in a location
+- Find tag IDs for filtering operations
+- Audit tag usage and organization
+- Discover tag names before creating new ones
+
+Parameters:
+- locationId: The location to get tags from
+
+Returns: Array of tags with IDs, names, and metadata.
+
+Best Practices:
+- Check existing tags before creating duplicates
+- Use tag IDs in contact/opportunity filtering
+- Tags are location-specific (not shared across locations)
+
+Related Tools: create_location_tag, update_location_tag, delete_location_tag`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID to get tags from'
-            }
-          },
-          required: ['locationId']
+          locationId: z.string().describe('The location ID to get tags from')
         }
       },
       {
         name: 'create_location_tag',
-        description: 'Create a new tag for a location',
+        description: `Create a new tag for a location.
+
+Tags help organize contacts, opportunities, and other resources. Each tag has a unique name within the location.
+
+Use Cases:
+- Create tags for contact segmentation
+- Set up opportunity categorization
+- Organize resources by type or status
+- Build tag-based automation triggers
+
+Parameters:
+- locationId: The location to create tag in
+- name: Tag name (must be unique within location)
+
+Returns: Created tag with generated ID.
+
+Known Limitations:
+- Tag names must be unique within the location
+- Some special characters may not be allowed
+- Tag name length limits may apply
+
+Best Practices:
+- Use consistent naming conventions (e.g., "Lead - Hot", "Customer - VIP")
+- Check existing tags with get_location_tags first
+- Use descriptive names for clarity
+- Consider tag hierarchy in naming (Category - Subcategory)
+
+Related Tools: get_location_tags (check existing), update_location_tag, delete_location_tag`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID to create tag in'
-            },
-            name: {
-              type: 'string',
-              description: 'Name of the tag to create'
-            }
-          },
-          required: ['locationId', 'name']
+          locationId: z.string().describe('The location ID to create tag in'),
+          name: z.string().describe('Name of the tag (must be unique within location)')
         }
       },
       {
         name: 'get_location_tag',
-        description: 'Get a specific location tag by ID',
+        description: `Get a specific location tag by ID.
+
+Retrieves detailed information about a single tag.
+
+Use Cases:
+- Verify tag exists before operations
+- Get tag details for display
+- Check tag properties
+
+Parameters:
+- locationId: The location containing the tag
+- tagId: The tag to retrieve
+
+Returns: Tag object with ID, name, and metadata.
+
+Related Tools: get_location_tags (list all tags), update_location_tag, delete_location_tag`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            tagId: {
-              type: 'string',
-              description: 'The tag ID to retrieve'
-            }
-          },
-          required: ['locationId', 'tagId']
+          locationId: z.string().describe('The location ID'),
+          tagId: z.string().describe('The tag ID to retrieve')
         }
       },
       {
         name: 'update_location_tag',
-        description: 'Update an existing location tag',
+        description: `Update an existing location tag.
+
+Modify tag name while preserving all tag assignments to contacts and opportunities.
+
+Use Cases:
+- Fix typos in tag names
+- Rename tags for better organization
+- Update tag naming conventions
+- Consolidate similar tag names
+
+Parameters:
+- locationId: The location containing the tag
+- tagId: The tag to update
+- name: New tag name (must be unique)
+
+Returns: Updated tag with new name.
+
+Best Practices:
+- Use get_location_tags to find tagId first
+- Verify new name doesn't conflict with existing tags
+- Tag assignments are preserved after rename
+- Consider impact on automations using tag names
+
+Related Tools: get_location_tags (find tagId), create_location_tag, delete_location_tag`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            tagId: {
-              type: 'string',
-              description: 'The tag ID to update'
-            },
-            name: {
-              type: 'string',
-              description: 'Updated name for the tag'
-            }
-          },
-          required: ['locationId', 'tagId', 'name']
+          locationId: z.string().describe('The location ID'),
+          tagId: z.string().describe('The tag ID to update'),
+          name: z.string().describe('Updated name for the tag (must be unique within location)')
         }
       },
       {
         name: 'delete_location_tag',
-        description: 'Delete a location tag',
+        description: `Delete a location tag.
+
+⚠️ WARNING: This removes the tag from all contacts and opportunities!
+
+Permanently deletes the tag and removes it from all resources it's assigned to.
+
+Use Cases:
+- Remove unused or obsolete tags
+- Clean up duplicate tags
+- Simplify tag organization
+- Remove test tags
+
+Parameters:
+- locationId: The location containing the tag
+- tagId: The tag to delete
+
+⚠️ Impact:
+- Tag removed from all contacts
+- Tag removed from all opportunities
+- Tag-based automations may break
+- Cannot be undone
+
+Best Practices:
+- Export contacts with this tag before deletion
+- Update automations that reference this tag
+- Consider renaming instead of deleting
+- Verify tagId with get_location_tags first
+
+Related Tools: get_location_tags (find tagId), update_location_tag (rename instead)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            tagId: {
-              type: 'string',
-              description: 'The tag ID to delete'
-            }
-          },
-          required: ['locationId', 'tagId']
+          locationId: z.string().describe('The location ID'),
+          tagId: z.string().describe('The tag ID to delete')
         }
       },
 
-      // Location Tasks Tools
+      // ============================================================================
+      // LOCATION TASKS (1 tool)
+      // ============================================================================
+
       {
         name: 'search_location_tasks',
-        description: 'Search tasks within a location with advanced filtering',
+        description: `Search tasks within a location with advanced filtering.
+
+Tasks are action items assigned to contacts or team members within a location.
+
+Use Cases:
+- Find tasks by contact
+- List tasks assigned to specific users
+- Filter completed vs pending tasks
+- Search task content
+
+Parameters:
+- locationId: The location to search (required)
+- contactId: Filter by contact IDs (array)
+- completed: Filter by completion status (boolean)
+- assignedTo: Filter by assigned user IDs (array)
+- query: Search task content
+- limit: Max results (default: 25)
+- skip: Pagination offset (default: 0)
+- businessId: Filter by business ID
+
+Returns: Array of tasks with details, assignments, and status.
+
+Best Practices:
+- Use filters to narrow large result sets
+- Paginate for locations with many tasks
+- Combine filters for precise results
+
+Related Tools: Contact task tools for individual contact task management`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID to search tasks in'
-            },
-            contactId: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'Filter by specific contact IDs'
-            },
-            completed: {
-              type: 'boolean',
-              description: 'Filter by completion status'
-            },
-            assignedTo: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'Filter by assigned user IDs'
-            },
-            query: {
-              type: 'string',
-              description: 'Search query for task content'
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of tasks to return (default: 25)',
-              default: 25
-            },
-            skip: {
-              type: 'number',
-              description: 'Number of tasks to skip for pagination (default: 0)',
-              default: 0
-            },
-            businessId: {
-              type: 'string',
-              description: 'Business ID filter'
-            }
-          },
-          required: ['locationId']
+          locationId: z.string().describe('The location ID to search tasks in'),
+          contactId: z.array(z.string()).optional().describe('Filter by specific contact IDs'),
+          completed: z.boolean().optional().describe('Filter by completion status'),
+          assignedTo: z.array(z.string()).optional().describe('Filter by assigned user IDs'),
+          query: z.string().optional().describe('Search query for task content'),
+          limit: z.number().optional().describe('Maximum number of tasks to return (default: 25)'),
+          skip: z.number().optional().describe('Number of tasks to skip for pagination (default: 0)'),
+          businessId: z.string().optional().describe('Business ID filter')
         }
       },
 
-      // Custom Fields Tools
+      // ============================================================================
+      // CUSTOM FIELDS (3 tools)
+      // ============================================================================
+
       {
         name: 'get_location_custom_fields',
-        description: 'Get custom fields for a location, optionally filtered by model type',
+        description: `Get custom fields for a location, optionally filtered by model type.
+
+Custom fields allow you to store additional data on contacts and opportunities beyond the standard fields.
+
+Use Cases:
+- List all custom fields in a location
+- Find custom field IDs for data entry
+- Audit custom field configuration
+- Discover field types and options
+
+Parameters:
+- locationId: The location to get custom fields from
+- model: Filter by 'contact', 'opportunity', or 'all' (default: 'all')
+
+Returns: Array of custom field definitions with IDs, names, types, and options.
+
+Field Types:
+- TEXT: Single-line text input
+- TEXTAREA: Multi-line text input
+- NUMBER: Numeric values
+- CHECKBOX: Boolean yes/no
+- SELECT: Dropdown with predefined options
+- RADIO: Radio button selection
+- DATE: Date picker
+
+Best Practices:
+- Check existing fields before creating new ones
+- Note field IDs for setting custom values
+- Understand field types for proper data entry
+- Custom fields are location-specific
+
+Related Tools: create_location_custom_field, update_location_custom_field, get_location_custom_values`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            model: {
-              type: 'string',
-              enum: ['contact', 'opportunity', 'all'],
-              description: 'Filter by model type (default: all)',
-              default: 'all'
-            }
-          },
-          required: ['locationId']
+          locationId: z.string().describe('The location ID'),
+          model: z.enum(['contact', 'opportunity', 'all']).optional().describe('Filter by model type (default: all)')
         }
       },
       {
         name: 'create_location_custom_field',
-        description: 'Create a new custom field for a location',
+        description: `Create a new custom field for a location.
+
+Custom fields extend the data model for contacts or opportunities with business-specific information.
+
+Use Cases:
+- Add industry-specific fields (e.g., "Property Type" for real estate)
+- Track custom metrics (e.g., "Lifetime Value", "Risk Score")
+- Store additional contact details (e.g., "Preferred Contact Time")
+- Create dropdown selections for categorization
+
+Required Parameters:
+- locationId: The location to create field in
+- name: Field name/label
+- dataType: Field type (TEXT, TEXTAREA, NUMBER, CHECKBOX, SELECT, RADIO, DATE)
+- model: 'contact' or 'opportunity'
+
+Optional Parameters:
+- placeholder: Hint text shown in empty field
+- position: Display order (default: 0)
+
+Returns: Created custom field with generated ID.
+
+Field Type Guidelines:
+- TEXT: Short text (names, IDs, codes)
+- TEXTAREA: Long text (notes, descriptions)
+- NUMBER: Numeric values (prices, scores, counts)
+- CHECKBOX: Yes/no, true/false
+- SELECT: Choose one from dropdown list
+- RADIO: Choose one from radio buttons
+- DATE: Date selection
+
+Best Practices:
+- Use descriptive names (shown to users)
+- Choose appropriate dataType for validation
+- Set position for logical field ordering
+- Check existing fields to avoid duplicates
+
+Related Tools: get_location_custom_fields (check existing), update_location_custom_field, create_location_custom_value (set values)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            name: {
-              type: 'string',
-              description: 'Name of the custom field'
-            },
-            dataType: {
-              type: 'string',
-              description: 'Data type of the field (TEXT, NUMBER, DATE, etc.)'
-            },
-            placeholder: {
-              type: 'string',
-              description: 'Placeholder text for the field'
-            },
-            model: {
-              type: 'string',
-              enum: ['contact', 'opportunity'],
-              description: 'Model to create the field for',
-              default: 'contact'
-            },
-            position: {
-              type: 'number',
-              description: 'Position/order of the field (default: 0)',
-              default: 0
-            }
-          },
-          required: ['locationId', 'name', 'dataType']
+          locationId: z.string().describe('The location ID'),
+          name: z.string().describe('Name/label of the custom field (shown to users)'),
+          dataType: z.enum(['TEXT', 'TEXTAREA', 'NUMBER', 'CHECKBOX', 'SELECT', 'RADIO', 'DATE']).describe('Data type of the field'),
+          model: z.enum(['contact', 'opportunity']).describe('Model to create the field for'),
+          placeholder: z.string().optional().describe('Placeholder text shown in empty field'),
+          position: z.number().optional().describe('Display order/position (default: 0)')
         }
       },
       {
         name: 'get_location_custom_field',
-        description: 'Get a specific custom field by ID',
+        description: `Get a specific custom field by ID.
+
+Retrieves detailed information about a single custom field definition.
+
+Use Cases:
+- Verify custom field exists
+- Check field type and options
+- Get field configuration details
+
+Parameters:
+- locationId: The location containing the field
+- customFieldId: The field to retrieve
+
+Returns: Custom field definition with type, options, and settings.
+
+Related Tools: get_location_custom_fields (list all), update_location_custom_field`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            customFieldId: {
-              type: 'string',
-              description: 'The custom field ID to retrieve'
-            }
-          },
-          required: ['locationId', 'customFieldId']
+          locationId: z.string().describe('The location ID'),
+          customFieldId: z.string().describe('The custom field ID to retrieve')
         }
       },
       {
         name: 'update_location_custom_field',
-        description: 'Update an existing custom field',
+        description: `Update an existing custom field.
+
+Modify custom field properties like name, placeholder, and position. Field type (dataType) cannot be changed.
+
+Use Cases:
+- Fix typos in field names
+- Update placeholder text
+- Reorder fields by changing position
+- Improve field labels for clarity
+
+Parameters:
+- locationId: The location containing the field
+- customFieldId: The field to update
+- name: Updated field name/label
+- placeholder: Updated placeholder text
+- position: Updated display order
+
+Returns: Updated custom field definition.
+
+Limitations:
+- Cannot change dataType after creation
+- Cannot change model (contact/opportunity)
+- Existing data is preserved
+
+Best Practices:
+- Use get_location_custom_fields to find customFieldId
+- Test changes in non-production location first
+- Update field names carefully (may affect integrations)
+- Preserve data integrity when renaming
+
+Related Tools: get_location_custom_fields (find fieldId), create_location_custom_field`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            customFieldId: {
-              type: 'string',
-              description: 'The custom field ID to update'
-            },
-            name: {
-              type: 'string',
-              description: 'Updated name of the custom field'
-            },
-            placeholder: {
-              type: 'string',
-              description: 'Updated placeholder text'
-            },
-            position: {
-              type: 'number',
-              description: 'Updated position/order'
-            }
-          },
-          required: ['locationId', 'customFieldId', 'name']
+          locationId: z.string().describe('The location ID'),
+          customFieldId: z.string().describe('The custom field ID to update'),
+          name: z.string().describe('Updated name/label of the custom field'),
+          placeholder: z.string().optional().describe('Updated placeholder text'),
+          position: z.number().optional().describe('Updated display order/position')
         }
       },
       {
         name: 'delete_location_custom_field',
-        description: 'Delete a custom field from a location',
+        description: `Delete a custom field from a location.
+
+⚠️ WARNING: This removes the field and ALL its data!
+
+Permanently deletes a custom field definition and all values stored in it across all contacts/opportunities.
+
+Use Cases:
+- Remove obsolete custom fields
+- Clean up unused fields
+- Simplify data model
+
+Parameters:
+- locationId: The location containing the field
+- customFieldId: The field to delete
+
+⚠️ Impact:
+- Field definition permanently deleted
+- All stored values permanently lost
+- Cannot be recovered
+- May affect integrations and reports
+
+Best Practices:
+- Export all field data before deletion
+- Verify field is truly unused
+- Check integrations that may reference this field
+- Consider hiding field instead of deleting
+
+Related Tools: get_location_custom_fields (find fieldId), get_location_custom_values (export data first)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            customFieldId: {
-              type: 'string',
-              description: 'The custom field ID to delete'
-            }
-          },
-          required: ['locationId', 'customFieldId']
+          locationId: z.string().describe('The location ID'),
+          customFieldId: z.string().describe('The custom field ID to delete')
         }
       },
 
-      // Custom Values Tools
+      // ============================================================================
+      // CUSTOM VALUES (3 tools)
+      // ============================================================================
+
       {
         name: 'get_location_custom_values',
-        description: 'Get all custom values for a location',
+        description: `Get all custom field values for a location.
+
+Retrieves the actual data stored in custom fields across all contacts and opportunities.
+
+Use Cases:
+- Audit custom field usage
+- Export custom field data
+- Verify data entry
+- Analyze custom field values
+
+Parameters:
+- locationId: The location to get custom values from
+
+Returns: Array of custom field values with field IDs, names, and values.
+
+Best Practices:
+- Use with get_location_custom_fields to understand field definitions
+- Values are returned for all contacts/opportunities
+- May return large datasets for locations with many records
+
+Related Tools: get_location_custom_fields (field definitions), create_location_custom_value, update_location_custom_value`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            }
-          },
-          required: ['locationId']
+          locationId: z.string().describe('The location ID')
         }
       },
       {
         name: 'create_location_custom_value',
-        description: 'Create a new custom value for a location',
+        description: `Create/set a custom field value for a location.
+
+Sets the value for a custom field. This is typically done at the contact or opportunity level.
+
+Use Cases:
+- Set custom field values during data import
+- Initialize custom fields for new records
+- Bulk update custom field values
+- Set default values
+
+Parameters:
+- locationId: The location ID
+- name: Custom field name
+- value: Value to set
+
+Returns: Created custom value record.
+
+Best Practices:
+- Verify field exists with get_location_custom_fields first
+- Ensure value matches field dataType
+- Use appropriate format for dates and numbers
+- Check field options for SELECT/RADIO types
+
+Related Tools: get_location_custom_fields (verify field), update_location_custom_value, get_location_custom_values`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            name: {
-              type: 'string',
-              description: 'Name of the custom value field'
-            },
-            value: {
-              type: 'string',
-              description: 'Value to assign'
-            }
-          },
-          required: ['locationId', 'name', 'value']
+          locationId: z.string().describe('The location ID'),
+          name: z.string().describe('Name of the custom field'),
+          value: z.string().describe('Value to set for the custom field')
         }
       },
       {
         name: 'get_location_custom_value',
-        description: 'Get a specific custom value by ID',
+        description: `Get a specific custom value by ID.
+
+Retrieves a single custom field value record.
+
+Use Cases:
+- Verify custom value exists
+- Get current value for a field
+- Check value details
+
+Parameters:
+- locationId: The location ID
+- customValueId: The custom value record to retrieve
+
+Returns: Custom value record with field name and value.
+
+Related Tools: get_location_custom_values (list all), update_location_custom_value`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            customValueId: {
-              type: 'string',
-              description: 'The custom value ID to retrieve'
-            }
-          },
-          required: ['locationId', 'customValueId']
+          locationId: z.string().describe('The location ID'),
+          customValueId: z.string().describe('The custom value ID to retrieve')
         }
       },
       {
         name: 'update_location_custom_value',
-        description: 'Update an existing custom value',
+        description: `Update an existing custom field value.
+
+Modify the value stored in a custom field.
+
+Use Cases:
+- Update custom field data
+- Correct data entry errors
+- Bulk update field values
+- Sync external data changes
+
+Parameters:
+- locationId: The location ID
+- customValueId: The custom value record to update
+- name: Custom field name
+- value: New value
+
+Returns: Updated custom value record.
+
+Best Practices:
+- Use get_location_custom_values to find customValueId
+- Ensure new value matches field dataType
+- Validate value format for dates and numbers
+- Check field options for SELECT/RADIO types
+
+Related Tools: get_location_custom_values (find valueId), create_location_custom_value, get_location_custom_fields`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            customValueId: {
-              type: 'string',
-              description: 'The custom value ID to update'
-            },
-            name: {
-              type: 'string',
-              description: 'Updated name'
-            },
-            value: {
-              type: 'string',
-              description: 'Updated value'
-            }
-          },
-          required: ['locationId', 'customValueId', 'name', 'value']
+          locationId: z.string().describe('The location ID'),
+          customValueId: z.string().describe('The custom value ID to update'),
+          name: z.string().describe('Name of the custom field'),
+          value: z.string().describe('New value for the custom field')
         }
       },
       {
         name: 'delete_location_custom_value',
-        description: 'Delete a custom value from a location',
+        description: `Delete a custom value from a location.
+
+⚠️ WARNING: This permanently removes the stored value!
+
+Deletes a specific custom field value. The field definition remains, only the value is removed.
+
+Use Cases:
+- Clear incorrect data
+- Remove obsolete values
+- Reset field to empty state
+
+Parameters:
+- locationId: The location ID
+- customValueId: The custom value record to delete
+
+⚠️ Impact:
+- Value permanently deleted
+- Field definition remains intact
+- Cannot be recovered
+- Field will be empty after deletion
+
+Best Practices:
+- Export value before deletion if needed
+- Verify correct customValueId
+- Consider updating to empty string instead
+- Check if value is referenced elsewhere
+
+Related Tools: get_location_custom_values (find valueId), update_location_custom_value (set to empty instead)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            customValueId: {
-              type: 'string',
-              description: 'The custom value ID to delete'
-            }
-          },
-          required: ['locationId', 'customValueId']
+          locationId: z.string().describe('The location ID'),
+          customValueId: z.string().describe('The custom value ID to delete')
         }
       },
 
-      // Templates Tools
+      // ============================================================================
+      // TEMPLATES & SETTINGS (3 tools)
+      // ============================================================================
+
       {
         name: 'get_location_templates',
-        description: 'Get SMS/Email templates for a location',
+        description: `Get SMS/Email/WhatsApp templates for a location.
+
+Templates are pre-defined message formats used in campaigns, workflows, and manual messaging.
+
+Use Cases:
+- List all available templates
+- Find template IDs for campaigns
+- Audit template usage
+- Export template content
+
+Parameters:
+- locationId: The location ID
+- originId: Origin ID (required by API)
+- type: Filter by 'sms', 'email', or 'whatsapp'
+- deleted: Include deleted templates (default: false)
+- skip: Pagination offset (default: 0)
+- limit: Max results (default: 25)
+
+Returns: Array of templates with IDs, names, content, and metadata.
+
+Best Practices:
+- Filter by type to narrow results
+- Use pagination for locations with many templates
+- Check deleted templates for recovery
+- Note template IDs for campaign/workflow use
+
+Related Tools: delete_location_template`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            originId: {
-              type: 'string',
-              description: 'Origin ID (required parameter)'
-            },
-            deleted: {
-              type: 'boolean',
-              description: 'Include deleted templates (default: false)',
-              default: false
-            },
-            skip: {
-              type: 'number',
-              description: 'Number to skip for pagination (default: 0)',
-              default: 0
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number to return (default: 25)',
-              default: 25
-            },
-            type: {
-              type: 'string',
-              enum: ['sms', 'email', 'whatsapp'],
-              description: 'Filter by template type'
-            }
-          },
-          required: ['locationId', 'originId']
+          locationId: z.string().describe('The location ID'),
+          originId: z.string().describe('Origin ID (required parameter)'),
+          type: z.enum(['sms', 'email', 'whatsapp']).optional().describe('Filter by template type'),
+          deleted: z.boolean().optional().describe('Include deleted templates (default: false)'),
+          skip: z.number().optional().describe('Number to skip for pagination (default: 0)'),
+          limit: z.number().optional().describe('Maximum number to return (default: 25, max: 100)')
         }
       },
       {
         name: 'delete_location_template',
-        description: 'Delete a template from a location',
+        description: `Delete a template from a location.
+
+⚠️ WARNING: This may break campaigns and workflows using this template!
+
+Permanently deletes a message template. Active campaigns and workflows using this template may fail.
+
+Use Cases:
+- Remove obsolete templates
+- Clean up test templates
+- Delete duplicate templates
+- Remove unused templates
+
+Parameters:
+- locationId: The location ID
+- templateId: The template to delete
+
+⚠️ Impact:
+- Template cannot be recovered
+- Campaigns using this template may break
+- Workflows using this template may fail
+- Scheduled messages using this template may fail
+
+Best Practices:
+- Check template usage before deletion
+- Update campaigns/workflows first
+- Consider archiving instead of deleting
+- Export template content before deletion
+
+Related Tools: get_location_templates (find templateId)`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'The location ID'
-            },
-            templateId: {
-              type: 'string',
-              description: 'The template ID to delete'
-            }
-          },
-          required: ['locationId', 'templateId']
+          locationId: z.string().describe('The location ID'),
+          templateId: z.string().describe('The template ID to delete')
         }
       },
 
-      // Timezones Tool
       {
         name: 'get_timezones',
-        description: 'Get available timezones for location configuration',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'Optional location ID'
-            }
-          }
-        }
+        description: `Get list of valid timezone identifiers for location configuration.
+
+Returns all supported timezone identifiers in IANA format (e.g., "America/New_York", "Europe/London").
+
+Use Cases:
+- Validate timezone before creating/updating location
+- Display timezone options to users
+- Convert between timezone formats
+- Reference for location configuration
+
+Parameters: None required
+
+Returns: Array of timezone objects with identifiers, offsets, and display names.
+
+Timezone Format:
+- Uses IANA timezone database format
+- Examples: "America/New_York", "Europe/London", "Asia/Tokyo", "UTC"
+- Includes UTC offset information
+- Handles daylight saving time automatically
+
+Best Practices:
+- Use this before create_location or update_location
+- Store timezone identifier, not display name
+- Consider user's actual timezone, not just country
+- UTC is safe default but may not be ideal for users
+
+Related Tools: create_location (requires timezone), update_location (change timezone)`,
+        inputSchema: {}
       }
     ];
   }

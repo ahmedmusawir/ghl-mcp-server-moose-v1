@@ -1,20 +1,34 @@
-/**
- * GoHighLevel Social Media Management Tools
- * Implements social media posting, account management, and bulk operations
- * 
- * IMPORTANT: Follows lessons learned from calendar-tools fix:
- * - Always use this.ghlClient.getConfig().locationId as fallback (never empty string)
- * - Return response.data (unwrapped) not response
- * - Comprehensive error handling for all HTTP codes
- */
-
-import { z } from "zod";
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { GHLApiClient } from '../clients/ghl-api-client.js';
+import {
+  MCPSearchPostsParams,
+  MCPCreatePostParams,
+  MCPGetPostParams,
+  MCPUpdatePostParams,
+  MCPDeletePostParams,
+  MCPBulkDeletePostsParams,
+  MCPGetAccountsParams,
+  MCPDeleteAccountParams,
+  MCPUploadCSVParams,
+  MCPGetUploadStatusParams,
+  MCPSetAccountsParams,
+  MCPGetCSVPostParams,
+  MCPFinalizeCSVParams,
+  MCPDeleteCSVParams,
+  MCPDeleteCSVPostParams,
+  MCPGetCategoriesParams,
+  MCPGetCategoryParams,
+  MCPGetTagsParams,
+  MCPGetTagsByIdsParams,
+  MCPStartOAuthParams,
+  MCPGetOAuthAccountsParams,
+  MCPAttachOAuthAccountParams
+} from '../types/ghl-types.js';
 
 export class SocialMediaTools {
   constructor(private ghlClient: GHLApiClient) {}
 
-  getToolDefinitions(): any[] {
+  getTools(): Tool[] {
     return [
       // Post Management Tools
       {
@@ -358,7 +372,7 @@ export class SocialMediaTools {
   }
 
   // Implementation methods
-  private async searchSocialPosts(params: any) {
+  private async searchSocialPosts(params: MCPSearchPostsParams) {
     const response = await this.ghlClient.searchSocialPosts({
       type: params.type,
       accounts: params.accounts,
@@ -378,7 +392,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async createSocialPost(params: any) {
+  private async createSocialPost(params: MCPCreatePostParams) {
     const response = await this.ghlClient.createSocialPost({
       accountIds: params.accountIds,
       summary: params.summary,
@@ -399,7 +413,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async getSocialPost(params: any) {
+  private async getSocialPost(params: MCPGetPostParams) {
     const response = await this.ghlClient.getSocialPost(params.postId);
     
     return {
@@ -409,7 +423,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async updateSocialPost(params: any) {
+  private async updateSocialPost(params: MCPUpdatePostParams) {
     const { postId, ...updateData } = params;
     const response = await this.ghlClient.updateSocialPost(postId, updateData);
     
@@ -419,7 +433,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async deleteSocialPost(params: any) {
+  private async deleteSocialPost(params: MCPDeletePostParams) {
     const response = await this.ghlClient.deleteSocialPost(params.postId);
     
     return {
@@ -428,7 +442,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async bulkDeleteSocialPosts(params: any) {
+  private async bulkDeleteSocialPosts(params: MCPBulkDeletePostsParams) {
     const response = await this.ghlClient.bulkDeleteSocialPosts({ postIds: params.postIds });
     
     return {
@@ -438,7 +452,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async getSocialAccounts(params: any) {
+  private async getSocialAccounts(params: MCPGetAccountsParams) {
     const response = await this.ghlClient.getSocialAccounts();
     
     return {
@@ -449,7 +463,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async deleteSocialAccount(params: any) {
+  private async deleteSocialAccount(params: MCPDeleteAccountParams) {
     const response = await this.ghlClient.deleteSocialAccount(
       params.accountId,
       params.companyId,
@@ -462,7 +476,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async getSocialCategories(params: any) {
+  private async getSocialCategories(params: MCPGetCategoriesParams) {
     const response = await this.ghlClient.getSocialCategories(
       params.searchText,
       params.limit,
@@ -477,7 +491,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async getSocialCategory(params: any) {
+  private async getSocialCategory(params: MCPGetCategoryParams) {
     const response = await this.ghlClient.getSocialCategory(params.categoryId);
     
     return {
@@ -487,7 +501,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async getSocialTags(params: any) {
+  private async getSocialTags(params: MCPGetTagsParams) {
     const response = await this.ghlClient.getSocialTags(
       params.searchText,
       params.limit,
@@ -502,7 +516,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async getSocialTagsByIds(params: any) {
+  private async getSocialTagsByIds(params: MCPGetTagsByIdsParams) {
     const response = await this.ghlClient.getSocialTagsByIds({ tagIds: params.tagIds });
     
     return {
@@ -513,7 +527,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async startSocialOAuth(params: any) {
+  private async startSocialOAuth(params: MCPStartOAuthParams) {
     const response = await this.ghlClient.startSocialOAuth(
       params.platform,
       params.userId,
@@ -528,7 +542,7 @@ export class SocialMediaTools {
     };
   }
 
-  private async getPlatformAccounts(params: any) {
+  private async getPlatformAccounts(params: MCPGetOAuthAccountsParams) {
     let response;
     
     switch (params.platform) {
