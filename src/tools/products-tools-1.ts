@@ -3,8 +3,33 @@
  * Provides comprehensive tools for managing products, prices, inventory, collections, and reviews
  */
 
-import { z } from "zod";
 import {
+  // MCP Product Types
+  MCPCreateProductParams,
+  MCPUpdateProductParams,
+  MCPListProductsParams,
+  MCPGetProductParams,
+  MCPDeleteProductParams,
+  MCPCreatePriceParams,
+  MCPUpdatePriceParams,
+  MCPListPricesParams,
+  MCPGetPriceParams,
+  MCPDeletePriceParams,
+  MCPBulkUpdateProductsParams,
+  MCPListInventoryParams,
+  MCPUpdateInventoryParams,
+  MCPGetProductStoreStatsParams,
+  MCPUpdateProductStoreParams,
+  MCPCreateProductCollectionParams,
+  MCPUpdateProductCollectionParams,
+  MCPListProductCollectionsParams,
+  MCPGetProductCollectionParams,
+  MCPDeleteProductCollectionParams,
+  MCPListProductReviewsParams,
+  MCPGetReviewsCountParams,
+  MCPUpdateProductReviewParams,
+  MCPDeleteProductReviewParams,
+  MCPBulkUpdateProductReviewsParams,
   // API Client Types
   GHLCreateProductRequest,
   GHLUpdateProductRequest,
@@ -37,7 +62,6 @@ import { GHLApiClient } from '../clients/ghl-api-client.js';
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 export interface ProductsToolResult {
-  [x: string]: unknown;
   content: {
     type: 'text';
     text: string;
@@ -48,7 +72,7 @@ export class ProductsTools {
   constructor(private apiClient: GHLApiClient) {}
 
   // Product Operations
-  async createProduct(params: any): Promise<ProductsToolResult> {
+  async createProduct(params: MCPCreateProductParams): Promise<ProductsToolResult> {
     try {
       const request: GHLCreateProductRequest = {
         ...params,
@@ -93,7 +117,7 @@ ${response.data.medias?.length ? `📸 **Media Files:** ${response.data.medias.l
     }
   }
 
-  async listProducts(params: any): Promise<ProductsToolResult> {
+  async listProducts(params: MCPListProductsParams): Promise<ProductsToolResult> {
     try {
       const request: GHLListProductsRequest = {
         ...params,
@@ -141,482 +165,180 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
     }
   }
 
-  getToolDefinitions(): any[] {
+  getTools(): Tool[] {
     return [
       // Product Management Tools
       {
         name: 'ghl_create_product',
-        description: `Create a new product in your GoHighLevel store.
-
-Add products to sell through your GHL e-commerce platform.
-
-Use Cases:
-- Add digital products (courses, ebooks, downloads)
-- List physical products (merchandise, equipment)
-- Offer services (consulting, coaching)
-- Create hybrid products (physical + digital)
-
-Product Types:
-- **DIGITAL**: Downloads, courses, digital content (no shipping)
-- **PHYSICAL**: Physical items that require shipping
-- **SERVICE**: Services, appointments, consultations
-- **PHYSICAL/DIGITAL**: Combo products (book + course)
-
-How It Works:
-1. Create product with name and type
-2. Add description and image
-3. Set availability in store
-4. Create prices (one-time or recurring)
-5. Product appears in your store
-
-Examples:
-- Digital course: name="Marketing Mastery", productType="DIGITAL", description="Complete marketing course"
-- Physical product: name="T-Shirt", productType="PHYSICAL", image="https://..."
-- Service: name="1-Hour Consultation", productType="SERVICE"
-
-💡 Best Practices:
-- Use clear, descriptive names
-- Add high-quality images (recommended: 1200x1200px)
-- Write compelling descriptions
-- Use SEO-friendly slugs (auto-generated if not provided)
-- Set availableInStore=true to make visible
-
-Returns: Created product with ID and configuration.
-
-Related Tools: ghl_create_price, ghl_update_product, ghl_list_products`,
+        description: 'Create a new product in GoHighLevel',
         inputSchema: {
-          name: z.string().min(1).describe('Product name (customer-facing)'),
-          productType: z.enum(['DIGITAL', 'PHYSICAL', 'SERVICE', 'PHYSICAL/DIGITAL']).describe('Product type: DIGITAL (downloads), PHYSICAL (ships), SERVICE (appointments), PHYSICAL/DIGITAL (combo)'),
-          description: z.string().optional().describe('Product description (supports HTML/markdown)'),
-          image: z.string().url().optional().describe('Product image URL (recommended: 1200x1200px)'),
-          availableInStore: z.boolean().optional().describe('Make product visible in store (default: true)'),
-          slug: z.string().optional().describe('URL-friendly slug (auto-generated from name if not provided)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            name: { type: 'string', description: 'Product name' },
+            productType: { 
+              type: 'string', 
+              enum: ['DIGITAL', 'PHYSICAL', 'SERVICE', 'PHYSICAL/DIGITAL'],
+              description: 'Type of product' 
+            },
+            description: { type: 'string', description: 'Product description' },
+            image: { type: 'string', description: 'Product image URL' },
+            availableInStore: { type: 'boolean', description: 'Whether product is available in store' },
+            slug: { type: 'string', description: 'Product URL slug' }
+          },
+          required: ['name', 'productType']
         }
       },
       {
         name: 'ghl_list_products',
-        description: `List products with filtering and search.
-
-Browse and search your product catalog.
-
-Use Cases:
-- View all products in catalog
-- Search products by name
-- Filter by availability
-- Find products in specific store
-- Paginate through large catalogs
-
-Filtering Options:
-- search: Find products by name
-- availableInStore: Show only visible products
-- includedInStore: Filter by store inclusion
-- storeId: Products in specific store
-
-Pagination:
-- limit: How many products per page (default: 20)
-- offset: Skip N products (for page 2, offset=20)
-
-Examples:
-- All products: {} (no filters)
-- Search: {search: "shirt"}
-- Available only: {availableInStore: true}
-- Page 2: {limit: 20, offset: 20}
-
-Returns: Array of products with details and pagination info.
-
-Related Tools: ghl_get_product, ghl_create_product, ghl_update_product`,
+        description: 'List products with optional filtering',
         inputSchema: {
-          limit: z.number().min(1).max(100).optional().describe('Maximum products to return (default: 20, max: 100)'),
-          offset: z.number().min(0).optional().describe('Number of products to skip (for pagination)'),
-          search: z.string().optional().describe('Search term for product names'),
-          storeId: z.string().optional().describe('Filter by specific store ID'),
-          includedInStore: z.boolean().optional().describe('Filter by store inclusion status'),
-          availableInStore: z.boolean().optional().describe('Filter by store availability (true = visible products)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            limit: { type: 'number', description: 'Maximum number of products to return' },
+            offset: { type: 'number', description: 'Number of products to skip' },
+            search: { type: 'string', description: 'Search term for product names' },
+            storeId: { type: 'string', description: 'Filter by store ID' },
+            includedInStore: { type: 'boolean', description: 'Filter by store inclusion status' },
+            availableInStore: { type: 'boolean', description: 'Filter by store availability' }
+          },
+          required: []
         }
       },
       {
         name: 'ghl_get_product',
-        description: `Get a specific product by ID.
-
-Retrieve complete product details.
-
-Use Cases:
-- View product before updating
-- Check product configuration
-- Get product for display
-- Verify product settings
-- Retrieve product data for integration
-
-What You Get:
-- Product ID, name, and type
-- Description and image
-- Availability settings
-- URL slug
-- Associated prices
-- Creation and update timestamps
-
-Common Workflow:
-1. List products to find product ID
-2. Get specific product for details
-3. Update product if needed
-
-Returns: Complete product configuration.
-
-Related Tools: ghl_list_products, ghl_update_product, ghl_list_prices`,
+        description: 'Get a specific product by ID',
         inputSchema: {
-          productId: z.string().describe('Product ID to retrieve'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            productId: { type: 'string', description: 'Product ID to retrieve' },
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' }
+          },
+          required: ['productId']
         }
       },
       {
         name: 'ghl_update_product',
-        description: `Update an existing product.
-
-Modify product details and settings.
-
-Use Cases:
-- Update product name or description
-- Change product image
-- Toggle store availability
-- Update product type
-- Refresh product information
-
-What You Can Update:
-- name: Change product name
-- description: Update product details
-- image: Replace product image
-- productType: Change type (DIGITAL/PHYSICAL/SERVICE)
-- availableInStore: Show/hide in store
-
-Examples:
-- Update name: {productId, name: "New Product Name"}
-- Hide from store: {productId, availableInStore: false}
-- Change image: {productId, image: "https://new-image.jpg"}
-
-💡 Best Practices:
-1. Get current product first
-2. Update only fields that changed
-3. Test product display after update
-4. Keep product type consistent with content
-
-⚠️ Important:
-- Provide only fields you want to update
-- Changes visible immediately in store
-- Existing orders not affected
-- Prices remain unchanged (update separately)
-
-Returns: Updated product configuration.
-
-Related Tools: ghl_get_product, ghl_create_product, ghl_create_price`,
+        description: 'Update an existing product',
         inputSchema: {
-          productId: z.string().describe('Product ID to update'),
-          name: z.string().min(1).optional().describe('New product name (optional)'),
-          productType: z.enum(['DIGITAL', 'PHYSICAL', 'SERVICE', 'PHYSICAL/DIGITAL']).optional().describe('New product type (optional)'),
-          description: z.string().optional().describe('New description (optional)'),
-          image: z.string().url().optional().describe('New image URL (optional)'),
-          availableInStore: z.boolean().optional().describe('Update store visibility (optional)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            productId: { type: 'string', description: 'Product ID to update' },
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            name: { type: 'string', description: 'Product name' },
+            productType: { 
+              type: 'string', 
+              enum: ['DIGITAL', 'PHYSICAL', 'SERVICE', 'PHYSICAL/DIGITAL'],
+              description: 'Type of product' 
+            },
+            description: { type: 'string', description: 'Product description' },
+            image: { type: 'string', description: 'Product image URL' },
+            availableInStore: { type: 'boolean', description: 'Whether product is available in store' }
+          },
+          required: ['productId']
         }
       },
       {
         name: 'ghl_delete_product',
-        description: `Delete a product by ID.
-
-⚠️ WARNING: This is PERMANENT and cannot be undone!
-
-Use Cases:
-- Remove discontinued products
-- Clean up test products
-- Delete duplicate products
-- Remove outdated offerings
-
-What Gets Deleted:
-- The product itself
-- Product configuration
-- Associated metadata
-- Store listings
-
-⚠️ Before Deleting:
-1. Verify correct product (use ghl_get_product)
-2. Check if product has active orders
-3. Consider hiding instead (availableInStore=false)
-4. Remove from collections first
-5. Have backup of product data
-
-⚠️ Impact:
-- Product no longer visible in store
-- Cannot be purchased
-- Existing orders NOT affected
-- Prices remain but orphaned
-- Cannot be recovered after deletion
-
-Safer Alternative:
-- Update product: availableInStore=false
-- Keeps product data intact
-- Can be reactivated if needed
-- Preserves order history
-
-💡 Best Practice:
-- Hide products instead of deleting when possible
-- Document why product was removed
-- Export product data before deletion
-
-Returns: Confirmation of deletion.
-
-Related Tools: ghl_update_product, ghl_get_product, ghl_list_products`,
+        description: 'Delete a product by ID',
         inputSchema: {
-          productId: z.string().describe('Product ID to permanently delete'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            productId: { type: 'string', description: 'Product ID to delete' },
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' }
+          },
+          required: ['productId']
         }
       },
 
       // Price Management Tools
       {
         name: 'ghl_create_price',
-        description: `Create a price for a product.
-
-Define pricing options and variants for your products.
-
-Use Cases:
-- Set product price (one-time purchase)
-- Create subscription pricing (recurring)
-- Add product variants (sizes, colors)
-- Set up payment plans
-- Offer discounted pricing
-
-Price Types:
-- **one_time**: Single payment (buy once)
-- **recurring**: Subscription/membership (monthly, yearly)
-
-How It Works:
-1. Create product first
-2. Add price with amount in cents
-3. Choose one-time or recurring
-4. Optionally add compareAtPrice for discounts
-5. Price appears as purchase option
-
-Examples:
-- Basic price: productId, name="Standard", type="one_time", currency="USD", amount=9900 ($99.00)
-- Subscription: productId, name="Monthly", type="recurring", amount=2900 ($29/month)
-- Sale price: amount=4900, compareAtPrice=9900 (was $99, now $49)
-- Variant: name="Large - Blue", amount=3900
-
-💡 Best Practices:
-- Amount always in cents (9900 = $99.00)
-- Use clear variant names ("Small", "Medium", "Large")
-- Set compareAtPrice to show savings
-- Create multiple prices for options
-- Test checkout with each price
-
-Returns: Created price with ID and configuration.
-
-Related Tools: ghl_list_prices, ghl_create_product, ghl_list_products`,
+        description: 'Create a price for a product',
         inputSchema: {
-          productId: z.string().describe('Product ID to create price for'),
-          name: z.string().describe('Price/variant name (e.g., "Standard", "Monthly Plan", "Large - Blue")'),
-          type: z.enum(['one_time', 'recurring']).describe('Price type: one_time (single payment) or recurring (subscription)'),
-          currency: z.string().describe('Currency code ("USD", "EUR", "GBP", "CAD")'),
-          amount: z.number().min(0).describe('Price in cents (9900 = $99.00, 2900 = $29.00)'),
-          compareAtPrice: z.number().min(0).optional().describe('Original price in cents for showing discounts (e.g., 9900 when amount=4900)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            productId: { type: 'string', description: 'Product ID to create price for' },
+            name: { type: 'string', description: 'Price name/variant name' },
+            type: { 
+              type: 'string', 
+              enum: ['one_time', 'recurring'],
+              description: 'Price type' 
+            },
+            currency: { type: 'string', description: 'Currency code (e.g., USD)' },
+            amount: { type: 'number', description: 'Price amount in cents' },
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            compareAtPrice: { type: 'number', description: 'Compare at price (for discounts)' }
+          },
+          required: ['productId', 'name', 'type', 'currency', 'amount']
         }
       },
       {
         name: 'ghl_list_prices',
-        description: `List prices for a product.
-
-View all pricing options and variants for a product.
-
-Use Cases:
-- See all price points for a product
-- Review product variants
-- Check pricing configuration
-- Find price IDs for updates
-- Audit product pricing
-
-What You Get:
-- All prices for the product
-- Price names and amounts
-- One-time vs recurring
-- Currency information
-- Compare at prices (discounts)
-- Price IDs
-
-Common Workflow:
-1. Get product ID
-2. List prices for that product
-3. Review pricing options
-4. Update or add prices as needed
-
-Example Response:
-- "Standard" - $99.00 (one_time)
-- "Monthly Plan" - $29.00/month (recurring)
-- "Large - Blue" - $39.00 (one_time)
-
-Returns: Array of all prices for the product.
-
-Related Tools: ghl_create_price, ghl_get_product, ghl_list_products`,
+        description: 'List prices for a product',
         inputSchema: {
-          productId: z.string().describe('Product ID to list prices for'),
-          limit: z.number().min(1).max(100).optional().describe('Maximum prices to return (for pagination)'),
-          offset: z.number().min(0).optional().describe('Number of prices to skip (for pagination)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            productId: { type: 'string', description: 'Product ID to list prices for' },
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            limit: { type: 'number', description: 'Maximum number of prices to return' },
+            offset: { type: 'number', description: 'Number of prices to skip' }
+          },
+          required: ['productId']
         }
       },
 
       // Inventory Tools
       {
         name: 'ghl_list_inventory',
-        description: `List inventory items with stock levels.
-
-Track product inventory and stock quantities.
-
-Use Cases:
-- Monitor stock levels
-- Find low-stock items
-- Search inventory by product
-- Track inventory across variants
-- Audit inventory status
-
-What You Get:
-- Product and variant information
-- Current stock quantities
-- Inventory tracking status
-- Product IDs and names
-- Variant details
-
-Inventory Management:
-- Track stock for physical products
-- Monitor quantities per variant
-- Get alerts for low stock
-- Plan restocking
-
-Filtering:
-- search: Find specific products
-- Pagination with limit/offset
-
-Examples:
-- All inventory: {} (no filters)
-- Search: {search: "shirt"}
-- Page 2: {limit: 50, offset: 50}
-
-💡 Use Cases:
-- Before creating orders (check stock)
-- Inventory audits
-- Restocking decisions
-- Product availability checks
-
-Returns: Array of inventory items with stock levels.
-
-Related Tools: ghl_list_products, ghl_get_product, ghl_list_prices`,
+        description: 'List inventory items with stock levels',
         inputSchema: {
-          limit: z.number().min(1).max(100).optional().describe('Maximum items to return (default: 20, max: 100)'),
-          offset: z.number().min(0).optional().describe('Number of items to skip (for pagination)'),
-          search: z.string().optional().describe('Search term for inventory items'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            limit: { type: 'number', description: 'Maximum number of items to return' },
+            offset: { type: 'number', description: 'Number of items to skip' },
+            search: { type: 'string', description: 'Search term for inventory items' }
+          },
+          required: []
         }
       },
 
       // Collection Tools
       {
         name: 'ghl_create_product_collection',
-        description: `Create a new product collection.
-
-Organize products into collections for better browsing.
-
-Use Cases:
-- Group related products ("Summer Collection")
-- Create category pages ("T-Shirts", "Courses")
-- Build themed collections ("Best Sellers")
-- Organize by season/event
-- Improve store navigation
-
-Collection Benefits:
-- Better product organization
-- Easier customer browsing
-- SEO-friendly category pages
-- Featured product groups
-- Marketing campaigns
-
-How It Works:
-1. Create collection with name and slug
-2. Add collection image (optional)
-3. Set SEO metadata
-4. Add products to collection
-5. Collection appears in store
-
-Examples:
-- Basic: name="Summer Sale", slug="summer-sale"
-- With image: name="T-Shirts", slug="t-shirts", image="https://..."
-- With SEO: name="Courses", slug="courses", seo={title:"Online Courses", description:"..."}
-
-💡 Best Practices:
-- Use clear, descriptive names
-- Create SEO-friendly slugs (lowercase, hyphens)
-- Add collection images (1200x400px recommended)
-- Write compelling SEO descriptions
-- Organize logically for customers
-
-Returns: Created collection with ID and configuration.
-
-Related Tools: ghl_list_product_collections, ghl_create_product, ghl_list_products`,
+        description: 'Create a new product collection',
         inputSchema: {
-          name: z.string().min(1).describe('Collection name (e.g., "Summer Sale", "T-Shirts", "Best Sellers")'),
-          slug: z.string().min(1).describe('URL-friendly slug (e.g., "summer-sale", "t-shirts")'),
-          image: z.string().url().optional().describe('Collection banner image URL (recommended: 1200x400px)'),
-          seo: z.object({
-            title: z.string().optional().describe('SEO title for search engines'),
-            description: z.string().optional().describe('SEO description for search engines')
-          }).optional().describe('SEO metadata for collection page'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            name: { type: 'string', description: 'Collection name' },
+            slug: { type: 'string', description: 'Collection URL slug' },
+            image: { type: 'string', description: 'Collection image URL' },
+            seo: {
+              type: 'object',
+              properties: {
+                title: { type: 'string', description: 'SEO title' },
+                description: { type: 'string', description: 'SEO description' }
+              }
+            }
+          },
+          required: ['name', 'slug']
         }
       },
       {
         name: 'ghl_list_product_collections',
-        description: `List product collections.
-
-Browse and search your product collections.
-
-Use Cases:
-- View all collections
-- Search collections by name
-- Find collection IDs
-- Audit collection structure
-- Review store organization
-
-What You Get:
-- All collections
-- Collection names and slugs
-- Collection images
-- SEO metadata
-- Collection IDs
-- Product counts per collection
-
-Filtering:
-- name: Search by collection name
-- Pagination with limit/offset
-
-Examples:
-- All collections: {} (no filters)
-- Search: {name: "summer"}
-- Page 2: {limit: 20, offset: 20}
-
-Common Workflow:
-1. List collections
-2. Find collection ID
-3. Add products to collection
-4. Display on store
-
-Returns: Array of collections with details.
-
-Related Tools: ghl_create_product_collection, ghl_list_products, ghl_create_product`,
+        description: 'List product collections',
         inputSchema: {
-          limit: z.number().min(1).max(100).optional().describe('Maximum collections to return (default: 20, max: 100)'),
-          offset: z.number().min(0).optional().describe('Number of collections to skip (for pagination)'),
-          name: z.string().optional().describe('Search by collection name'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            limit: { type: 'number', description: 'Maximum number of collections to return' },
+            offset: { type: 'number', description: 'Number of collections to skip' },
+            name: { type: 'string', description: 'Search by collection name' }
+          },
+          required: []
         }
       }
     ];
@@ -625,25 +347,25 @@ Related Tools: ghl_create_product_collection, ghl_list_products, ghl_create_prod
   async executeProductsTool(toolName: string, params: any): Promise<ProductsToolResult> {
     switch (toolName) {
       case 'ghl_create_product':
-        return this.createProduct(params);
+        return this.createProduct(params as MCPCreateProductParams);
       case 'ghl_list_products':
-        return this.listProducts(params);
+        return this.listProducts(params as MCPListProductsParams);
       case 'ghl_get_product':
-        return this.getProduct(params);
+        return this.getProduct(params as MCPGetProductParams);
       case 'ghl_update_product':
-        return this.updateProduct(params);
+        return this.updateProduct(params as MCPUpdateProductParams);
       case 'ghl_delete_product':
-        return this.deleteProduct(params);
+        return this.deleteProduct(params as MCPDeleteProductParams);
       case 'ghl_create_price':
-        return this.createPrice(params);
+        return this.createPrice(params as MCPCreatePriceParams);
       case 'ghl_list_prices':
-        return this.listPrices(params);
+        return this.listPrices(params as MCPListPricesParams);
       case 'ghl_list_inventory':
-        return this.listInventory(params);
+        return this.listInventory(params as MCPListInventoryParams);
       case 'ghl_create_product_collection':
-        return this.createProductCollection(params);
+        return this.createProductCollection(params as MCPCreateProductCollectionParams);
       case 'ghl_list_product_collections':
-        return this.listProductCollections(params);
+        return this.listProductCollections(params as MCPListProductCollectionsParams);
       default:
         return {
           content: [{
@@ -655,7 +377,7 @@ Related Tools: ghl_create_product_collection, ghl_list_products, ghl_create_prod
   }
 
   // Additional Product Operations
-  async getProduct(params: any): Promise<ProductsToolResult> {
+  async getProduct(params: MCPGetProductParams): Promise<ProductsToolResult> {
     try {
       const response = await this.apiClient.getProduct(
         params.productId,
@@ -698,7 +420,7 @@ ${response.data.isLabelEnabled ? `🏷️ **Labels:** Enabled` : ''}`
     }
   }
 
-  async updateProduct(params: any): Promise<ProductsToolResult> {
+  async updateProduct(params: MCPUpdateProductParams): Promise<ProductsToolResult> {
     try {
       const request: GHLUpdateProductRequest = {
         ...params,
@@ -736,7 +458,7 @@ ${response.data.isLabelEnabled ? `🏷️ **Labels:** Enabled` : ''}`
     }
   }
 
-  async deleteProduct(params: any): Promise<ProductsToolResult> {
+  async deleteProduct(params: MCPDeleteProductParams): Promise<ProductsToolResult> {
     try {
       const response = await this.apiClient.deleteProduct(
         params.productId,
@@ -768,7 +490,7 @@ ${response.data.isLabelEnabled ? `🏷️ **Labels:** Enabled` : ''}`
     }
   }
 
-  async createPrice(params: any): Promise<ProductsToolResult> {
+  async createPrice(params: MCPCreatePriceParams): Promise<ProductsToolResult> {
     try {
       const request: GHLCreatePriceRequest = {
         ...params,
@@ -811,7 +533,7 @@ ${response.data.sku ? `📦 **SKU:** ${response.data.sku}` : ''}
     }
   }
 
-  async listPrices(params: any): Promise<ProductsToolResult> {
+  async listPrices(params: MCPListPricesParams): Promise<ProductsToolResult> {
     try {
       const request: GHLListPricesRequest = {
         ...params,
@@ -856,7 +578,7 @@ ${price.sku ? `• **SKU:** ${price.sku}` : ''}
     }
   }
 
-  async listInventory(params: any): Promise<ProductsToolResult> {
+  async listInventory(params: MCPListInventoryParams): Promise<ProductsToolResult> {
     try {
       const request: GHLListInventoryRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -905,7 +627,7 @@ ${params.search ? `• **Search:** "${params.search}"` : ''}`
     }
   }
 
-  async createProductCollection(params: any): Promise<ProductsToolResult> {
+  async createProductCollection(params: MCPCreateProductCollectionParams): Promise<ProductsToolResult> {
     try {
       const request: GHLCreateProductCollectionRequest = {
         ...params,
@@ -948,7 +670,7 @@ ${response.data.data.seo?.description ? `📝 **SEO Description:** ${response.da
     }
   }
 
-  async listProductCollections(params: any): Promise<ProductsToolResult> {
+  async listProductCollections(params: MCPListProductCollectionsParams): Promise<ProductsToolResult> {
     try {
       const request: GHLListProductCollectionsRequest = {
         ...params,

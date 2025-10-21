@@ -3,8 +3,26 @@
  * Provides comprehensive tools for managing store shipping zones, rates, carriers, and settings
  */
 
-import { z } from "zod";
 import {
+  // MCP Types
+  MCPCreateShippingZoneParams,
+  MCPListShippingZonesParams,
+  MCPGetShippingZoneParams,
+  MCPUpdateShippingZoneParams,
+  MCPDeleteShippingZoneParams,
+  MCPCreateShippingRateParams,
+  MCPListShippingRatesParams,
+  MCPGetShippingRateParams,
+  MCPUpdateShippingRateParams,
+  MCPDeleteShippingRateParams,
+  MCPGetAvailableShippingRatesParams,
+  MCPCreateShippingCarrierParams,
+  MCPListShippingCarriersParams,
+  MCPGetShippingCarrierParams,
+  MCPUpdateShippingCarrierParams,
+  MCPDeleteShippingCarrierParams,
+  MCPCreateStoreSettingParams,
+  MCPGetStoreSettingParams,
   // API Client Types
   GHLCreateShippingZoneRequest,
   GHLUpdateShippingZoneRequest,
@@ -26,9 +44,9 @@ import {
 } from '../types/ghl-types.js';
 
 import { GHLApiClient } from '../clients/ghl-api-client.js';
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 export interface StoreToolResult {
-  [x: string]: unknown;
   content: {
     type: 'text';
     text: string;
@@ -45,7 +63,7 @@ export class StoreTools {
   /**
    * Create a new shipping zone
    */
-  async createShippingZone(params: any): Promise<StoreToolResult> {
+  async createShippingZone(params: MCPCreateShippingZoneParams): Promise<StoreToolResult> {
     try {
       const request: GHLCreateShippingZoneRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -96,7 +114,7 @@ The shipping zone is now active and ready to use with shipping rates.`
   /**
    * List all shipping zones
    */
-  async listShippingZones(params: any): Promise<StoreToolResult> {
+  async listShippingZones(params: MCPListShippingZonesParams): Promise<StoreToolResult> {
     try {
       const request: GHLGetShippingZonesRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -156,7 +174,7 @@ ${zone.countries.map(country => {
   /**
    * Get a specific shipping zone
    */
-  async getShippingZone(params: any): Promise<StoreToolResult> {
+  async getShippingZone(params: MCPGetShippingZoneParams): Promise<StoreToolResult> {
     try {
       const request: Omit<GHLGetShippingZonesRequest, 'limit' | 'offset'> = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -213,7 +231,7 @@ Use this zone ID to create shipping rates or update zone configuration.`
   /**
    * Update a shipping zone
    */
-  async updateShippingZone(params: any): Promise<StoreToolResult> {
+  async updateShippingZone(params: MCPUpdateShippingZoneParams): Promise<StoreToolResult> {
     try {
       const request: GHLUpdateShippingZoneRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -265,7 +283,7 @@ The shipping zone configuration has been updated successfully.`
   /**
    * Delete a shipping zone
    */
-  async deleteShippingZone(params: any): Promise<StoreToolResult> {
+  async deleteShippingZone(params: MCPDeleteShippingZoneParams): Promise<StoreToolResult> {
     try {
       const request: GHLDeleteShippingZoneRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -303,7 +321,7 @@ The shipping zone and all associated shipping rates have been permanently delete
   /**
    * Get available shipping rates for an order
    */
-  async getAvailableShippingRates(params: any): Promise<StoreToolResult> {
+  async getAvailableShippingRates(params: MCPGetAvailableShippingRatesParams): Promise<StoreToolResult> {
     try {
       const request: GHLGetAvailableShippingRatesRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -376,7 +394,7 @@ Select the appropriate shipping rate for checkout.`
   /**
    * Create a shipping rate
    */
-  async createShippingRate(params: any): Promise<StoreToolResult> {
+  async createShippingRate(params: MCPCreateShippingRateParams): Promise<StoreToolResult> {
     try {
       const request: GHLCreateShippingRateRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -437,7 +455,7 @@ The shipping rate is now active and available for orders.`
   /**
    * List shipping rates for a zone
    */
-  async listShippingRates(params: any): Promise<StoreToolResult> {
+  async listShippingRates(params: MCPListShippingRatesParams): Promise<StoreToolResult> {
     try {
       const request: GHLGetShippingRatesRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -493,7 +511,7 @@ Use rate IDs to update or delete specific shipping rates.`
   /**
    * Get a specific shipping rate
    */
-  async getShippingRate(params: any): Promise<StoreToolResult> {
+  async getShippingRate(params: MCPGetShippingRateParams): Promise<StoreToolResult> {
     try {
       const request: Omit<GHLGetShippingRatesRequest, 'limit' | 'offset'> = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -549,7 +567,7 @@ Use this rate information to manage shipping configurations.`
   /**
    * Update a shipping rate
    */
-  async updateShippingRate(params: any): Promise<StoreToolResult> {
+  async updateShippingRate(params: MCPUpdateShippingRateParams): Promise<StoreToolResult> {
     try {
       const request: GHLUpdateShippingRateRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -613,7 +631,7 @@ The shipping rate configuration has been updated successfully.`
   /**
    * Delete a shipping rate
    */
-  async deleteShippingRate(params: any): Promise<StoreToolResult> {
+  async deleteShippingRate(params: MCPDeleteShippingRateParams): Promise<StoreToolResult> {
     try {
       const request: GHLDeleteShippingRateRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -657,7 +675,7 @@ The shipping rate has been permanently deleted. This action cannot be undone.
   /**
    * Create a shipping carrier
    */
-  async createShippingCarrier(params: any): Promise<StoreToolResult> {
+  async createShippingCarrier(params: MCPCreateShippingCarrierParams): Promise<StoreToolResult> {
     try {
       const request: GHLCreateShippingCarrierRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -707,7 +725,7 @@ The shipping carrier is now available for creating carrier-based shipping rates.
   /**
    * List all shipping carriers
    */
-  async listShippingCarriers(params: any): Promise<StoreToolResult> {
+  async listShippingCarriers(params: MCPListShippingCarriersParams): Promise<StoreToolResult> {
     try {
       const request: GHLGetShippingCarriersRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -761,7 +779,7 @@ Use carrier IDs to create carrier-based shipping rates or manage carrier configu
   /**
    * Get a specific shipping carrier
    */
-  async getShippingCarrier(params: any): Promise<StoreToolResult> {
+  async getShippingCarrier(params: MCPGetShippingCarrierParams): Promise<StoreToolResult> {
     try {
       const request: GHLGetShippingCarriersRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -810,7 +828,7 @@ Use this carrier to create dynamic shipping rates based on real-time carrier pri
   /**
    * Update a shipping carrier
    */
-  async updateShippingCarrier(params: any): Promise<StoreToolResult> {
+  async updateShippingCarrier(params: MCPUpdateShippingCarrierParams): Promise<StoreToolResult> {
     try {
       const request: GHLUpdateShippingCarrierRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -861,7 +879,7 @@ The shipping carrier configuration has been updated successfully.`
   /**
    * Delete a shipping carrier
    */
-  async deleteShippingCarrier(params: any): Promise<StoreToolResult> {
+  async deleteShippingCarrier(params: MCPDeleteShippingCarrierParams): Promise<StoreToolResult> {
     try {
       const request: GHLDeleteShippingCarrierRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -899,7 +917,7 @@ The shipping carrier has been permanently deleted. This action cannot be undone.
   /**
    * Create or update store settings
    */
-  async createStoreSetting(params: any): Promise<StoreToolResult> {
+  async createStoreSetting(params: MCPCreateStoreSettingParams): Promise<StoreToolResult> {
     try {
       const request: GHLCreateStoreSettingRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -959,7 +977,7 @@ Your store settings have been configured successfully.`
   /**
    * Get store settings
    */
-  async getStoreSetting(params: any): Promise<StoreToolResult> {
+  async getStoreSetting(params: MCPGetStoreSettingParams): Promise<StoreToolResult> {
     try {
       const request: GHLGetStoreSettingRequest = {
         altId: params.locationId || this.apiClient.getConfig().locationId,
@@ -1026,830 +1044,327 @@ These settings control your store's shipping origin and email notification prefe
   /**
    * Get all Store API tool definitions
    */
-  getToolDefinitions(): any[] {
+  getTools(): Tool[] {
     return [
       // Shipping Zones Tools
       {
         name: 'ghl_create_shipping_zone',
-        description: `Create a new shipping zone with specific countries and states.
-
-Define geographic regions where you ship products and set up location-based shipping rules.
-
-Use Cases:
-- Create "Domestic US" zone for all US states
-- Set up "California Only" zone for CA-specific shipping
-- Define "North America" zone for US, Canada, Mexico
-- Create "EU Countries" zone for European shipping
-- Set up "International" zone for worldwide shipping
-
-How It Works:
-1. Name your shipping zone (e.g., "US Mainland", "West Coast")
-2. Add countries by 2-letter code (US, CA, GB, etc.)
-3. Optionally restrict to specific states within countries
-4. Zone can include multiple countries and state combinations
-
-Examples:
-- US only: countries=[{code:"US"}]
-- California only: countries=[{code:"US", states:[{code:"CA"}]}]
-- US + Canada: countries=[{code:"US"}, {code:"CA"}]
-- Multiple states: countries=[{code:"US", states:[{code:"CA"},{code:"NY"},{code:"TX"}]}]
-
-⚠️ Important:
-- Country codes must be valid 2-letter ISO codes (US, CA, GB, etc.)
-- State codes must be valid for the country (CA, NY, TX for US)
-- Empty states array means ALL states in that country
-- Zones are used to calculate shipping rates for orders
-
-Returns: Created zone with ID, name, and configured countries/states.
-
-Related Tools: ghl_list_shipping_zones, ghl_update_shipping_zone, ghl_create_shipping_rate`,
+        description: 'Create a new shipping zone with specific countries and states',
         inputSchema: {
-          name: z.string().describe('Name of the shipping zone (e.g., "US Mainland", "West Coast", "International")'),
-          countries: z.array(z.object({
-            code: z.string().describe('2-letter country code (e.g., "US", "CA", "GB", "AU")'),
-            states: z.array(z.object({
-              code: z.string().describe('State/province code (e.g., "CA", "NY", "TX", "ON", "BC")')
-            })).optional().describe('Optional: Specific states/provinces. Omit for all states in country')
-          })).describe('Array of countries with optional state restrictions'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            name: { type: 'string', description: 'Name of the shipping zone' },
+            countries: {
+              type: 'array',
+              description: 'Array of countries with optional state restrictions',
+              items: {
+                type: 'object',
+                properties: {
+                  code: { type: 'string', description: 'Country code (e.g., US, CA)' },
+                  states: {
+                    type: 'array',
+                    description: 'Optional array of state codes for this country',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        code: { type: 'string', description: 'State code (e.g., CA, NY)' }
+                      },
+                      required: ['code']
+                    }
+                  }
+                },
+                required: ['code']
+              }
+            }
+          },
+          required: ['name', 'countries']
         }
       },
       {
         name: 'ghl_list_shipping_zones',
-        description: `List all shipping zones for a location.
-
-View all configured shipping zones to understand your shipping coverage.
-
-Use Cases:
-- Audit all shipping zones in your store
-- Review geographic coverage before adding rates
-- Find zone IDs for updating or deleting
-- Check which countries/states are configured
-- Display shipping options to customers
-
-Pagination:
-- Use limit/offset for large zone lists
-- Default returns all zones if no limit specified
-
-withShippingRate Option:
-- Set to true to include associated shipping rates
-- Useful for seeing complete shipping configuration
-- Helps identify zones without rates configured
-
-Returns: Array of zones with names, countries, states, and optionally rates.
-
-Related Tools: ghl_get_shipping_zone, ghl_create_shipping_zone, ghl_list_shipping_rates`,
+        description: 'List all shipping zones for a location',
         inputSchema: {
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
-          limit: z.number().min(1).optional().describe('Maximum zones to return (for pagination)'),
-          offset: z.number().min(0).optional().describe('Number of zones to skip (for pagination)'),
-          withShippingRate: z.boolean().optional().describe('Include associated shipping rates in response (default: false)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            limit: { type: 'number', description: 'Number of zones to return (optional)' },
+            offset: { type: 'number', description: 'Number of zones to skip (optional)' },
+            withShippingRate: { type: 'boolean', description: 'Include shipping rates in response (optional)' }
+          }
         }
       },
       {
         name: 'ghl_get_shipping_zone',
-        description: `Get details of a specific shipping zone.
-
-Retrieve complete configuration for a single shipping zone.
-
-Use Cases:
-- View zone details before updating
-- Check which countries/states are in a zone
-- Verify zone configuration is correct
-- Get zone info for customer support
-- Review shipping rates for a zone
-
-What You Get:
-- Zone ID and name
-- All configured countries
-- State restrictions per country
-- Associated shipping rates (if withShippingRate=true)
-- Creation and update timestamps
-
-Common Workflow:
-1. List zones to find the zone ID
-2. Get specific zone to see full details
-3. Update zone if changes needed
-
-Returns: Complete zone configuration with countries, states, and optionally rates.
-
-Related Tools: ghl_list_shipping_zones, ghl_update_shipping_zone, ghl_list_shipping_rates`,
+        description: 'Get details of a specific shipping zone',
         inputSchema: {
-          shippingZoneId: z.string().describe('ID of the shipping zone to retrieve'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
-          withShippingRate: z.boolean().optional().describe('Include shipping rates in response (default: false)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingZoneId: { type: 'string', description: 'ID of the shipping zone to retrieve' },
+            withShippingRate: { type: 'boolean', description: 'Include shipping rates in response (optional)' }
+          },
+          required: ['shippingZoneId']
         }
       },
       {
         name: 'ghl_update_shipping_zone',
-        description: `Update a shipping zone's name or countries.
-
-Modify existing shipping zones to adjust geographic coverage.
-
-Use Cases:
-- Rename zone for clarity ("West Coast" → "CA/OR/WA")
-- Add new countries to existing zone
-- Remove countries from zone
-- Adjust state restrictions
-- Expand or reduce shipping coverage
-
-What You Can Update:
-- name: Change zone display name
-- countries: Replace entire country/state configuration
-
-⚠️ Important:
-- Provide name, countries, or both
-- Countries update REPLACES all existing countries
-- Include ALL countries you want to keep
-- Cannot update zone ID
-- Existing shipping rates remain attached to zone
-
-Examples:
-- Rename only: {shippingZoneId, name: "New Name"}
-- Add country: Get current countries, add new one, update
-- Remove state: Get current config, remove state, update
-
-Best Practice:
-1. Get current zone configuration first
-2. Modify the configuration
-3. Send complete updated configuration
-
-Returns: Updated zone with new name and/or countries.
-
-Related Tools: ghl_get_shipping_zone, ghl_list_shipping_zones, ghl_delete_shipping_zone`,
+        description: 'Update a shipping zone\'s name or countries',
         inputSchema: {
-          shippingZoneId: z.string().describe('ID of the shipping zone to update'),
-          name: z.string().optional().describe('New name for the zone (optional)'),
-          countries: z.array(z.object({
-            code: z.string().describe('2-letter country code (e.g., "US", "CA", "GB")'),
-            states: z.array(z.object({
-              code: z.string().describe('State/province code (e.g., "CA", "NY", "TX")')
-            })).optional().describe('Optional: Specific states. Omit for all states')
-          })).optional().describe('Updated countries array (REPLACES all existing countries)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingZoneId: { type: 'string', description: 'ID of the shipping zone to update' },
+            name: { type: 'string', description: 'New name for the shipping zone (optional)' },
+            countries: {
+              type: 'array',
+              description: 'Updated array of countries with optional state restrictions (optional)',
+              items: {
+                type: 'object',
+                properties: {
+                  code: { type: 'string', description: 'Country code (e.g., US, CA)' },
+                  states: {
+                    type: 'array',
+                    description: 'Optional array of state codes for this country',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        code: { type: 'string', description: 'State code (e.g., CA, NY)' }
+                      },
+                      required: ['code']
+                    }
+                  }
+                },
+                required: ['code']
+              }
+            }
+          },
+          required: ['shippingZoneId']
         }
       },
       {
         name: 'ghl_delete_shipping_zone',
-        description: `Delete a shipping zone and all its associated shipping rates.
-
-⚠️ WARNING: This is PERMANENT and cannot be undone!
-⚠️ All shipping rates in this zone will also be deleted!
-
-Use Cases:
-- Remove zones no longer needed
-- Clean up test/duplicate zones
-- Reorganize shipping structure
-- Remove zones with incorrect configuration
-
-What Gets Deleted:
-- The shipping zone itself
-- ALL shipping rates associated with this zone
-- Zone configuration (countries, states)
-- Zone name and metadata
-
-⚠️ Before Deleting:
-1. Verify this is the correct zone (use ghl_get_shipping_zone)
-2. Check if zone has active shipping rates
-3. Ensure no orders are pending with these rates
-4. Consider updating instead of deleting
-5. Have backup of zone configuration if needed
-
-⚠️ Impact:
-- Customers in this zone won't see shipping options
-- Existing orders with these rates are NOT affected
-- Zone cannot be recovered after deletion
-- Must recreate zone and rates if deleted by mistake
-
-Safer Alternative:
-- Update zone to remove countries instead of deleting
-- Keeps shipping rate history intact
-
-Returns: Confirmation of deletion.
-
-Related Tools: ghl_get_shipping_zone, ghl_update_shipping_zone, ghl_list_shipping_zones`,
+        description: 'Delete a shipping zone and all its associated shipping rates',
         inputSchema: {
-          shippingZoneId: z.string().describe('ID of the shipping zone to permanently delete'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingZoneId: { type: 'string', description: 'ID of the shipping zone to delete' }
+          },
+          required: ['shippingZoneId']
         }
       },
 
-      // Shipping Rates Tools
+      // Shipping Rates Tools (key ones)
       {
         name: 'ghl_get_available_shipping_rates',
-        description: `Get available shipping rates for an order based on destination.
-
-Calculate which shipping options are available for a customer's order based on their location and order details.
-
-Use Cases:
-- Display shipping options at checkout
-- Calculate shipping costs for quotes
-- Determine delivery options for customer
-- Show estimated shipping costs
-- Filter rates by order weight/amount
-
-How It Works:
-1. Provide destination country and address
-2. Include order total amount and weight
-3. List all products with quantities
-4. System matches to configured shipping zones
-5. Returns applicable rates with costs
-
-Rate Calculation:
-- Matches destination to shipping zones
-- Applies zone-specific rates
-- Considers order amount/weight conditions
-- Returns only rates that match criteria
-
-Examples:
-- US order: country="US", address with city/state
-- International: country="CA", totalOrderAmount=5000 (cents)
-- Heavy order: totalOrderWeight=2500 (grams)
-
-💡 Best Practices:
-- Always provide complete address for accuracy
-- Amount in cents (5000 = $50.00)
-- Weight in grams (1000 = 1kg)
-- Include all products for accurate calculation
-
-Returns: Array of available shipping rates with names, costs, and delivery estimates.
-
-Related Tools: ghl_list_shipping_zones, ghl_list_shipping_rates, ghl_create_shipping_rate`,
+        description: 'Get available shipping rates for an order based on destination and order details',
         inputSchema: {
-          country: z.string().describe('Destination country code (2-letter ISO: "US", "CA", "GB")'),
-          address: z.object({
-            street1: z.string().describe('Street address line 1'),
-            city: z.string().describe('City name'),
-            country: z.string().describe('Country code (must match outer country parameter)')
-          }).describe('Complete shipping address for rate calculation'),
-          totalOrderAmount: z.number().describe('Total order amount in cents (e.g., 5000 = $50.00)'),
-          totalOrderWeight: z.number().describe('Total order weight in grams (e.g., 1000 = 1kg)'),
-          products: z.array(z.object({
-            id: z.string().describe('Product ID'),
-            quantity: z.number().min(1).describe('Product quantity')
-          })).describe('Array of products in the order'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            country: { type: 'string', description: 'Destination country code' },
+            address: {
+              type: 'object',
+              description: 'Shipping address details',
+              properties: {
+                street1: { type: 'string', description: 'Street address line 1' },
+                city: { type: 'string', description: 'City' },
+                country: { type: 'string', description: 'Country code' }
+              },
+              required: ['street1', 'city', 'country']
+            },
+            totalOrderAmount: { type: 'number', description: 'Total order amount' },
+            totalOrderWeight: { type: 'number', description: 'Total order weight' },
+            products: {
+              type: 'array',
+              description: 'Array of products in the order',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', description: 'Product ID' },
+                  quantity: { type: 'number', description: 'Product quantity' }
+                },
+                required: ['id', 'quantity']
+              }
+            }
+          },
+          required: ['country', 'address', 'totalOrderAmount', 'totalOrderWeight', 'products']
         }
       },
       {
         name: 'ghl_create_shipping_rate',
-        description: `Create a new shipping rate for a shipping zone.
-
-Define shipping costs and conditions for a specific geographic zone.
-
-Use Cases:
-- Set up "Standard Shipping" for $5.99
-- Create "Express Shipping" for $15.99
-- Add "Free Shipping" for orders over $50
-- Define weight-based shipping rates
-- Set up flat rate shipping
-
-Condition Types:
-- **PRICE**: Rate based on order amount (e.g., free over $50)
-- **WEIGHT**: Rate based on order weight (e.g., $5 per kg)
-- **FLAT**: Fixed rate regardless of order (e.g., $9.99 always)
-
-How It Works:
-1. Select the shipping zone (e.g., "US Mainland")
-2. Name your rate (e.g., "Standard Ground")
-3. Set currency (USD, CAD, EUR, etc.)
-4. Define amount in cents (999 = $9.99)
-5. Choose condition type for when rate applies
-
-Examples:
-- Flat rate: name="Standard", amount=999, conditionType="FLAT"
-- Free shipping: name="Free", amount=0, conditionType="PRICE", minCondition=5000
-- Weight-based: name="Heavy", amount=1500, conditionType="WEIGHT"
-
-💡 Best Practices:
-- Use clear, customer-friendly names
-- Amount always in cents (999 = $9.99)
-- Create multiple rates per zone for options
-- Test rates with ghl_get_available_shipping_rates
-
-Returns: Created rate with ID, name, amount, and conditions.
-
-Related Tools: ghl_list_shipping_rates, ghl_update_shipping_rate, ghl_create_shipping_zone`,
+        description: 'Create a new shipping rate for a shipping zone',
         inputSchema: {
-          shippingZoneId: z.string().describe('ID of the shipping zone for this rate'),
-          name: z.string().describe('Customer-facing rate name (e.g., "Standard Ground", "Express")'),
-          currency: z.string().describe('Currency code ("USD", "CAD", "EUR", "GBP")'),
-          amount: z.number().min(0).describe('Shipping cost in cents (999 = $9.99, 0 = free)'),
-          conditionType: z.enum(['PRICE', 'WEIGHT', 'FLAT']).describe('When rate applies: PRICE (order amount), WEIGHT (order weight), FLAT (always)'),
-          minCondition: z.number().optional().describe('Minimum value for PRICE/WEIGHT conditions (in cents or grams)'),
-          maxCondition: z.number().optional().describe('Maximum value for PRICE/WEIGHT conditions (in cents or grams)'),
-          description: z.string().optional().describe('Optional description shown to customers'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingZoneId: { type: 'string', description: 'ID of the shipping zone' },
+            name: { type: 'string', description: 'Name of the shipping rate' },
+            currency: { type: 'string', description: 'Currency code (e.g., USD)' },
+            amount: { type: 'number', description: 'Shipping rate amount' },
+            conditionType: { type: 'string', description: 'Condition type for rate calculation' }
+          },
+          required: ['shippingZoneId', 'name', 'currency', 'amount', 'conditionType']
         }
       },
       {
         name: 'ghl_list_shipping_rates',
-        description: `List all shipping rates for a specific shipping zone.
-
-View all configured shipping options for a geographic zone.
-
-Use Cases:
-- Review all rates for a zone
-- Audit shipping configuration
-- Find rate IDs for updates/deletes
-- Check rate pricing and conditions
-- Verify customer shipping options
-
-What You Get:
-- All rates for the specified zone
-- Rate names and amounts
-- Condition types and values
-- Currency information
-- Rate IDs for management
-
-Common Workflow:
-1. List zones to find zone ID
-2. List rates for that zone
-3. Review or modify rates as needed
-
-Example Response:
-- "Standard Ground" - $9.99 (FLAT)
-- "Express" - $19.99 (FLAT)
-- "Free Shipping" - $0 (PRICE > $50)
-
-Returns: Array of all shipping rates configured for the zone.
-
-Related Tools: ghl_get_shipping_rate, ghl_create_shipping_rate, ghl_list_shipping_zones`,
+        description: 'List all shipping rates for a specific shipping zone',
         inputSchema: {
-          shippingZoneId: z.string().describe('ID of the shipping zone to get rates for'),
-          limit: z.number().min(1).optional().describe('Maximum rates to return (for pagination)'),
-          offset: z.number().min(0).optional().describe('Number of rates to skip (for pagination)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingZoneId: { type: 'string', description: 'ID of the shipping zone' }
+          },
+          required: ['shippingZoneId']
         }
       },
       {
         name: 'ghl_get_shipping_rate',
-        description: `Get details of a specific shipping rate.
-
-Retrieve complete configuration for a single shipping rate.
-
-Use Cases:
-- View rate details before updating
-- Check rate pricing and conditions
-- Verify rate configuration
-- Get rate info for customer support
-- Review condition settings
-
-What You Get:
-- Rate ID, name, and description
-- Amount and currency
-- Condition type (PRICE/WEIGHT/FLAT)
-- Min/max condition values
-- Associated shipping zone
-- Creation and update timestamps
-
-Common Workflow:
-1. List rates to find the rate ID
-2. Get specific rate to see full details
-3. Update rate if changes needed
-
-Returns: Complete rate configuration with all settings.
-
-Related Tools: ghl_list_shipping_rates, ghl_update_shipping_rate, ghl_delete_shipping_rate`,
+        description: 'Get details of a specific shipping rate',
         inputSchema: {
-          shippingZoneId: z.string().describe('ID of the shipping zone'),
-          shippingRateId: z.string().describe('ID of the shipping rate to retrieve'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingZoneId: { type: 'string', description: 'ID of the shipping zone' },
+            shippingRateId: { type: 'string', description: 'ID of the shipping rate to retrieve' }
+          },
+          required: ['shippingZoneId', 'shippingRateId']
         }
       },
       {
         name: 'ghl_update_shipping_rate',
-        description: `Update a shipping rate's properties.
-
-Modify existing shipping rates to adjust pricing or conditions.
-
-Use Cases:
-- Change shipping price ($9.99 → $12.99)
-- Update rate name for clarity
-- Adjust free shipping threshold ($50 → $75)
-- Change condition type (FLAT → PRICE)
-- Update rate description
-
-What You Can Update:
-- name: Change display name
-- amount: Adjust shipping cost (in cents)
-- currency: Change currency code
-- conditionType: Modify when rate applies
-- minCondition/maxCondition: Adjust thresholds
-- description: Update customer-facing text
-
-Examples:
-- Price increase: {amount: 1299} (was 999)
-- Free shipping change: {minCondition: 7500} (was 5000)
-- Rename: {name: "Priority Mail"} (was "Express")
-
-💡 Best Practices:
-1. Get current rate configuration first
-2. Modify only the fields you want to change
-3. Test with ghl_get_available_shipping_rates
-4. Communicate changes to customers
-
-⚠️ Important:
-- Provide only fields you want to update
-- Amount always in cents
-- Changes affect future orders immediately
-- Existing orders keep original rates
-
-Returns: Updated rate with new configuration.
-
-Related Tools: ghl_get_shipping_rate, ghl_list_shipping_rates, ghl_delete_shipping_rate`,
+        description: 'Update a shipping rate\'s properties',
         inputSchema: {
-          shippingZoneId: z.string().describe('ID of the shipping zone'),
-          shippingRateId: z.string().describe('ID of the shipping rate to update'),
-          name: z.string().optional().describe('New rate name (optional)'),
-          amount: z.number().min(0).optional().describe('New amount in cents (optional)'),
-          currency: z.string().optional().describe('New currency code (optional)'),
-          conditionType: z.enum(['PRICE', 'WEIGHT', 'FLAT']).optional().describe('New condition type (optional)'),
-          minCondition: z.number().optional().describe('New minimum condition value (optional)'),
-          maxCondition: z.number().optional().describe('New maximum condition value (optional)'),
-          description: z.string().optional().describe('New description (optional)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingZoneId: { type: 'string', description: 'ID of the shipping zone' },
+            shippingRateId: { type: 'string', description: 'ID of the shipping rate to update' }
+          },
+          required: ['shippingZoneId', 'shippingRateId']
         }
       },
       {
         name: 'ghl_delete_shipping_rate',
-        description: `Delete a shipping rate.
-
-⚠️ WARNING: This is PERMANENT and cannot be undone!
-
-Use Cases:
-- Remove discontinued shipping options
-- Clean up test/duplicate rates
-- Simplify shipping options
-- Remove outdated pricing
-
-What Gets Deleted:
-- The shipping rate itself
-- Rate name and pricing
-- All condition settings
-- Rate configuration
-
-⚠️ Before Deleting:
-1. Verify this is the correct rate (use ghl_get_shipping_rate)
-2. Check if customers are using this rate
-3. Ensure other rates are available for the zone
-4. Consider updating instead of deleting
-5. Have backup of rate configuration if needed
-
-⚠️ Impact:
-- Rate no longer available at checkout
-- Customers in this zone need other rate options
-- Existing orders with this rate are NOT affected
-- Rate cannot be recovered after deletion
-- Must recreate rate if deleted by mistake
-
-Safer Alternative:
-- Update rate to $0 and rename to "Discontinued"
-- Keeps rate history intact
-- Can be reactivated if needed
-
-💡 Best Practice:
-- Always have at least one rate per active zone
-- Verify zone has other rates before deleting
-- Communicate shipping changes to customers
-
-Returns: Confirmation of deletion.
-
-Related Tools: ghl_get_shipping_rate, ghl_list_shipping_rates, ghl_update_shipping_rate`,
+        description: 'Delete a shipping rate',
         inputSchema: {
-          shippingZoneId: z.string().describe('ID of the shipping zone'),
-          shippingRateId: z.string().describe('ID of the shipping rate to permanently delete'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingZoneId: { type: 'string', description: 'ID of the shipping zone' },
+            shippingRateId: { type: 'string', description: 'ID of the shipping rate to delete' }
+          },
+          required: ['shippingZoneId', 'shippingRateId']
         }
       },
 
       // Shipping Carriers Tools
       {
         name: 'ghl_create_shipping_carrier',
-        description: `Create a new shipping carrier for dynamic rate calculation.
-
-⚠️ ADVANCED FEATURE: Integrates external shipping APIs for real-time rates.
-
-Use Cases:
-- Integrate with UPS, FedEx, USPS APIs
-- Connect to custom shipping providers
-- Calculate real-time shipping costs
-- Offer live carrier rates at checkout
-- Support multiple shipping services
-
-How It Works:
-1. Create carrier with callback URL
-2. Define available services (Ground, Express, etc.)
-3. GHL calls your URL with order details
-4. Your API returns available rates
-5. Rates displayed to customer at checkout
-
-Callback URL Requirements:
-- Must accept POST requests
-- Receives order details (weight, destination, products)
-- Returns JSON with available rates and costs
-- Must respond within 5 seconds
-- Should handle errors gracefully
-
-Services Array:
-- Each service represents a shipping option
-- name: Customer-facing name ("Ground Shipping")
-- value: Internal identifier ("ups_ground")
-- Multiple services = multiple checkout options
-
-Examples:
-- UPS Integration: name="UPS", services=[{name:"Ground", value:"ups_ground"}, {name:"2-Day", value:"ups_2day"}]
-- Custom API: name="My Carrier", callbackUrl="https://api.mysite.com/shipping"
-
-💡 Best Practices:
-- Test callback URL before creating carrier
-- Implement caching to improve response times
-- Handle API failures with fallback rates
-- Log all requests for debugging
-- Use HTTPS for security
-
-Returns: Created carrier with ID and configuration.
-
-Related Tools: ghl_list_shipping_carriers, ghl_update_shipping_carrier, ghl_get_available_shipping_rates`,
+        description: 'Create a new shipping carrier for dynamic rate calculation',
         inputSchema: {
-          name: z.string().describe('Carrier name (e.g., "UPS", "FedEx", "Custom Carrier")'),
-          callbackUrl: z.string().url().describe('HTTPS URL that receives rate requests and returns shipping options'),
-          services: z.array(z.object({
-            name: z.string().describe('Service display name (e.g., "Ground Shipping", "Express 2-Day")'),
-            value: z.string().describe('Service identifier (e.g., "ups_ground", "fedex_express")')
-          })).min(1).describe('Array of shipping services this carrier offers'),
-          allowsMultipleServiceSelection: z.boolean().optional().describe('Allow customers to select multiple services (default: false)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            name: { type: 'string', description: 'Name of the shipping carrier' },
+            callbackUrl: { type: 'string', description: 'Callback URL for carrier rate requests' },
+            services: {
+              type: 'array',
+              description: 'Array of available services',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string', description: 'Service name' },
+                  value: { type: 'string', description: 'Service value' }
+                },
+                required: ['name', 'value']
+              }
+            }
+          },
+          required: ['name', 'callbackUrl', 'services']
         }
       },
       {
         name: 'ghl_list_shipping_carriers',
-        description: `List all shipping carriers for a location.
-
-View all configured carrier integrations.
-
-Use Cases:
-- Audit carrier integrations
-- Review callback URLs
-- Check available services
-- Find carrier IDs for updates
-- Verify carrier configuration
-
-What You Get:
-- All configured carriers
-- Carrier names and IDs
-- Callback URLs
-- Available services per carrier
-- Service selection settings
-
-Common Workflow:
-1. List carriers to see all integrations
-2. Test each carrier's callback URL
-3. Update or remove non-working carriers
-
-Returns: Array of all shipping carriers with their configurations.
-
-Related Tools: ghl_get_shipping_carrier, ghl_create_shipping_carrier, ghl_update_shipping_carrier`,
+        description: 'List all shipping carriers for a location',
         inputSchema: {
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' }
+          }
         }
       },
       {
         name: 'ghl_get_shipping_carrier',
-        description: `Get details of a specific shipping carrier.
-
-Retrieve complete configuration for a carrier integration.
-
-Use Cases:
-- View carrier details before updating
-- Check callback URL configuration
-- Review available services
-- Verify carrier settings
-- Debug carrier integration issues
-
-What You Get:
-- Carrier ID and name
-- Callback URL
-- All configured services
-- Service selection settings
-- Creation and update timestamps
-
-Common Workflow:
-1. List carriers to find carrier ID
-2. Get specific carrier to see full details
-3. Test callback URL
-4. Update carrier if needed
-
-Returns: Complete carrier configuration with all services.
-
-Related Tools: ghl_list_shipping_carriers, ghl_update_shipping_carrier, ghl_delete_shipping_carrier`,
+        description: 'Get details of a specific shipping carrier',
         inputSchema: {
-          shippingCarrierId: z.string().describe('ID of the shipping carrier to retrieve'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingCarrierId: { type: 'string', description: 'ID of the shipping carrier to retrieve' }
+          },
+          required: ['shippingCarrierId']
         }
       },
       {
         name: 'ghl_update_shipping_carrier',
-        description: `Update a shipping carrier's properties.
-
-Modify existing carrier integrations.
-
-Use Cases:
-- Update callback URL
-- Change carrier name
-- Add/remove services
-- Modify service selection settings
-- Fix broken integrations
-
-What You Can Update:
-- name: Change carrier display name
-- callbackUrl: Update API endpoint
-- services: Add, remove, or modify services
-- allowsMultipleServiceSelection: Change selection behavior
-
-Examples:
-- Update URL: {callbackUrl: "https://new-api.com/rates"}
-- Add service: Get current services, add new one, update
-- Rename: {name: "UPS Express"} (was "UPS")
-
-💡 Best Practices:
-1. Get current carrier configuration first
-2. Test new callback URL before updating
-3. Verify services still work after update
-4. Update one property at a time for safety
-
-⚠️ Important:
-- Provide only fields you want to update
-- Changes affect future rate calculations immediately
-- Test thoroughly after updates
-- Existing orders not affected
-
-Returns: Updated carrier with new configuration.
-
-Related Tools: ghl_get_shipping_carrier, ghl_list_shipping_carriers, ghl_delete_shipping_carrier`,
+        description: 'Update a shipping carrier\'s properties',
         inputSchema: {
-          shippingCarrierId: z.string().describe('ID of the shipping carrier to update'),
-          name: z.string().optional().describe('New carrier name (optional)'),
-          callbackUrl: z.string().url().optional().describe('New callback URL (optional)'),
-          services: z.array(z.object({
-            name: z.string().describe('Service display name'),
-            value: z.string().describe('Service identifier')
-          })).min(1).optional().describe('Updated services array (REPLACES all existing services)'),
-          allowsMultipleServiceSelection: z.boolean().optional().describe('Update service selection behavior (optional)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingCarrierId: { type: 'string', description: 'ID of the shipping carrier to update' }
+          },
+          required: ['shippingCarrierId']
         }
       },
       {
         name: 'ghl_delete_shipping_carrier',
-        description: `Delete a shipping carrier.
-
-⚠️ WARNING: This is PERMANENT and cannot be undone!
-
-Use Cases:
-- Remove discontinued carrier integrations
-- Clean up broken/unused carriers
-- Remove test carriers
-- Simplify shipping options
-
-What Gets Deleted:
-- The carrier integration
-- All configured services
-- Callback URL configuration
-- Carrier settings
-
-⚠️ Before Deleting:
-1. Verify this is the correct carrier (use ghl_get_shipping_carrier)
-2. Check if carrier is actively used
-3. Ensure other shipping options are available
-4. Test checkout without this carrier
-5. Have backup of carrier configuration
-
-⚠️ Impact:
-- Carrier rates no longer available at checkout
-- Callback URL no longer called
-- Customers won't see this carrier's services
-- Existing orders with these rates NOT affected
-- Cannot be recovered after deletion
-
-Safer Alternative:
-- Update carrier with disabled flag (if supported)
-- Keep carrier but remove services temporarily
-- Allows reactivation if needed
-
-💡 Best Practice:
-- Always have at least one shipping option available
-- Test checkout after deletion
-- Document why carrier was removed
-
-Returns: Confirmation of deletion.
-
-Related Tools: ghl_get_shipping_carrier, ghl_list_shipping_carriers, ghl_update_shipping_carrier`,
+        description: 'Delete a shipping carrier',
         inputSchema: {
-          shippingCarrierId: z.string().describe('ID of the shipping carrier to permanently delete'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingCarrierId: { type: 'string', description: 'ID of the shipping carrier to delete' }
+          },
+          required: ['shippingCarrierId']
         }
       },
 
       // Store Settings Tools
       {
         name: 'ghl_create_store_setting',
-        description: `Create or update store settings including shipping origin and notifications.
-
-Configure essential store settings for e-commerce operations.
-
-Use Cases:
-- Set up shipping origin address
-- Configure order notifications
-- Update fulfillment notifications
-- Set business address for shipping calculations
-- Configure store contact information
-
-Shipping Origin:
-- Required for accurate shipping rate calculations
-- Used as "ship from" address
-- Affects carrier rate quotes
-- Must be complete and accurate
-- Should match your warehouse/business location
-
-Notification Settings:
-- storeOrderNotification: Email for new orders
-- storeOrderFulfillmentNotification: Email for fulfillment updates
-- Helps track orders and fulfillment
-- Keeps team informed of store activity
-
-Examples:
-- Basic setup: shippingOrigin with complete address
-- With notifications: Add email addresses for alerts
-- Update address: Provide new shippingOrigin object
-
-💡 Best Practices:
-- Use accurate address for shipping calculations
-- Verify address with carrier before setting
-- Keep notification emails up to date
-- Test with real orders after setup
-- Update when warehouse/business moves
-
-⚠️ Important:
-- Shipping origin affects all rate calculations
-- Inaccurate address = incorrect shipping costs
-- Changes affect future orders immediately
-- Existing orders not affected
-
-Returns: Created/updated store settings.
-
-Related Tools: ghl_get_store_setting, ghl_create_shipping_zone, ghl_create_shipping_rate`,
+        description: 'Create or update store settings including shipping origin and notifications',
         inputSchema: {
-          shippingOrigin: z.object({
-            name: z.string().describe('Business/warehouse name'),
-            street1: z.string().describe('Street address line 1'),
-            street2: z.string().optional().describe('Street address line 2 (optional)'),
-            city: z.string().describe('City name'),
-            state: z.string().optional().describe('State/province code (e.g., "CA", "NY")'),
-            zip: z.string().describe('Postal/ZIP code'),
-            country: z.string().describe('Country code (2-letter ISO: "US", "CA", "GB")')
-          }).describe('Shipping origin address (where orders ship from)'),
-          storeOrderNotification: z.string().email().optional().describe('Email address for new order notifications (optional)'),
-          storeOrderFulfillmentNotification: z.string().email().optional().describe('Email address for fulfillment notifications (optional)'),
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' },
+            shippingOrigin: {
+              type: 'object',
+              description: 'Shipping origin address details',
+              properties: {
+                name: { type: 'string', description: 'Business name' },
+                street1: { type: 'string', description: 'Street address line 1' },
+                city: { type: 'string', description: 'City' },
+                zip: { type: 'string', description: 'Postal/ZIP code' },
+                country: { type: 'string', description: 'Country code' }
+              },
+              required: ['name', 'street1', 'city', 'zip', 'country']
+            }
+          },
+          required: ['shippingOrigin']
         }
       },
       {
         name: 'ghl_get_store_setting',
-        description: `Get current store settings.
-
-Retrieve all configured store settings.
-
-Use Cases:
-- View shipping origin address
-- Check notification email addresses
-- Verify store configuration
-- Audit store settings
-- Get settings before updating
-
-What You Get:
-- Shipping origin address (complete)
-- Order notification email
-- Fulfillment notification email
-- Store configuration details
-- Creation and update timestamps
-
-Common Workflow:
-1. Get current settings
-2. Review configuration
-3. Update if needed
-4. Verify changes
-
-💡 Use Cases:
-- Before creating shipping zones (need origin)
-- Troubleshooting shipping rate issues
-- Verifying notification setup
-- Documenting store configuration
-
-Returns: Complete store settings including shipping origin and notifications.
-
-Related Tools: ghl_create_store_setting, ghl_create_shipping_zone, ghl_list_shipping_zones`,
+        description: 'Get current store settings',
         inputSchema: {
-          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'GHL Location ID (optional, uses default if not provided)' }
+          }
         }
       }
     ];

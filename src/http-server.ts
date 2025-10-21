@@ -26,6 +26,10 @@ import { AssociationTools } from "./tools/association-tools";
 import { CustomFieldV2Tools } from "./tools/custom-field-v2-tools";
 import { WorkflowTools } from "./tools/workflow-tools";
 import { SurveyTools } from "./tools/survey-tools";
+import { StoreTools } from "./tools/store-tools";
+import { ProductsTools } from "./tools/products-tools";
+import { PaymentsTools } from "./tools/payments-tools";
+import { InvoicesTools } from "./tools/invoices-tools";
 import { registerUtilityTools } from "./tools/utility-tools";
 import { GHLConfig } from "./types/ghl-types";
 
@@ -54,6 +58,10 @@ class GHLMCPHttpServer {
   private customFieldV2Tools: CustomFieldV2Tools;
   private workflowTools: WorkflowTools;
   private surveyTools: SurveyTools;
+  private storeTools: StoreTools;
+  private productsTools: ProductsTools;
+  private paymentsTools: PaymentsTools;
+  private invoicesTools: InvoicesTools;
   private port: number;
 
   constructor() {
@@ -90,6 +98,10 @@ class GHLMCPHttpServer {
     this.customFieldV2Tools = new CustomFieldV2Tools(this.ghlClient);
     this.workflowTools = new WorkflowTools(this.ghlClient);
     this.surveyTools = new SurveyTools(this.ghlClient);
+    this.storeTools = new StoreTools(this.ghlClient);
+    this.productsTools = new ProductsTools(this.ghlClient);
+    this.paymentsTools = new PaymentsTools(this.ghlClient);
+    this.invoicesTools = new InvoicesTools(this.ghlClient);
 
     // Setup MCP handlers
     this.registerTools();
@@ -745,8 +757,80 @@ class GHLMCPHttpServer {
       );
     }
 
+    // Register store tools
+    const storeToolDefinitions = this.storeTools.getToolDefinitions();
+    for (const tool of storeToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.storeTools.executeStoreTool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
+    // Register products tools
+    const productsToolDefinitions = this.productsTools.getToolDefinitions();
+    for (const tool of productsToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.productsTools.executeProductsTool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
+    // Register payments tools
+    const paymentsToolDefinitions = this.paymentsTools.getToolDefinitions();
+    for (const tool of paymentsToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.paymentsTools.handleToolCall(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
+    // Register invoices tools
+    const invoicesToolDefinitions = this.invoicesTools.getToolDefinitions();
+    for (const tool of invoicesToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.invoicesTools.handleToolCall(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
     console.log(
-      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact + ${conversationToolDefinitions.length} conversation + ${blogToolDefinitions.length} blog + ${opportunityToolDefinitions.length} opportunity + ${calendarToolDefinitions.length} calendar + ${locationToolDefinitions.length} location + ${emailToolDefinitions.length} email + ${emailISVToolDefinitions.length} email verification + ${socialMediaToolDefinitions.length} social media + ${mediaToolDefinitions.length} media + ${objectToolDefinitions.length} object + ${associationToolDefinitions.length} association + ${customFieldV2ToolDefinitions.length} custom fields + ${workflowToolDefinitions.length} workflow + ${surveyToolDefinitions.length} survey + 2 utility tools`
+      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact + ${conversationToolDefinitions.length} conversation + ${blogToolDefinitions.length} blog + ${opportunityToolDefinitions.length} opportunity + ${calendarToolDefinitions.length} calendar + ${locationToolDefinitions.length} location + ${emailToolDefinitions.length} email + ${emailISVToolDefinitions.length} email verification + ${socialMediaToolDefinitions.length} social media + ${mediaToolDefinitions.length} media + ${objectToolDefinitions.length} object + ${associationToolDefinitions.length} association + ${customFieldV2ToolDefinitions.length} custom fields + ${workflowToolDefinitions.length} workflow + ${surveyToolDefinitions.length} survey + ${storeToolDefinitions.length} store + ${productsToolDefinitions.length} products + ${paymentsToolDefinitions.length} payments + ${invoicesToolDefinitions.length} invoices + 2 utility tools`
     );
   }
 
@@ -952,8 +1036,22 @@ class GHLMCPHttpServer {
             this.blogTools.getToolDefinitions().length +
             this.opportunityTools.getToolDefinitions().length +
             this.calendarTools.getToolDefinitions().length +
+            this.locationTools.getToolDefinitions().length +
+            this.emailTools.getToolDefinitions().length +
+            this.emailISVTools.getToolDefinitions().length +
+            this.socialMediaTools.getToolDefinitions().length +
+            this.mediaTools.getToolDefinitions().length +
+            this.objectTools.getToolDefinitions().length +
+            this.associationTools.getToolDefinitions().length +
+            this.customFieldV2Tools.getToolDefinitions().length +
+            this.workflowTools.getToolDefinitions().length +
+            this.surveyTools.getToolDefinitions().length +
+            this.storeTools.getToolDefinitions().length +
+            this.productsTools.getToolDefinitions().length +
+            this.paymentsTools.getToolDefinitions().length +
+            this.invoicesTools.getToolDefinitions().length +
             2
-          } (32 Contact + 21 Conversation + 7 Blog + 10 Opportunity + 14 Calendar + 2 Utility)`
+          } total tools`
         );
         console.log("🎯 Ready for ADK integration!");
         console.log("=========================================");
@@ -1050,6 +1148,44 @@ class GHLMCPHttpServer {
         console.log("   SURVEYS: get surveys");
         console.log("   SUBMISSIONS: get survey submissions with filtering");
         console.log("");
+        console.log("🏪 STORE MANAGEMENT (18 tools):");
+        console.log("   SHIPPING ZONES: create, list, get, update, delete zones");
+        console.log("   SHIPPING RATES: get available rates, create, list, get, update, delete rates");
+        console.log("   SHIPPING CARRIERS: create, list, get, update, delete carriers");
+        console.log("   STORE SETTINGS: create/update settings, get store configuration");
+        console.log("   E-COMMERCE: geographic shipping, rate calculation, carrier integration");
+        console.log("");
+        console.log("🛒 PRODUCTS MANAGEMENT (10 tools):");
+        console.log("   PRODUCTS: create, list, get, update, delete products");
+        console.log("   PRICING: create prices, list prices (one-time & recurring)");
+        console.log("   INVENTORY: list inventory with stock levels");
+        console.log("   COLLECTIONS: create, list product collections");
+        console.log("   PRODUCT TYPES: digital, physical, service, hybrid");
+        console.log("");
+        console.log("💳 PAYMENTS MANAGEMENT (20 tools):");
+        console.log("   INTEGRATION PROVIDERS: create, list white-label payment gateways");
+        console.log("   ORDERS: list, get orders with filtering");
+        console.log("   FULFILLMENT: create, list order fulfillments with tracking");
+        console.log("   TRANSACTIONS: list, get payment transactions");
+        console.log("   SUBSCRIPTIONS: list, get recurring subscriptions");
+        console.log("   COUPONS: create, update, delete, list, get discount coupons");
+        console.log("   CUSTOM GATEWAYS: integrate custom payment providers");
+        console.log("");
+        console.log("🧾 INVOICES & BILLING (39 tools):");
+        console.log("   INVOICE TEMPLATES: create, list, get, update, delete, configure (7 tools)");
+        console.log("   RECURRING INVOICES: create, list, get, update, delete, schedule, auto-payment, cancel (8 tools)");
+        console.log("   INVOICE MANAGEMENT: create, list, get, update, delete, void, send, record payment, text2pay, generate number (10 tools)");
+        console.log("   ESTIMATES: create, list, get, update, delete, send, convert to invoice, generate number (7 tools)");
+        console.log("   ESTIMATE TEMPLATES: list, get, create, update, delete, preview (5 tools)");
+        console.log("");
+        console.log("   ⚠️  UNIMPLEMENTED TOOLS (6 tools - will throw 'not implemented' errors):");
+        console.log("      • get_estimate - needs API method in ghl-api-client.ts");
+        console.log("      • update_estimate - needs API method in ghl-api-client.ts");
+        console.log("      • delete_estimate - needs API method in ghl-api-client.ts");
+        console.log("      • get_estimate_template - needs API method in ghl-api-client.ts");
+        console.log("      • update_estimate_template - needs API method in ghl-api-client.ts");
+        console.log("      • delete_estimate_template - needs API method in ghl-api-client.ts");
+        console.log("");
         console.log("🛠️  UTILITY TOOLS (2 tools):");
         console.log("   DATE/TIME: calculate future datetime for GHL API");
         console.log("   CALCULATOR: safe math calculations with functions");
@@ -1072,6 +1208,10 @@ class GHLMCPHttpServer {
           this.customFieldV2Tools.getToolDefinitions().length +
           this.workflowTools.getToolDefinitions().length +
           this.surveyTools.getToolDefinitions().length +
+          this.storeTools.getToolDefinitions().length +
+          this.productsTools.getToolDefinitions().length +
+          this.paymentsTools.getToolDefinitions().length +
+          this.invoicesTools.getToolDefinitions().length +
           2; // utility tools
         
         console.log(`\n🎯 TOTAL TOOLS AVAILABLE: ${totalTools}`);

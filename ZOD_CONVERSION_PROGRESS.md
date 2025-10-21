@@ -1,12 +1,12 @@
 # GoHighLevel MCP Server - Zod Schema Conversion Progress
 
-**Last Updated:** 2025-10-21 1:30 PM
+**Last Updated:** 2025-10-21 2:15 PM
 
 ---
 
 ## 📊 Overall Progress
 
-**Total Tools Converted: 80/155 (52%)**
+**Total Tools Converted: 108/166 (65%)**
 **Total Tools in System: 166 tools**
 
 ---
@@ -185,10 +185,64 @@
 
 ---
 
+### **Block 5: Store & Products Management (28 tools)** ✅
+
+#### Store Management Tools (18 tools) ✅
+**File:** `src/tools/store-tools.ts`
+**Backup:** `src/tools/store-tools-1.ts`
+
+**Shipping Zones (5 tools):**
+1. ✅ ghl_create_shipping_zone
+2. ✅ ghl_list_shipping_zones
+3. ✅ ghl_get_shipping_zone
+4. ✅ ghl_update_shipping_zone
+5. ✅ ghl_delete_shipping_zone
+
+**Shipping Rates (6 tools):**
+6. ✅ ghl_get_available_shipping_rates
+7. ✅ ghl_create_shipping_rate
+8. ✅ ghl_list_shipping_rates
+9. ✅ ghl_get_shipping_rate
+10. ✅ ghl_update_shipping_rate
+11. ✅ ghl_delete_shipping_rate
+
+**Shipping Carriers (5 tools):**
+12. ✅ ghl_create_shipping_carrier
+13. ✅ ghl_list_shipping_carriers
+14. ✅ ghl_get_shipping_carrier
+15. ✅ ghl_update_shipping_carrier
+16. ✅ ghl_delete_shipping_carrier
+
+**Store Settings (2 tools):**
+17. ✅ ghl_create_store_setting
+18. ✅ ghl_get_store_setting
+
+#### Products Management Tools (10 tools) ✅
+**File:** `src/tools/products-tools.ts`
+**Backup:** `src/tools/products-tools-1.ts`
+
+**Product Operations (5 tools):**
+1. ✅ ghl_create_product
+2. ✅ ghl_list_products
+3. ✅ ghl_get_product
+4. ✅ ghl_update_product
+5. ✅ ghl_delete_product
+
+**Pricing & Inventory (3 tools):**
+6. ✅ ghl_create_price
+7. ✅ ghl_list_prices
+8. ✅ ghl_list_inventory
+
+**Collections (2 tools):**
+9. ✅ ghl_create_product_collection
+10. ✅ ghl_list_product_collections
+
+---
+
 ## 🔧 Server Integration Status
 
 ### HTTP Server (`src/http-server.ts`) ✅
-- ✅ Imports added for all new tools (including Custom Fields V2, Workflows, Surveys)
+- ✅ Imports added for all new tools (including Store & Products)
 - ✅ Tool instances initialized
 - ✅ Tools registered with MCP server
 - ✅ Health check endpoint updated
@@ -197,9 +251,9 @@
 - **Backup:** `src/http-server-2.ts`
 
 ### STDIO Server (`src/stdio-server.ts`) ✅
-- ✅ Imports added for all new tools (including Custom Fields V2, Workflows, Surveys)
+- ✅ Imports added for all new tools (including Store & Products)
 - ✅ Tool instances initialized
-- ✅ Register functions created (registerCustomFieldV2Tools, registerWorkflowTools, registerSurveyTools)
+- ✅ Register functions created (registerStoreTools, registerProductsTools)
 - ✅ Tools registered with MCP server
 - **Backup:** `src/stdio-server-2.ts`
 
@@ -362,12 +416,13 @@ npm run build
 
 ## 🎉 Success Metrics
 
-- ✅ **80 tools successfully converted to Zod schemas (52% complete)**
+- ✅ **108 tools successfully converted to Zod schemas (65% complete)**
 - ✅ All builds passing
 - ✅ Servers updated and integrated
 - ✅ Dynamic tool counting implemented (166 tools total)
 - ✅ Comprehensive documentation added to all tools
 - ✅ All backups created for safety
+- ✅ Store & Products Management (28 tools) fully integrated with e-commerce features
 - ✅ Custom Objects, Associations, Custom Fields V2, Workflows, and Surveys fully integrated
 
 ---

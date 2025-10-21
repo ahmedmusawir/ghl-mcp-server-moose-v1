@@ -31,6 +31,10 @@ import { AssociationTools } from "./tools/association-tools.js";
 import { CustomFieldV2Tools } from "./tools/custom-field-v2-tools.js";
 import { WorkflowTools } from "./tools/workflow-tools.js";
 import { SurveyTools } from "./tools/survey-tools.js";
+import { StoreTools } from "./tools/store-tools.js";
+import { ProductsTools } from "./tools/products-tools.js";
+import { PaymentsTools } from "./tools/payments-tools.js";
+import { InvoicesTools } from "./tools/invoices-tools.js";
 import { registerUtilityTools } from "./tools/utility-tools.js";
 import { GHLConfig } from "./types/ghl-types.js";
 
@@ -591,6 +595,90 @@ function registerSurveyTools(
 }
 
 /**
+ * Register Store Tools
+ */
+function registerStoreTools(
+  server: McpServer,
+  storeTools: StoreTools
+): void {
+  const toolDefinitions = storeTools.getToolDefinitions();
+  for (const tool of toolDefinitions) {
+    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
+      try {
+        const result = await storeTools.executeStoreTool(tool.name, params);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+      }
+    });
+  }
+}
+
+/**
+ * Register Products Tools
+ */
+function registerProductsTools(
+  server: McpServer,
+  productsTools: ProductsTools
+): void {
+  const toolDefinitions = productsTools.getToolDefinitions();
+  for (const tool of toolDefinitions) {
+    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
+      try {
+        const result = await productsTools.executeProductsTool(tool.name, params);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+      }
+    });
+  }
+}
+
+/**
+ * Register Payments Tools
+ */
+function registerPaymentsTools(
+  server: McpServer,
+  paymentsTools: PaymentsTools
+): void {
+  const toolDefinitions = paymentsTools.getToolDefinitions();
+  for (const tool of toolDefinitions) {
+    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
+      try {
+        const result = await paymentsTools.handleToolCall(tool.name, params);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+      }
+    });
+  }
+}
+
+/**
+ * Register Invoices Tools
+ */
+function registerInvoicesTools(
+  server: McpServer,
+  invoicesTools: InvoicesTools
+): void {
+  const toolDefinitions = invoicesTools.getToolDefinitions();
+  for (const tool of toolDefinitions) {
+    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
+      try {
+        const result = await invoicesTools.handleToolCall(tool.name, params);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+      }
+    });
+  }
+}
+
+/**
  * Main entry point
  */
 async function main() {
@@ -620,6 +708,10 @@ async function main() {
     const customFieldV2Tools = new CustomFieldV2Tools(ghlClient);
     const workflowTools = new WorkflowTools(ghlClient);
     const surveyTools = new SurveyTools(ghlClient);
+    const storeTools = new StoreTools(ghlClient);
+    const productsTools = new ProductsTools(ghlClient);
+    const paymentsTools = new PaymentsTools(ghlClient);
+    const invoicesTools = new InvoicesTools(ghlClient);
 
     // Register all tools
     registerContactTools(server, contactTools);
@@ -637,6 +729,10 @@ async function main() {
     registerCustomFieldV2Tools(server, customFieldV2Tools);
     registerWorkflowTools(server, workflowTools);
     registerSurveyTools(server, surveyTools);
+    registerStoreTools(server, storeTools);
+    registerProductsTools(server, productsTools);
+    registerPaymentsTools(server, paymentsTools);
+    registerInvoicesTools(server, invoicesTools);
     registerUtilityTools(server);
 
     // Start STDIO transport
