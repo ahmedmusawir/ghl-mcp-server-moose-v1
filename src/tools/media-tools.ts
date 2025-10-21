@@ -1,22 +1,15 @@
-import { GHLApiClient } from '../clients/ghl-api-client.js';
-import {
-  MCPGetMediaFilesParams,
-  MCPUploadMediaFileParams,
-  MCPDeleteMediaParams,
-  GHLGetMediaFilesRequest,
-  GHLUploadMediaFileRequest,
-  GHLDeleteMediaRequest
-} from '../types/ghl-types.js';
+/**
+ * GoHighLevel Media Library Tools
+ * Implements media file management functionality
+ * 
+ * IMPORTANT: Follows lessons learned from calendar-tools fix:
+ * - Always use this.ghlClient.getConfig().locationId as fallback (never empty string)
+ * - Return response.data (unwrapped) not response
+ * - Comprehensive error handling for all HTTP codes
+ */
 
-export interface Tool {
-  name: string;
-  description: string;
-  inputSchema: {
-    type: string;
-    properties: Record<string, any>;
-    required: string[];
-  };
-}
+import { z } from "zod";
+import { GHLApiClient } from '../clients/ghl-api-client.js';
 
 /**
  * MediaTools class for GoHighLevel Media Library API endpoints
@@ -28,126 +21,76 @@ export class MediaTools {
   /**
    * Get all available Media Library tool definitions
    */
-  getToolDefinitions(): Tool[] {
+  getToolDefinitions(): any[] {
     return [
       {
         name: 'get_media_files',
-        description: 'Get list of files and folders from the media library with filtering and search capabilities',
+        description: `Get list of files and folders from the media library.
+
+Search and filter media with pagination and sorting.
+
+Use Cases:
+- Browse media library
+- Search for specific files
+- List files in a folder
+- Filter by file type
+
+Returns: Array of files/folders with URLs, sizes, and metadata.
+
+Related Tools: upload_media_file, delete_media_file`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            offset: { 
-              type: 'number', 
-              description: 'Number of files to skip in listing',
-              minimum: 0
-            },
-            limit: { 
-              type: 'number', 
-              description: 'Number of files to show in the listing (max 100)',
-              minimum: 1,
-              maximum: 100
-            },
-            sortBy: { 
-              type: 'string', 
-              description: 'Field to sort the file listing by (e.g., createdAt, name, size)',
-              default: 'createdAt'
-            },
-            sortOrder: { 
-              type: 'string', 
-              description: 'Direction to sort files (asc or desc)',
-              enum: ['asc', 'desc'],
-              default: 'desc'
-            },
-            type: { 
-              type: 'string', 
-              description: 'Filter by type (file or folder)',
-              enum: ['file', 'folder']
-            },
-            query: { 
-              type: 'string', 
-              description: 'Search query text to filter files by name'
-            },
-            altType: { 
-              type: 'string', 
-              description: 'Context type (location or agency)',
-              enum: ['location', 'agency'],
-              default: 'location'
-            },
-            altId: { 
-              type: 'string', 
-              description: 'Location or Agency ID (uses default location if not provided)'
-            },
-            parentId: { 
-              type: 'string', 
-              description: 'Parent folder ID to list files within a specific folder'
-            }
-          },
-          required: []
+          offset: z.number().min(0).optional().describe('Number of files to skip (default: 0)'),
+          limit: z.number().min(1).max(100).optional().describe('Number of files to return (max 100, default: 20)'),
+          sortBy: z.string().optional().describe('Field to sort by (createdAt, name, size)'),
+          sortOrder: z.enum(['asc', 'desc']).optional().describe('Sort direction (default: desc)'),
+          type: z.enum(['file', 'folder']).optional().describe('Filter by type'),
+          query: z.string().optional().describe('Search query to filter files by name'),
+          altType: z.enum(['location', 'agency']).optional().describe('Context type (default: location)'),
+          altId: z.string().optional().describe('Location or Agency ID (uses default if not provided)'),
+          parentId: z.string().optional().describe('Parent folder ID to list files within')
         }
       },
       {
         name: 'upload_media_file',
-        description: 'Upload a file to the media library or add a hosted file URL (max 25MB for direct uploads)',
+        description: `Upload a file to the media library or add a hosted file URL.
+
+⚠️ Max file size: 25MB for direct uploads
+
+Two upload modes:
+1. Direct upload: Provide file data
+2. Hosted URL: Provide fileUrl (set hosted=true)
+
+Use Cases:
+- Upload images for social posts
+- Store documents
+- Add hosted files by URL
+- Organize files in folders
+
+Returns: Uploaded file with URL and metadata.
+
+Related Tools: get_media_files, delete_media_file`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            file: { 
-              type: 'string', 
-              description: 'File data (binary) for direct upload'
-            },
-            hosted: { 
-              type: 'boolean', 
-              description: 'Set to true if providing a fileUrl instead of direct file upload',
-              default: false
-            },
-            fileUrl: { 
-              type: 'string', 
-              description: 'URL of hosted file (required if hosted=true)'
-            },
-            name: { 
-              type: 'string', 
-              description: 'Custom name for the uploaded file'
-            },
-            parentId: { 
-              type: 'string', 
-              description: 'Parent folder ID to upload file into'
-            },
-            altType: { 
-              type: 'string', 
-              description: 'Context type (location or agency)',
-              enum: ['location', 'agency'],
-              default: 'location'
-            },
-            altId: { 
-              type: 'string', 
-              description: 'Location or Agency ID (uses default location if not provided)'
-            }
-          },
-          required: []
+          file: z.string().optional().describe('File data (binary) for direct upload'),
+          hosted: z.boolean().optional().describe('Set to true if providing a fileUrl (default: false)'),
+          fileUrl: z.string().optional().describe('URL of hosted file (required if hosted=true)'),
+          name: z.string().optional().describe('Custom name for the uploaded file'),
+          parentId: z.string().optional().describe('Parent folder ID to upload into'),
+          altType: z.enum(['location', 'agency']).optional().describe('Context type (default: location)'),
+          altId: z.string().optional().describe('Location or Agency ID (uses default if not provided)')
         }
       },
       {
         name: 'delete_media_file',
-        description: 'Delete a specific file or folder from the media library',
+        description: `Delete a specific file or folder from the media library.
+
+⚠️ WARNING: This is permanent and cannot be undone!
+⚠️ Deleting a folder deletes all files inside it!
+
+Related Tools: get_media_files, upload_media_file`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            id: { 
-              type: 'string', 
-              description: 'ID of the file or folder to delete'
-            },
-            altType: { 
-              type: 'string', 
-              description: 'Context type (location or agency)',
-              enum: ['location', 'agency'],
-              default: 'location'
-            },
-            altId: { 
-              type: 'string', 
-              description: 'Location or Agency ID (uses default location if not provided)'
-            }
-          },
-          required: ['id']
+          id: z.string().describe('ID of the file or folder to delete'),
+          altType: z.enum(['location', 'agency']).optional().describe('Context type (default: location)'),
+          altId: z.string().optional().describe('Location or Agency ID (uses default if not provided)')
         }
       }
     ];
@@ -159,13 +102,13 @@ export class MediaTools {
   async executeTool(name: string, args: any): Promise<any> {
     switch (name) {
       case 'get_media_files':
-        return this.getMediaFiles(args as MCPGetMediaFilesParams);
+        return await this.getMediaFiles(args);
       
       case 'upload_media_file':
-        return this.uploadMediaFile(args as MCPUploadMediaFileParams);
+        return await this.uploadMediaFile(args);
       
       case 'delete_media_file':
-        return this.deleteMediaFile(args as MCPDeleteMediaParams);
+        return await this.deleteMediaFile(args);
       
       default:
         throw new Error(`Unknown media tool: ${name}`);
@@ -175,9 +118,9 @@ export class MediaTools {
   /**
    * GET MEDIA FILES
    */
-  private async getMediaFiles(params: MCPGetMediaFilesParams = {}): Promise<{ success: boolean; files: any[]; total?: number; message: string }> {
+  private async getMediaFiles(params: any = {}): Promise<{ success: boolean; files: any[]; total?: number; message: string }> {
     try {
-      const requestParams: GHLGetMediaFilesRequest = {
+      const requestParams: any = {
         sortBy: params.sortBy || 'createdAt',
         sortOrder: params.sortOrder || 'desc',
         altType: params.altType || 'location',
@@ -212,7 +155,7 @@ export class MediaTools {
   /**
    * UPLOAD MEDIA FILE
    */
-  private async uploadMediaFile(params: MCPUploadMediaFileParams): Promise<{ success: boolean; fileId: string; url?: string; message: string }> {
+  private async uploadMediaFile(params: any): Promise<{ success: boolean; fileId: string; url?: string; message: string }> {
     try {
       // Validate upload parameters
       if (params.hosted && !params.fileUrl) {
@@ -222,7 +165,7 @@ export class MediaTools {
         throw new Error('file is required when hosted=false or not specified');
       }
 
-      const uploadData: GHLUploadMediaFileRequest = {
+      const uploadData: any = {
         altType: params.altType || 'location',
         altId: params.altId || this.ghlClient.getConfig().locationId,
         ...(params.hosted !== undefined && { hosted: params.hosted }),
@@ -253,9 +196,9 @@ export class MediaTools {
   /**
    * DELETE MEDIA FILE
    */
-  private async deleteMediaFile(params: MCPDeleteMediaParams): Promise<{ success: boolean; message: string }> {
+  private async deleteMediaFile(params: any): Promise<{ success: boolean; message: string }> {
     try {
-      const deleteParams: GHLDeleteMediaRequest = {
+      const deleteParams: any = {
         id: params.id,
         altType: params.altType || 'location',
         altId: params.altId || this.ghlClient.getConfig().locationId

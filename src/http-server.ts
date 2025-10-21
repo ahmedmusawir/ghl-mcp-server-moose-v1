@@ -19,6 +19,10 @@ import { CalendarTools } from "./tools/calendar-tools";
 import { LocationTools } from "./tools/location-tools";
 import { EmailTools } from "./tools/email-tools";
 import { EmailISVTools } from "./tools/email-isv-tools";
+import { SocialMediaTools } from "./tools/social-media-tools";
+import { MediaTools } from "./tools/media-tools";
+import { ObjectTools } from "./tools/object-tools";
+import { AssociationTools } from "./tools/association-tools";
 import { registerUtilityTools } from "./tools/utility-tools";
 import { GHLConfig } from "./types/ghl-types";
 
@@ -40,6 +44,10 @@ class GHLMCPHttpServer {
   private locationTools: LocationTools;
   private emailTools: EmailTools;
   private emailISVTools: EmailISVTools;
+  private socialMediaTools: SocialMediaTools;
+  private mediaTools: MediaTools;
+  private objectTools: ObjectTools;
+  private associationTools: AssociationTools;
   private port: number;
 
   constructor() {
@@ -69,6 +77,10 @@ class GHLMCPHttpServer {
     this.locationTools = new LocationTools(this.ghlClient);
     this.emailTools = new EmailTools(this.ghlClient);
     this.emailISVTools = new EmailISVTools(this.ghlClient);
+    this.socialMediaTools = new SocialMediaTools(this.ghlClient);
+    this.mediaTools = new MediaTools(this.ghlClient);
+    this.objectTools = new ObjectTools(this.ghlClient);
+    this.associationTools = new AssociationTools(this.ghlClient);
 
     // Setup MCP handlers
     this.registerTools();
@@ -598,8 +610,80 @@ class GHLMCPHttpServer {
       );
     }
 
+    // Register social media tools
+    const socialMediaToolDefinitions = this.socialMediaTools.getToolDefinitions();
+    for (const tool of socialMediaToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.socialMediaTools.executeTool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
+    // Register media tools
+    const mediaToolDefinitions = this.mediaTools.getToolDefinitions();
+    for (const tool of mediaToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.mediaTools.executeTool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
+    // Register object tools
+    const objectToolDefinitions = this.objectTools.getToolDefinitions();
+    for (const tool of objectToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.objectTools.executeTool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
+    // Register association tools
+    const associationToolDefinitions = this.associationTools.getToolDefinitions();
+    for (const tool of associationToolDefinitions) {
+      this.mcpServer.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: tool.inputSchema },
+        async (params: any) => {
+          try {
+            const result = await this.associationTools.executeAssociationTool(tool.name, params);
+            return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
+          }
+        }
+      );
+    }
+
     console.log(
-      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact + ${conversationToolDefinitions.length} conversation + ${blogToolDefinitions.length} blog + ${opportunityToolDefinitions.length} opportunity + ${calendarToolDefinitions.length} calendar + ${locationToolDefinitions.length} location + ${emailToolDefinitions.length} email + ${emailISVToolDefinitions.length} email verification + 2 utility tools`
+      `[GHL MCP HTTP] Registered ${contactToolDefinitions.length} contact + ${conversationToolDefinitions.length} conversation + ${blogToolDefinitions.length} blog + ${opportunityToolDefinitions.length} opportunity + ${calendarToolDefinitions.length} calendar + ${locationToolDefinitions.length} location + ${emailToolDefinitions.length} email + ${emailISVToolDefinitions.length} email verification + ${socialMediaToolDefinitions.length} social media + ${mediaToolDefinitions.length} media + ${objectToolDefinitions.length} object + ${associationToolDefinitions.length} association + 2 utility tools`
     );
   }
 
@@ -623,6 +707,10 @@ class GHLMCPHttpServer {
           location: this.locationTools.getToolDefinitions().length,
           email: this.emailTools.getToolDefinitions().length,
           emailVerification: this.emailISVTools.getToolDefinitions().length,
+          socialMedia: this.socialMediaTools.getToolDefinitions().length,
+          media: this.mediaTools.getToolDefinitions().length,
+          object: this.objectTools.getToolDefinitions().length,
+          association: this.associationTools.getToolDefinitions().length,
           utility: 2,
           total: 
             this.contactTools.getToolDefinitions().length + 
@@ -633,6 +721,10 @@ class GHLMCPHttpServer {
             this.locationTools.getToolDefinitions().length +
             this.emailTools.getToolDefinitions().length +
             this.emailISVTools.getToolDefinitions().length +
+            this.socialMediaTools.getToolDefinitions().length +
+            this.mediaTools.getToolDefinitions().length +
+            this.objectTools.getToolDefinitions().length +
+            this.associationTools.getToolDefinitions().length +
             2,
         },
       });
@@ -853,9 +945,51 @@ class GHLMCPHttpServer {
         console.log("✅ EMAIL VERIFICATION (1 tool):");
         console.log("   VERIFY: email deliverability and risk assessment");
         console.log("");
+        console.log("📱 SOCIAL MEDIA MANAGEMENT (17 tools):");
+        console.log("   POST MANAGEMENT: search, create, get, update, delete posts");
+        console.log("   BULK OPERATIONS: bulk delete, CSV upload/status");
+        console.log("   ACCOUNT INTEGRATION: get/delete social accounts");
+        console.log("   ORGANIZATION: categories and tags");
+        console.log("   OAUTH: connect platforms (Google, Facebook, Instagram, LinkedIn, Twitter, TikTok)");
+        console.log("");
+        console.log("📁 MEDIA LIBRARY (3 tools):");
+        console.log("   FILES: get, upload, delete media files");
+        console.log("   STORAGE: organize in folders, hosted URLs");
+        console.log("");
+        console.log("🏗️  CUSTOM OBJECTS (9 tools):");
+        console.log("   SCHEMA MANAGEMENT: get all objects, create/get/update object schemas");
+        console.log("   RECORD OPERATIONS: create, get, update, delete object records");
+        console.log("   ADVANCED SEARCH: query custom data with searchable properties");
+        console.log("   USE CASES: pet records, support tickets, inventory, custom business data");
+        console.log("");
+        console.log("🔗 ASSOCIATION MANAGEMENT (10 tools):");
+        console.log("   ASSOCIATIONS: get all, create, get by ID/key/object, update, delete");
+        console.log("   RELATIONS: create, get by record, delete relations");
+        console.log("   ADVANCED: relationship mapping between objects (contacts, custom objects, opportunities)");
+        console.log("   USE CASES: student-teacher links, pet-owner connections, ticket-product associations");
+        console.log("");
         console.log("🛠️  UTILITY TOOLS (2 tools):");
         console.log("   DATE/TIME: calculate future datetime for GHL API");
         console.log("   CALCULATOR: safe math calculations with functions");
+        console.log("=========================================");
+        
+        // Calculate and display total tool count dynamically
+        const totalTools = 
+          this.contactTools.getToolDefinitions().length +
+          this.conversationTools.getToolDefinitions().length +
+          this.blogTools.getToolDefinitions().length +
+          this.opportunityTools.getToolDefinitions().length +
+          this.calendarTools.getToolDefinitions().length +
+          this.locationTools.getToolDefinitions().length +
+          this.emailTools.getToolDefinitions().length +
+          this.emailISVTools.getToolDefinitions().length +
+          this.socialMediaTools.getToolDefinitions().length +
+          this.mediaTools.getToolDefinitions().length +
+          this.objectTools.getToolDefinitions().length +
+          this.associationTools.getToolDefinitions().length +
+          2; // utility tools
+        
+        console.log(`\n🎯 TOTAL TOOLS AVAILABLE: ${totalTools}`);
         console.log("=========================================\n");
       });
 

@@ -21,13 +21,6 @@ import { ConversationTools } from "./tools/conversation-tools.js";
 import { BlogTools } from "./tools/blog-tools.js";
 import { OpportunityTools } from "./tools/opportunity-tools.js";
 import { CalendarTools } from "./tools/calendar-tools.js";
-import { LocationTools } from "./tools/location-tools.js";
-import { EmailTools } from "./tools/email-tools.js";
-import { EmailISVTools } from "./tools/email-isv-tools.js";
-import { SocialMediaTools } from "./tools/social-media-tools.js";
-import { MediaTools } from "./tools/media-tools.js";
-import { ObjectTools } from "./tools/object-tools.js";
-import { AssociationTools } from "./tools/association-tools.js";
 import { registerUtilityTools } from "./tools/utility-tools.js";
 import { GHLConfig } from "./types/ghl-types.js";
 
@@ -378,153 +371,6 @@ function registerCalendarTools(
 }
 
 /**
- * Register Location Tools
- */
-function registerLocationTools(
-  server: McpServer,
-  locationTools: LocationTools
-): void {
-  const toolDefinitions = locationTools.getToolDefinitions();
-  for (const tool of toolDefinitions) {
-    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
-      try {
-        const result = await locationTools.executeTool(tool.name, params);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-      }
-    });
-  }
-}
-
-/**
- * Register Email Tools
- */
-function registerEmailTools(
-  server: McpServer,
-  emailTools: EmailTools
-): void {
-  const toolDefinitions = emailTools.getToolDefinitions();
-  for (const tool of toolDefinitions) {
-    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
-      try {
-        const result = await emailTools.executeTool(tool.name, params);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-      }
-    });
-  }
-}
-
-/**
- * Register Email Verification Tools
- */
-function registerEmailISVTools(
-  server: McpServer,
-  emailISVTools: EmailISVTools
-): void {
-  const toolDefinitions = emailISVTools.getToolDefinitions();
-  for (const tool of toolDefinitions) {
-    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
-      try {
-        const result = await emailISVTools.executeTool(tool.name, params);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-      }
-    });
-  }
-}
-
-/**
- * Register Social Media Tools
- */
-function registerSocialMediaTools(
-  server: McpServer,
-  socialMediaTools: SocialMediaTools
-): void {
-  const toolDefinitions = socialMediaTools.getToolDefinitions();
-  for (const tool of toolDefinitions) {
-    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
-      try {
-        const result = await socialMediaTools.executeTool(tool.name, params);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-      }
-    });
-  }
-}
-
-/**
- * Register Media Tools
- */
-function registerMediaTools(
-  server: McpServer,
-  mediaTools: MediaTools
-): void {
-  const toolDefinitions = mediaTools.getToolDefinitions();
-  for (const tool of toolDefinitions) {
-    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
-      try {
-        const result = await mediaTools.executeTool(tool.name, params);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-      }
-    });
-  }
-}
-
-/**
- * Register Object Tools
- */
-function registerObjectTools(
-  server: McpServer,
-  objectTools: ObjectTools
-): void {
-  const toolDefinitions = objectTools.getToolDefinitions();
-  for (const tool of toolDefinitions) {
-    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
-      try {
-        const result = await objectTools.executeTool(tool.name, params);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-      }
-    });
-  }
-}
-
-/**
- * Register Association Tools
- */
-function registerAssociationTools(
-  server: McpServer,
-  associationTools: AssociationTools
-): void {
-  const toolDefinitions = associationTools.getToolDefinitions();
-  for (const tool of toolDefinitions) {
-    server.tool(tool.name, tool.description, tool.inputSchema, async (params: any) => {
-      try {
-        const result = await associationTools.executeAssociationTool(tool.name, params);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result) }], structuredContent: result };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return { content: [{ type: "text" as const, text: `Error: ${errorMessage}` }], isError: true };
-      }
-    });
-  }
-}
-
-/**
  * Main entry point
  */
 async function main() {
@@ -544,13 +390,6 @@ async function main() {
     const blogTools = new BlogTools(ghlClient);
     const opportunityTools = new OpportunityTools(ghlClient);
     const calendarTools = new CalendarTools(ghlClient);
-    const locationTools = new LocationTools(ghlClient);
-    const emailTools = new EmailTools(ghlClient);
-    const emailISVTools = new EmailISVTools(ghlClient);
-    const socialMediaTools = new SocialMediaTools(ghlClient);
-    const mediaTools = new MediaTools(ghlClient);
-    const objectTools = new ObjectTools(ghlClient);
-    const associationTools = new AssociationTools(ghlClient);
 
     // Register all tools
     registerContactTools(server, contactTools);
@@ -558,13 +397,6 @@ async function main() {
     registerBlogTools(server, blogTools);
     registerOpportunityTools(server, opportunityTools);
     registerCalendarTools(server, calendarTools);
-    registerLocationTools(server, locationTools);
-    registerEmailTools(server, emailTools);
-    registerEmailISVTools(server, emailISVTools);
-    registerSocialMediaTools(server, socialMediaTools);
-    registerMediaTools(server, mediaTools);
-    registerObjectTools(server, objectTools);
-    registerAssociationTools(server, associationTools);
     registerUtilityTools(server);
 
     // Start STDIO transport

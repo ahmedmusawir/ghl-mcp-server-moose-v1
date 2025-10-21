@@ -1,14 +1,6 @@
+import { z } from "zod";
 import { GHLApiClient } from '../clients/ghl-api-client.js';
 import {
-  MCPGetAllObjectsParams,
-  MCPCreateObjectSchemaParams,
-  MCPGetObjectSchemaParams,
-  MCPUpdateObjectSchemaParams,
-  MCPCreateObjectRecordParams,
-  MCPGetObjectRecordParams,
-  MCPUpdateObjectRecordParams,
-  MCPDeleteObjectRecordParams,
-  MCPSearchObjectRecordsParams,
   GHLGetObjectSchemaRequest,
   GHLCreateObjectSchemaRequest,
   GHLUpdateObjectSchemaRequest,
@@ -16,16 +8,6 @@ import {
   GHLUpdateObjectRecordRequest,
   GHLSearchObjectRecordsRequest
 } from '../types/ghl-types.js';
-
-export interface Tool {
-  name: string;
-  description: string;
-  inputSchema: {
-    type: string;
-    properties: Record<string, any>;
-    required: string[];
-  };
-}
 
 /**
  * ObjectTools class for GoHighLevel Custom Objects API endpoints
@@ -37,267 +19,228 @@ export class ObjectTools {
   /**
    * Get all available Custom Objects tool definitions
    */
-  getToolDefinitions(): Tool[] {
+  getToolDefinitions(): any[] {
     return [
       {
         name: 'get_all_objects',
-        description: 'Get all objects (custom and standard) for a location including contact, opportunity, business, and custom objects',
+        description: `Get all objects (custom and standard) for a location.
+
+Returns both system objects (contact, opportunity, business) and custom objects.
+
+Use Cases:
+- List all available object types
+- Discover custom objects
+- Get object schema keys
+- Understand data model
+
+Returns: Array of objects with keys, labels, and properties.
+
+Related Tools: get_object_schema, create_object_schema`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: { 
-              type: 'string', 
-              description: 'Location ID (uses default if not provided)'
-            }
-          },
-          required: []
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
         name: 'create_object_schema',
-        description: 'Create a new custom object schema with labels, key, and primary display property',
+        description: `Create a new custom object schema.
+
+Define custom data structures for your business needs.
+
+Use Cases:
+- Create pet records system
+- Build support ticket tracking
+- Manage inventory items
+- Store custom business data
+
+Examples:
+- Pet tracking: labels={singular:"Pet", plural:"Pets"}, key="pet"
+- Support tickets: labels={singular:"Ticket", plural:"Tickets"}, key="ticket"
+
+Returns: Created object schema with ID and configuration.
+
+Related Tools: get_object_schema, update_object_schema, create_object_record`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            labels: {
-              type: 'object',
-              description: 'Singular and plural names for the custom object',
-              properties: {
-                singular: { type: 'string', description: 'Singular name (e.g., "Pet")' },
-                plural: { type: 'string', description: 'Plural name (e.g., "Pets")' }
-              },
-              required: ['singular', 'plural']
-            },
-            key: { 
-              type: 'string', 
-              description: 'Unique key for the object (e.g., "custom_objects.pet"). The "custom_objects." prefix is added automatically if not included'
-            },
-            description: { 
-              type: 'string', 
-              description: 'Description of the custom object'
-            },
-            locationId: { 
-              type: 'string', 
-              description: 'Location ID (uses default if not provided)'
-            },
-            primaryDisplayPropertyDetails: {
-              type: 'object',
-              description: 'Primary property configuration for display',
-              properties: {
-                key: { type: 'string', description: 'Property key (e.g., "custom_objects.pet.name")' },
-                name: { type: 'string', description: 'Display name (e.g., "Pet Name")' },
-                dataType: { type: 'string', description: 'Data type (TEXT or NUMERICAL)', enum: ['TEXT', 'NUMERICAL'] }
-              },
-              required: ['key', 'name', 'dataType']
-            }
-          },
-          required: ['labels', 'key', 'primaryDisplayPropertyDetails']
+          labels: z.object({
+            singular: z.string().describe('Singular name (e.g., "Pet")'),
+            plural: z.string().describe('Plural name (e.g., "Pets")')
+          }).describe('Singular and plural names for the custom object'),
+          key: z.string().describe('Unique key for the object (e.g., "pet"). The "custom_objects." prefix is added automatically'),
+          description: z.string().optional().describe('Description of the custom object'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          primaryDisplayPropertyDetails: z.object({
+            key: z.string().describe('Property key (e.g., "name")'),
+            name: z.string().describe('Display name (e.g., "Pet Name")'),
+            dataType: z.enum(['TEXT', 'NUMERICAL']).describe('Data type')
+          }).describe('Primary property configuration for display')
         }
       },
       {
         name: 'get_object_schema',
-        description: 'Get object schema details by key including all fields and properties for custom or standard objects',
+        description: `Get object schema details by key.
+
+Retrieve complete schema including all fields and properties.
+
+Use Cases:
+- View custom object structure
+- Get field definitions
+- Understand object properties
+- Prepare for record creation
+
+Supports both custom objects ("custom_objects.pet") and standard objects ("contact", "opportunity").
+
+Returns: Object schema with fields, properties, and configuration.
+
+Related Tools: get_all_objects, create_object_schema, update_object_schema`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            key: { 
-              type: 'string', 
-              description: 'Object key (e.g., "custom_objects.pet" for custom objects, "contact" for standard objects)'
-            },
-            locationId: { 
-              type: 'string', 
-              description: 'Location ID (uses default if not provided)'
-            },
-            fetchProperties: { 
-              type: 'boolean', 
-              description: 'Whether to fetch all standard/custom fields of the object',
-              default: true
-            }
-          },
-          required: ['key']
+          key: z.string().describe('Object key (e.g., "custom_objects.pet" for custom, "contact" for standard)'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          fetchProperties: z.boolean().optional().describe('Whether to fetch all standard/custom fields (default: true)')
         }
       },
       {
         name: 'update_object_schema',
-        description: 'Update object schema properties including labels, description, and searchable fields',
+        description: `Update object schema properties.
+
+Modify labels, description, and searchable fields.
+
+Use Cases:
+- Update object labels
+- Change description
+- Configure searchable fields
+- Refine object schema
+
+Searchable properties enable search_object_records to find records by those fields.
+
+Returns: Updated object schema.
+
+Related Tools: get_object_schema, search_object_records`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            key: { 
-              type: 'string', 
-              description: 'Object key to update'
-            },
-            labels: {
-              type: 'object',
-              description: 'Updated singular and plural names (optional)',
-              properties: {
-                singular: { type: 'string', description: 'Updated singular name' },
-                plural: { type: 'string', description: 'Updated plural name' }
-              }
-            },
-            description: { 
-              type: 'string', 
-              description: 'Updated description'
-            },
-            locationId: { 
-              type: 'string', 
-              description: 'Location ID (uses default if not provided)'
-            },
-            searchableProperties: {
-              type: 'array',
-              description: 'Array of field keys that should be searchable (e.g., ["custom_objects.pet.name", "custom_objects.pet.breed"])',
-              items: { type: 'string' }
-            }
-          },
-          required: ['key', 'searchableProperties']
+          key: z.string().describe('Object key to update'),
+          searchableProperties: z.array(z.string()).describe('Array of field keys that should be searchable (e.g., ["custom_objects.pet.name"])'),
+          labels: z.object({
+            singular: z.string().describe('Updated singular name'),
+            plural: z.string().describe('Updated plural name')
+          }).optional().describe('Updated singular and plural names'),
+          description: z.string().optional().describe('Updated description'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
         name: 'create_object_record',
-        description: 'Create a new record in a custom or standard object with properties, owner, and followers',
+        description: `Create a new record in a custom or standard object.
+
+Add data to your custom objects or standard objects.
+
+Use Cases:
+- Add new pet record
+- Create support ticket
+- Add inventory item
+- Store custom business data
+
+Examples:
+- Pet: schemaKey="custom_objects.pet", properties={"name":"Buddy", "breed":"Golden Retriever"}
+- Ticket: schemaKey="custom_objects.ticket", properties={"title":"Bug report", "status":"open"}
+
+Returns: Created record with ID and all properties.
+
+Related Tools: get_object_record, update_object_record, search_object_records`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            schemaKey: { 
-              type: 'string', 
-              description: 'Schema key of the object (e.g., "custom_objects.pet", "business")'
-            },
-            properties: {
-              type: 'object',
-              description: 'Record properties as key-value pairs (e.g., {"name": "Buddy", "breed": "Golden Retriever"})'
-            },
-            locationId: { 
-              type: 'string', 
-              description: 'Location ID (uses default if not provided)'
-            },
-            owner: {
-              type: 'array',
-              description: 'Array of user IDs who own this record (limited to 1, only for custom objects)',
-              items: { type: 'string' },
-              maxItems: 1
-            },
-            followers: {
-              type: 'array',
-              description: 'Array of user IDs who follow this record (limited to 10)',
-              items: { type: 'string' },
-              maxItems: 10
-            }
-          },
-          required: ['schemaKey', 'properties']
+          schemaKey: z.string().describe('Schema key of the object (e.g., "custom_objects.pet", "business")'),
+          properties: z.record(z.any()).describe('Record properties as key-value pairs (e.g., {"name": "Buddy", "breed": "Golden Retriever"})'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          owner: z.array(z.string()).max(1).optional().describe('Array of user IDs who own this record (max 1, custom objects only)'),
+          followers: z.array(z.string()).max(10).optional().describe('Array of user IDs who follow this record (max 10)')
         }
       },
       {
         name: 'get_object_record',
-        description: 'Get a specific record by ID from a custom or standard object',
+        description: `Get a specific record by ID.
+
+Retrieve complete record data from custom or standard objects.
+
+Use Cases:
+- View pet details
+- Get ticket information
+- Retrieve inventory item
+- Access custom record data
+
+Returns: Complete record with all properties and metadata.
+
+Related Tools: search_object_records, create_object_record, update_object_record`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            schemaKey: { 
-              type: 'string', 
-              description: 'Schema key of the object'
-            },
-            recordId: { 
-              type: 'string', 
-              description: 'ID of the record to retrieve'
-            }
-          },
-          required: ['schemaKey', 'recordId']
+          schemaKey: z.string().describe('Schema key of the object'),
+          recordId: z.string().describe('ID of the record to retrieve')
         }
       },
       {
         name: 'update_object_record',
-        description: 'Update an existing record in a custom or standard object',
+        description: `Update an existing record.
+
+Modify properties, owner, or followers of a record.
+
+Use Cases:
+- Update pet information
+- Change ticket status
+- Modify inventory data
+- Update custom record fields
+
+Only provide the properties you want to update.
+
+Returns: Updated record with all current properties.
+
+Related Tools: get_object_record, create_object_record`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            schemaKey: { 
-              type: 'string', 
-              description: 'Schema key of the object'
-            },
-            recordId: { 
-              type: 'string', 
-              description: 'ID of the record to update'
-            },
-            properties: {
-              type: 'object',
-              description: 'Updated record properties as key-value pairs'
-            },
-            locationId: { 
-              type: 'string', 
-              description: 'Location ID (uses default if not provided)'
-            },
-            owner: {
-              type: 'array',
-              description: 'Updated array of user IDs who own this record',
-              items: { type: 'string' },
-              maxItems: 1
-            },
-            followers: {
-              type: 'array',
-              description: 'Updated array of user IDs who follow this record',
-              items: { type: 'string' },
-              maxItems: 10
-            }
-          },
-          required: ['schemaKey', 'recordId']
+          schemaKey: z.string().describe('Schema key of the object'),
+          recordId: z.string().describe('ID of the record to update'),
+          properties: z.record(z.any()).optional().describe('Updated record properties as key-value pairs'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          owner: z.array(z.string()).max(1).optional().describe('Updated array of user IDs who own this record (max 1)'),
+          followers: z.array(z.string()).max(10).optional().describe('Updated array of user IDs who follow this record (max 10)')
         }
       },
       {
         name: 'delete_object_record',
-        description: 'Delete a record from a custom or standard object',
+        description: `Delete a record from a custom or standard object.
+
+⚠️ WARNING: This is permanent and cannot be undone!
+⚠️ All associated data will be lost!
+
+Use Cases:
+- Remove outdated records
+- Delete test data
+- Clean up duplicates
+
+Related Tools: get_object_record, search_object_records`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            schemaKey: { 
-              type: 'string', 
-              description: 'Schema key of the object'
-            },
-            recordId: { 
-              type: 'string', 
-              description: 'ID of the record to delete'
-            }
-          },
-          required: ['schemaKey', 'recordId']
+          schemaKey: z.string().describe('Schema key of the object'),
+          recordId: z.string().describe('ID of the record to delete')
         }
       },
       {
         name: 'search_object_records',
-        description: 'Search records within a custom or standard object using searchable properties',
+        description: `Search records within a custom or standard object.
+
+Query custom data using searchable properties configured in the schema.
+
+Use Cases:
+- Find pets by name or breed
+- Search tickets by title
+- Query inventory by SKU
+- Filter custom records
+
+Query format: "fieldName:value" (e.g., "name:Buddy", "status:open")
+Only fields marked as searchable in update_object_schema can be queried.
+
+Returns: Array of matching records with pagination info.
+
+Related Tools: get_object_record, update_object_schema`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            schemaKey: { 
-              type: 'string', 
-              description: 'Schema key of the object to search in'
-            },
-            query: { 
-              type: 'string', 
-              description: 'Search query using searchable properties (e.g., "name:Buddy" to search for records with name Buddy)'
-            },
-            locationId: { 
-              type: 'string', 
-              description: 'Location ID (uses default if not provided)'
-            },
-            page: { 
-              type: 'number', 
-              description: 'Page number for pagination',
-              default: 1,
-              minimum: 1
-            },
-            pageLimit: { 
-              type: 'number', 
-              description: 'Number of records per page',
-              default: 10,
-              minimum: 1,
-              maximum: 100
-            },
-            searchAfter: {
-              type: 'array',
-              description: 'Cursor for pagination (returned from previous search)',
-              items: { type: 'string' }
-            }
-          },
-          required: ['schemaKey', 'query']
+          schemaKey: z.string().describe('Schema key of the object to search in'),
+          query: z.string().describe('Search query using searchable properties (e.g., "name:Buddy")'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          page: z.number().min(1).optional().describe('Page number for pagination (default: 1)'),
+          pageLimit: z.number().min(1).max(100).optional().describe('Number of records per page (default: 10, max: 100)'),
+          searchAfter: z.array(z.string()).optional().describe('Cursor for pagination (returned from previous search)')
         }
       }
     ];
@@ -309,31 +252,31 @@ export class ObjectTools {
   async executeTool(name: string, args: any): Promise<any> {
     switch (name) {
       case 'get_all_objects':
-        return this.getAllObjects(args as MCPGetAllObjectsParams);
+        return this.getAllObjects(args);
       
       case 'create_object_schema':
-        return this.createObjectSchema(args as MCPCreateObjectSchemaParams);
+        return this.createObjectSchema(args);
       
       case 'get_object_schema':
-        return this.getObjectSchema(args as MCPGetObjectSchemaParams);
+        return this.getObjectSchema(args);
       
       case 'update_object_schema':
-        return this.updateObjectSchema(args as MCPUpdateObjectSchemaParams);
+        return this.updateObjectSchema(args);
       
       case 'create_object_record':
-        return this.createObjectRecord(args as MCPCreateObjectRecordParams);
+        return this.createObjectRecord(args);
       
       case 'get_object_record':
-        return this.getObjectRecord(args as MCPGetObjectRecordParams);
+        return this.getObjectRecord(args);
       
       case 'update_object_record':
-        return this.updateObjectRecord(args as MCPUpdateObjectRecordParams);
+        return this.updateObjectRecord(args);
       
       case 'delete_object_record':
-        return this.deleteObjectRecord(args as MCPDeleteObjectRecordParams);
+        return this.deleteObjectRecord(args);
       
       case 'search_object_records':
-        return this.searchObjectRecords(args as MCPSearchObjectRecordsParams);
+        return this.searchObjectRecords(args);
       
       default:
         throw new Error(`Unknown object tool: ${name}`);
@@ -343,7 +286,7 @@ export class ObjectTools {
   /**
    * GET ALL OBJECTS
    */
-  private async getAllObjects(params: MCPGetAllObjectsParams = {}): Promise<{ success: boolean; objects: any[]; message: string }> {
+  private async getAllObjects(params: any = {}): Promise<{ success: boolean; objects: any[]; message: string }> {
     try {
       const response = await this.ghlClient.getObjectsByLocation(params.locationId);
       
@@ -367,7 +310,7 @@ export class ObjectTools {
   /**
    * CREATE OBJECT SCHEMA
    */
-  private async createObjectSchema(params: MCPCreateObjectSchemaParams): Promise<{ success: boolean; object: any; message: string }> {
+  private async createObjectSchema(params: any): Promise<{ success: boolean; object: any; message: string }> {
     try {
       const schemaData: GHLCreateObjectSchemaRequest = {
         labels: params.labels,
@@ -397,7 +340,7 @@ export class ObjectTools {
   /**
    * GET OBJECT SCHEMA
    */
-  private async getObjectSchema(params: MCPGetObjectSchemaParams): Promise<{ success: boolean; object: any; fields?: any[]; cache?: boolean; message: string }> {
+  private async getObjectSchema(params: any): Promise<{ success: boolean; object: any; fields?: any[]; cache?: boolean; message: string }> {
     try {
       const requestParams: GHLGetObjectSchemaRequest = {
         key: params.key,
@@ -427,7 +370,7 @@ export class ObjectTools {
   /**
    * UPDATE OBJECT SCHEMA
    */
-  private async updateObjectSchema(params: MCPUpdateObjectSchemaParams): Promise<{ success: boolean; object: any; message: string }> {
+  private async updateObjectSchema(params: any): Promise<{ success: boolean; object: any; message: string }> {
     try {
       const updateData: GHLUpdateObjectSchemaRequest = {
         labels: params.labels,
@@ -456,7 +399,7 @@ export class ObjectTools {
   /**
    * CREATE OBJECT RECORD
    */
-  private async createObjectRecord(params: MCPCreateObjectRecordParams): Promise<{ success: boolean; record: any; recordId: string; message: string }> {
+  private async createObjectRecord(params: any): Promise<{ success: boolean; record: any; recordId: string; message: string }> {
     try {
       const recordData: GHLCreateObjectRecordRequest = {
         properties: params.properties,
@@ -486,7 +429,7 @@ export class ObjectTools {
   /**
    * GET OBJECT RECORD
    */
-  private async getObjectRecord(params: MCPGetObjectRecordParams): Promise<{ success: boolean; record: any; message: string }> {
+  private async getObjectRecord(params: any): Promise<{ success: boolean; record: any; message: string }> {
     try {
       const response = await this.ghlClient.getObjectRecord(params.schemaKey, params.recordId);
       
@@ -508,7 +451,7 @@ export class ObjectTools {
   /**
    * UPDATE OBJECT RECORD
    */
-  private async updateObjectRecord(params: MCPUpdateObjectRecordParams): Promise<{ success: boolean; record: any; message: string }> {
+  private async updateObjectRecord(params: any): Promise<{ success: boolean; record: any; message: string }> {
     try {
       const updateData: GHLUpdateObjectRecordRequest = {
         properties: params.properties,
@@ -537,7 +480,7 @@ export class ObjectTools {
   /**
    * DELETE OBJECT RECORD
    */
-  private async deleteObjectRecord(params: MCPDeleteObjectRecordParams): Promise<{ success: boolean; deletedId: string; message: string }> {
+  private async deleteObjectRecord(params: any): Promise<{ success: boolean; deletedId: string; message: string }> {
     try {
       const response = await this.ghlClient.deleteObjectRecord(params.schemaKey, params.recordId);
       
@@ -559,7 +502,7 @@ export class ObjectTools {
   /**
    * SEARCH OBJECT RECORDS
    */
-  private async searchObjectRecords(params: MCPSearchObjectRecordsParams): Promise<{ success: boolean; records: any[]; total: number; message: string }> {
+  private async searchObjectRecords(params: any): Promise<{ success: boolean; records: any[]; total: number; message: string }> {
     try {
       const searchData: GHLSearchObjectRecordsRequest = {
         locationId: params.locationId || this.ghlClient.getConfig().locationId,

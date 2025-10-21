@@ -182,12 +182,12 @@ class GHLMCPHttpServer {
         const socialMediaToolDefinitions = this.socialMediaTools.getToolDefinitions();
         const mediaToolDefinitions = this.mediaTools.getToolDefinitions();
         const objectToolDefinitions = this.objectTools.getToolDefinitions();
-        const associationToolDefinitions = this.associationTools.getTools();
-        const customFieldV2ToolDefinitions = this.customFieldV2Tools.getTools();
-        const workflowToolDefinitions = this.workflowTools.getTools();
-        const surveyToolDefinitions = this.surveyTools.getTools();
-        const storeToolDefinitions = this.storeTools.getTools();
-        const productsToolDefinitions = this.productsTools.getTools();
+        const associationToolDefinitions = this.associationTools.getToolDefinitions();
+        const customFieldV2ToolDefinitions = this.customFieldV2Tools.getToolDefinitions();
+        const workflowToolDefinitions = this.workflowTools.getToolDefinitions();
+        const surveyToolDefinitions = this.surveyTools.getToolDefinitions();
+        const storeToolDefinitions = this.storeTools.getToolDefinitions();
+        const productsToolDefinitions = this.productsTools.getToolDefinitions();
         
         const allTools = [
           ...contactToolDefinitions,
@@ -334,12 +334,12 @@ class GHLMCPHttpServer {
         const socialMediaTools = this.socialMediaTools.getToolDefinitions();
         const mediaTools = this.mediaTools.getToolDefinitions();
         const objectTools = this.objectTools.getToolDefinitions();
-        const associationTools = this.associationTools.getTools();
-        const customFieldV2Tools = this.customFieldV2Tools.getTools();
-        const workflowTools = this.workflowTools.getTools();
-        const surveyTools = this.surveyTools.getTools();
-        const storeTools = this.storeTools.getTools();
-        const productsTools = this.productsTools.getTools();
+        const associationTools = this.associationTools.getToolDefinitions();
+        const customFieldV2Tools = this.customFieldV2Tools.getToolDefinitions();
+        const workflowTools = this.workflowTools.getToolDefinitions();
+        const surveyTools = this.surveyTools.getToolDefinitions();
+        const storeTools = this.storeTools.getToolDefinitions();
+        const productsTools = this.productsTools.getToolDefinitions();
         
         res.json({
           tools: [...contactTools, ...conversationTools, ...blogTools, ...opportunityTools, ...calendarTools, ...emailTools, ...locationTools, ...emailISVTools, ...socialMediaTools, ...mediaTools, ...objectTools, ...associationTools, ...customFieldV2Tools, ...workflowTools, ...surveyTools, ...storeTools, ...productsTools],
@@ -420,12 +420,12 @@ class GHLMCPHttpServer {
       socialMedia: this.socialMediaTools.getToolDefinitions().length,
       media: this.mediaTools.getToolDefinitions().length,
       objects: this.objectTools.getToolDefinitions().length,
-      associations: this.associationTools.getTools().length,
-      customFieldsV2: this.customFieldV2Tools.getTools().length,
-      workflows: this.workflowTools.getTools().length,
-      surveys: this.surveyTools.getTools().length,
-      store: this.storeTools.getTools().length,
-      products: this.productsTools.getTools().length,
+      associations: this.associationTools.getToolDefinitions().length,
+      customFieldsV2: this.customFieldV2Tools.getToolDefinitions().length,
+      workflows: this.workflowTools.getToolDefinitions().length,
+      surveys: this.surveyTools.getToolDefinitions().length,
+      store: this.storeTools.getToolDefinitions().length,
+      products: this.productsTools.getToolDefinitions().length,
       total: this.contactTools.getToolDefinitions().length + 
              this.conversationTools.getToolDefinitions().length + 
              this.blogTools.getToolDefinitions().length +
@@ -437,12 +437,12 @@ class GHLMCPHttpServer {
              this.socialMediaTools.getToolDefinitions().length +
              this.mediaTools.getToolDefinitions().length +
              this.objectTools.getToolDefinitions().length +
-             this.associationTools.getTools().length +
-             this.customFieldV2Tools.getTools().length +
-             this.workflowTools.getTools().length +
-             this.surveyTools.getTools().length +
-             this.storeTools.getTools().length +
-             this.productsTools.getTools().length
+             this.associationTools.getToolDefinitions().length +
+             this.customFieldV2Tools.getToolDefinitions().length +
+             this.workflowTools.getToolDefinitions().length +
+             this.surveyTools.getToolDefinitions().length +
+             this.storeTools.getToolDefinitions().length +
+             this.productsTools.getToolDefinitions().length
     };
   }
 

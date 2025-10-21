@@ -1,239 +1,224 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { z } from "zod";
 import { GHLApiClient } from '../clients/ghl-api-client.js';
-import {
-  MCPCreateAssociationParams,
-  MCPUpdateAssociationParams,
-  MCPGetAllAssociationsParams,
-  MCPGetAssociationByIdParams,
-  MCPGetAssociationByKeyParams,
-  MCPGetAssociationByObjectKeyParams,
-  MCPDeleteAssociationParams,
-  MCPCreateRelationParams,
-  MCPGetRelationsByRecordParams,
-  MCPDeleteRelationParams
-} from '../types/ghl-types.js';
 
 export class AssociationTools {
   constructor(private apiClient: GHLApiClient) {}
 
-  getTools(): Tool[] {
+  getToolDefinitions(): any[] {
     return [
       // Association Management Tools
       {
         name: 'ghl_get_all_associations',
-        description: 'Get all associations for a sub-account/location with pagination. Returns system-defined and user-defined associations.',
+        description: `Get all associations for a location.
+
+Returns both system-defined and user-defined associations.
+
+Use Cases:
+- List all available associations
+- Discover relationship types
+- View association configurations
+- Prepare for creating relations
+
+Returns: Array of associations with IDs, keys, and object mappings.
+
+Related Tools: ghl_create_association, ghl_get_association_by_id`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            },
-            skip: {
-              type: 'number',
-              description: 'Number of records to skip for pagination',
-              default: 0
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of records to return (max 100)',
-              default: 20
-            }
-          }
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          skip: z.number().min(0).optional().describe('Number of records to skip for pagination (default: 0)'),
+          limit: z.number().min(1).max(100).optional().describe('Maximum number of records to return (default: 20, max: 100)')
         }
       },
       {
         name: 'ghl_create_association',
-        description: 'Create a new association that defines relationship types between entities like contacts, custom objects, and opportunities.',
+        description: `Create a new association between two object types.
+
+Define relationship types between entities like contacts, custom objects, and opportunities.
+
+Use Cases:
+- Link students to teachers
+- Connect pets to owners (contacts)
+- Associate tickets to products
+- Map custom business relationships
+
+Examples:
+- Student-Teacher: key="student_teacher", firstObjectKey="custom_objects.student", secondObjectKey="contact"
+- Pet-Owner: key="pet_owner", firstObjectKey="custom_objects.pet", secondObjectKey="contact"
+
+Returns: Created association with ID and configuration.
+
+Related Tools: ghl_create_relation, ghl_get_all_associations`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            },
-            key: {
-              type: 'string',
-              description: 'Unique key for the association (e.g., "student_teacher")'
-            },
-            firstObjectLabel: {
-              description: 'Label for the first object in the association (e.g., "student")'
-            },
-            firstObjectKey: {
-              description: 'Key for the first object (e.g., "custom_objects.children")'
-            },
-            secondObjectLabel: {
-              description: 'Label for the second object in the association (e.g., "teacher")'
-            },
-            secondObjectKey: {
-              description: 'Key for the second object (e.g., "contact")'
-            }
-          },
-          required: ['key', 'firstObjectLabel', 'firstObjectKey', 'secondObjectLabel', 'secondObjectKey']
+          key: z.string().describe('Unique key for the association (e.g., "student_teacher")'),
+          firstObjectLabel: z.string().describe('Label for the first object (e.g., "student")'),
+          firstObjectKey: z.string().describe('Key for the first object (e.g., "custom_objects.student")'),
+          secondObjectLabel: z.string().describe('Label for the second object (e.g., "teacher")'),
+          secondObjectKey: z.string().describe('Key for the second object (e.g., "contact")'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
         name: 'ghl_get_association_by_id',
-        description: 'Get a specific association by its ID. Works for both system-defined and user-defined associations.',
+        description: `Get a specific association by its ID.
+
+Retrieve association details for both system-defined and user-defined associations.
+
+Use Cases:
+- View association configuration
+- Get object mappings
+- Verify association setup
+
+Returns: Association with ID, key, labels, and object mappings.
+
+Related Tools: ghl_get_all_associations, ghl_update_association`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            associationId: {
-              type: 'string',
-              description: 'The ID of the association to retrieve'
-            }
-          },
-          required: ['associationId']
+          associationId: z.string().describe('The ID of the association to retrieve')
         }
       },
       {
         name: 'ghl_update_association',
-        description: 'Update the labels of an existing association. Only user-defined associations can be updated.',
+        description: `Update the labels of an existing association.
+
+Only user-defined associations can be updated (system associations are read-only).
+
+Use Cases:
+- Rename association labels
+- Update relationship terminology
+- Refine association descriptions
+
+Returns: Updated association with new labels.
+
+Related Tools: ghl_get_association_by_id, ghl_create_association`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            associationId: {
-              type: 'string',
-              description: 'The ID of the association to update'
-            },
-            firstObjectLabel: {
-              description: 'New label for the first object in the association'
-            },
-            secondObjectLabel: {
-              description: 'New label for the second object in the association'
-            }
-          },
-          required: ['associationId', 'firstObjectLabel', 'secondObjectLabel']
+          associationId: z.string().describe('The ID of the association to update'),
+          firstObjectLabel: z.string().describe('New label for the first object in the association'),
+          secondObjectLabel: z.string().describe('New label for the second object in the association')
         }
       },
       {
         name: 'ghl_delete_association',
-        description: 'Delete a user-defined association. This will also delete all relations created with this association.',
+        description: `Delete a user-defined association.
+
+⚠️ WARNING: This is permanent and cannot be undone!
+⚠️ All relations created with this association will also be deleted!
+
+Only user-defined associations can be deleted (system associations cannot be removed).
+
+Related Tools: ghl_get_all_associations, ghl_delete_relation`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            associationId: {
-              type: 'string',
-              description: 'The ID of the association to delete'
-            }
-          },
-          required: ['associationId']
+          associationId: z.string().describe('The ID of the association to delete')
         }
       },
       {
         name: 'ghl_get_association_by_key',
-        description: 'Get an association by its key name. Useful for finding both standard and user-defined associations.',
+        description: `Get an association by its key name.
+
+Find associations using their unique key identifier.
+
+Use Cases:
+- Look up association by key
+- Verify association exists
+- Get association ID from key
+
+Returns: Association matching the key.
+
+Related Tools: ghl_get_all_associations, ghl_get_association_by_id`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            keyName: {
-              type: 'string',
-              description: 'The key name of the association to retrieve'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            }
-          },
-          required: ['keyName']
+          keyName: z.string().describe('The key name of the association to retrieve'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
         name: 'ghl_get_association_by_object_key',
-        description: 'Get associations by object keys like contacts, custom objects, and opportunities.',
+        description: `Get associations by object key.
+
+Find all associations that involve a specific object type.
+
+Use Cases:
+- Find all associations for contacts
+- List associations for a custom object
+- Discover available relationships for an object
+
+Examples:
+- objectKey="contact" - Find all contact associations
+- objectKey="custom_objects.pet" - Find all pet associations
+
+Returns: Array of associations involving the specified object.
+
+Related Tools: ghl_get_all_associations, ghl_create_association`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            objectKey: {
-              type: 'string',
-              description: 'The object key to search for (e.g., "custom_objects.car", "contact", "opportunity")'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (optional)'
-            }
-          },
-          required: ['objectKey']
+          objectKey: z.string().describe('The object key to search for (e.g., "custom_objects.pet", "contact", "opportunity")'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       // Relation Management Tools
       {
         name: 'ghl_create_relation',
-        description: 'Create a relation between two entities using an existing association. Links specific records together.',
+        description: `Create a relation between two specific records.
+
+Link individual records together using an existing association.
+
+Use Cases:
+- Link a student to their teacher
+- Connect a pet to its owner (contact)
+- Associate a ticket to a product
+- Map custom business relationships
+
+Examples:
+- Link student record to teacher contact: associationId="abc123", firstRecordId="student_id", secondRecordId="contact_id"
+- Link pet to owner: associationId="xyz789", firstRecordId="pet_id", secondRecordId="owner_contact_id"
+
+Returns: Created relation with ID and record mappings.
+
+Related Tools: ghl_get_relations_by_record, ghl_delete_relation, ghl_create_association`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            },
-            associationId: {
-              type: 'string',
-              description: 'The ID of the association to use for this relation'
-            },
-            firstRecordId: {
-              type: 'string',
-              description: 'ID of the first record (e.g., contact ID if contact is first object in association)'
-            },
-            secondRecordId: {
-              type: 'string',
-              description: 'ID of the second record (e.g., custom object record ID if custom object is second object)'
-            }
-          },
-          required: ['associationId', 'firstRecordId', 'secondRecordId']
+          associationId: z.string().describe('The ID of the association to use for this relation'),
+          firstRecordId: z.string().describe('ID of the first record (matches first object in association)'),
+          secondRecordId: z.string().describe('ID of the second record (matches second object in association)'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
         name: 'ghl_get_relations_by_record',
-        description: 'Get all relations for a specific record ID with pagination and optional filtering by association IDs.',
+        description: `Get all relations for a specific record.
+
+Retrieve all relationships linked to a particular record with pagination.
+
+Use Cases:
+- Find all teachers for a student
+- List all pets owned by a contact
+- Get all tickets for a product
+- View all relationships for a record
+
+Optionally filter by specific association IDs to narrow results.
+
+Returns: Array of relations with related record IDs and association info.
+
+Related Tools: ghl_create_relation, ghl_delete_relation`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            recordId: {
-              type: 'string',
-              description: 'The record ID to get relations for'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            },
-            skip: {
-              type: 'number',
-              description: 'Number of records to skip for pagination',
-              default: 0
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of records to return',
-              default: 20
-            },
-            associationIds: {
-              type: 'array',
-              items: {
-                type: 'string'
-              },
-              description: 'Optional array of association IDs to filter relations'
-            }
-          },
-          required: ['recordId']
+          recordId: z.string().describe('The record ID to get relations for'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
+          skip: z.number().min(0).optional().describe('Number of records to skip for pagination (default: 0)'),
+          limit: z.number().min(1).optional().describe('Maximum number of records to return (default: 20)'),
+          associationIds: z.array(z.string()).optional().describe('Optional array of association IDs to filter relations')
         }
       },
       {
         name: 'ghl_delete_relation',
-        description: 'Delete a specific relation between two entities.',
+        description: `Delete a specific relation between two records.
+
+⚠️ WARNING: This is permanent and cannot be undone!
+
+Unlinks two records but does not delete the records themselves.
+
+Use Cases:
+- Remove student-teacher link
+- Unlink pet from owner
+- Disconnect ticket from product
+
+Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
         inputSchema: {
-          type: 'object',
-          properties: {
-            relationId: {
-              type: 'string',
-              description: 'The ID of the relation to delete'
-            },
-            locationId: {
-              type: 'string',
-              description: 'GoHighLevel location ID (will use default if not provided)'
-            }
-          },
-          required: ['relationId']
+          relationId: z.string().describe('The ID of the relation to delete'),
+          locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       }
     ];
@@ -243,11 +228,10 @@ export class AssociationTools {
     try {
       switch (name) {
         case 'ghl_get_all_associations': {
-          const params: MCPGetAllAssociationsParams = args;
           const result = await this.apiClient.getAssociations({
-            locationId: params.locationId || '',
-            skip: params.skip || 0,
-            limit: params.limit || 20
+            locationId: args.locationId || '',
+            skip: args.skip || 0,
+            limit: args.limit || 20
           });
           return {
             success: true,
@@ -257,25 +241,23 @@ export class AssociationTools {
         }
 
         case 'ghl_create_association': {
-          const params: MCPCreateAssociationParams = args;
           const result = await this.apiClient.createAssociation({
-            locationId: params.locationId || '',
-            key: params.key,
-            firstObjectLabel: params.firstObjectLabel,
-            firstObjectKey: params.firstObjectKey,
-            secondObjectLabel: params.secondObjectLabel,
-            secondObjectKey: params.secondObjectKey
+            locationId: args.locationId || '',
+            key: args.key,
+            firstObjectLabel: args.firstObjectLabel,
+            firstObjectKey: args.firstObjectKey,
+            secondObjectLabel: args.secondObjectLabel,
+            secondObjectKey: args.secondObjectKey
           });
           return {
             success: true,
             data: result.data,
-            message: `Association '${params.key}' created successfully`
+            message: `Association '${args.key}' created successfully`
           };
         }
 
         case 'ghl_get_association_by_id': {
-          const params: MCPGetAssociationByIdParams = args;
-          const result = await this.apiClient.getAssociationById(params.associationId);
+          const result = await this.apiClient.getAssociationById(args.associationId);
           return {
             success: true,
             data: result.data,
@@ -284,10 +266,9 @@ export class AssociationTools {
         }
 
         case 'ghl_update_association': {
-          const params: MCPUpdateAssociationParams = args;
-          const result = await this.apiClient.updateAssociation(params.associationId, {
-            firstObjectLabel: params.firstObjectLabel,
-            secondObjectLabel: params.secondObjectLabel
+          const result = await this.apiClient.updateAssociation(args.associationId, {
+            firstObjectLabel: args.firstObjectLabel,
+            secondObjectLabel: args.secondObjectLabel
           });
           return {
             success: true,
@@ -297,8 +278,7 @@ export class AssociationTools {
         }
 
         case 'ghl_delete_association': {
-          const params: MCPDeleteAssociationParams = args;
-          const result = await this.apiClient.deleteAssociation(params.associationId);
+          const result = await this.apiClient.deleteAssociation(args.associationId);
           return {
             success: true,
             data: result.data,
@@ -307,38 +287,35 @@ export class AssociationTools {
         }
 
         case 'ghl_get_association_by_key': {
-          const params: MCPGetAssociationByKeyParams = args;
           const result = await this.apiClient.getAssociationByKey({
-            keyName: params.keyName,
-            locationId: params.locationId || ''
+            keyName: args.keyName,
+            locationId: args.locationId || ''
           });
           return {
             success: true,
             data: result.data,
-            message: `Association with key '${params.keyName}' retrieved successfully`
+            message: `Association with key '${args.keyName}' retrieved successfully`
           };
         }
 
         case 'ghl_get_association_by_object_key': {
-          const params: MCPGetAssociationByObjectKeyParams = args;
           const result = await this.apiClient.getAssociationByObjectKey({
-            objectKey: params.objectKey,
-            locationId: params.locationId
+            objectKey: args.objectKey,
+            locationId: args.locationId
           });
           return {
             success: true,
             data: result.data,
-            message: `Association with object key '${params.objectKey}' retrieved successfully`
+            message: `Association with object key '${args.objectKey}' retrieved successfully`
           };
         }
 
         case 'ghl_create_relation': {
-          const params: MCPCreateRelationParams = args;
           const result = await this.apiClient.createRelation({
-            locationId: params.locationId || '',
-            associationId: params.associationId,
-            firstRecordId: params.firstRecordId,
-            secondRecordId: params.secondRecordId
+            locationId: args.locationId || '',
+            associationId: args.associationId,
+            firstRecordId: args.firstRecordId,
+            secondRecordId: args.secondRecordId
           });
           return {
             success: true,
@@ -348,13 +325,12 @@ export class AssociationTools {
         }
 
         case 'ghl_get_relations_by_record': {
-          const params: MCPGetRelationsByRecordParams = args;
           const result = await this.apiClient.getRelationsByRecord({
-            recordId: params.recordId,
-            locationId: params.locationId || '',
-            skip: params.skip || 0,
-            limit: params.limit || 20,
-            associationIds: params.associationIds
+            recordId: args.recordId,
+            locationId: args.locationId || '',
+            skip: args.skip || 0,
+            limit: args.limit || 20,
+            associationIds: args.associationIds
           });
           return {
             success: true,
@@ -364,10 +340,9 @@ export class AssociationTools {
         }
 
         case 'ghl_delete_relation': {
-          const params: MCPDeleteRelationParams = args;
           const result = await this.apiClient.deleteRelation({
-            relationId: params.relationId,
-            locationId: params.locationId || ''
+            relationId: args.relationId,
+            locationId: args.locationId || ''
           });
           return {
             success: true,

@@ -61,255 +61,270 @@ Related Tools: get_social_post, create_social_post, update_social_post`,
       },
       {
         name: 'create_social_post',
-        description: `Create a new social media post for multiple platforms.
-
-Post to Google Business, Facebook, Instagram, LinkedIn, Twitter, and TikTok simultaneously.
-
-Required Parameters:
-- accountIds: Array of social account IDs to post to
-- summary: Post content/text
-- type: Post type (post/story/reel)
-
-Optional Parameters:
-- media: Array of media attachments (images/videos)
-- status: draft/scheduled/published (default: draft)
-- scheduleDate: When to publish (ISO format)
-- followUpComment: Auto-comment after posting
-- tags: Tag IDs for organization
-- categoryId: Category for organization
-- userId: User creating the post
-
-Returns: Created post with IDs for each platform.
-
-Related Tools: search_social_posts, get_social_post, update_social_post`,
+        description: 'Create a new social media post for multiple platforms',
         inputSchema: {
-          accountIds: z.array(z.string()).describe('Array of social media account IDs to post to'),
-          summary: z.string().describe('Post content/text'),
-          type: z.enum(['post', 'story', 'reel']).describe('Type of post'),
-          media: z.array(z.object({
-            url: z.string().describe('Media URL'),
-            caption: z.string().optional().describe('Media caption'),
-            type: z.string().optional().describe('Media MIME type')
-          })).optional().describe('Media attachments'),
-          status: z.enum(['draft', 'scheduled', 'published']).optional().describe('Post status (default: draft)'),
-          scheduleDate: z.string().optional().describe('Schedule date for post (ISO format)'),
-          followUpComment: z.string().optional().describe('Follow-up comment'),
-          tags: z.array(z.string()).optional().describe('Tag IDs to associate with post'),
-          categoryId: z.string().optional().describe('Category ID'),
-          userId: z.string().optional().describe('User ID creating the post')
+          type: 'object',
+          properties: {
+            accountIds: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of social media account IDs to post to'
+            },
+            summary: { type: 'string', description: 'Post content/text' },
+            media: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  url: { type: 'string', description: 'Media URL' },
+                  caption: { type: 'string', description: 'Media caption' },
+                  type: { type: 'string', description: 'Media MIME type' }
+                },
+                required: ['url']
+              },
+              description: 'Media attachments'
+            },
+            status: {
+              type: 'string',
+              enum: ['draft', 'scheduled', 'published'],
+              description: 'Post status',
+              default: 'draft'
+            },
+            scheduleDate: { type: 'string', description: 'Schedule date for post (ISO format)' },
+            followUpComment: { type: 'string', description: 'Follow-up comment' },
+            type: {
+              type: 'string',
+              enum: ['post', 'story', 'reel'],
+              description: 'Type of post'
+            },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Tag IDs to associate with post'
+            },
+            categoryId: { type: 'string', description: 'Category ID' },
+            userId: { type: 'string', description: 'User ID creating the post' }
+          },
+          required: ['accountIds', 'summary', 'type']
         }
       },
       {
         name: 'get_social_post',
-        description: `Get details of a specific social media post.
-
-Returns: Post content, media, status, platform details, and engagement metrics.
-
-Related Tools: search_social_posts, update_social_post`,
+        description: 'Get details of a specific social media post',
         inputSchema: {
-          postId: z.string().describe('Social media post ID')
+          type: 'object',
+          properties: {
+            postId: { type: 'string', description: 'Social media post ID' }
+          },
+          required: ['postId']
         }
       },
       {
         name: 'update_social_post',
-        description: `Update an existing social media post.
-
-Only updates draft or scheduled posts. Published posts cannot be edited.
-
-Related Tools: get_social_post, search_social_posts`,
+        description: 'Update an existing social media post',
         inputSchema: {
-          postId: z.string().describe('Social media post ID'),
-          summary: z.string().optional().describe('Updated post content'),
-          status: z.enum(['draft', 'scheduled', 'published']).optional().describe('Updated post status'),
-          scheduleDate: z.string().optional().describe('Updated schedule date'),
-          tags: z.array(z.string()).optional().describe('Updated tag IDs')
+          type: 'object',
+          properties: {
+            postId: { type: 'string', description: 'Social media post ID' },
+            summary: { type: 'string', description: 'Updated post content' },
+            status: {
+              type: 'string',
+              enum: ['draft', 'scheduled', 'published'],
+              description: 'Updated post status'
+            },
+            scheduleDate: { type: 'string', description: 'Updated schedule date' },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Updated tag IDs'
+            }
+          },
+          required: ['postId']
         }
       },
       {
         name: 'delete_social_post',
-        description: `Delete a social media post.
-
-⚠️ WARNING: This is permanent and cannot be undone!
-
-Related Tools: bulk_delete_social_posts (delete multiple)`,
+        description: 'Delete a social media post',
         inputSchema: {
-          postId: z.string().describe('Social media post ID to delete')
+          type: 'object',
+          properties: {
+            postId: { type: 'string', description: 'Social media post ID to delete' }
+          },
+          required: ['postId']
         }
       },
       {
         name: 'bulk_delete_social_posts',
-        description: `Delete multiple social media posts at once (max 50).
-
-⚠️ WARNING: This is permanent and cannot be undone!
-
-Related Tools: delete_social_post (delete single), search_social_posts`,
+        description: 'Delete multiple social media posts at once (max 50)',
         inputSchema: {
-          postIds: z.array(z.string()).max(50).describe('Array of post IDs to delete (max 50)')
+          type: 'object',
+          properties: {
+            postIds: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of post IDs to delete',
+              maxItems: 50
+            }
+          },
+          required: ['postIds']
         }
       },
 
-      // ============================================================================
-      // ACCOUNT INTEGRATION (2 tools)
-      // ============================================================================
-
+      // Account Management Tools
       {
         name: 'get_social_accounts',
-        description: `Get all connected social media accounts and groups.
-
-Returns: List of connected accounts across all platforms with status and permissions.
-
-Related Tools: delete_social_account, start_social_oauth`,
-        inputSchema: {}
+        description: 'Get all connected social media accounts and groups',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          additionalProperties: false
+        }
       },
       {
         name: 'delete_social_account',
-        description: `Delete a social media account connection.
-
-⚠️ WARNING: This disconnects the account from GHL!
-
-Related Tools: get_social_accounts, start_social_oauth (reconnect)`,
+        description: 'Delete a social media account connection',
         inputSchema: {
-          accountId: z.string().describe('Account ID to delete'),
-          companyId: z.string().optional().describe('Company ID'),
-          userId: z.string().optional().describe('User ID')
+          type: 'object',
+          properties: {
+            accountId: { type: 'string', description: 'Account ID to delete' },
+            companyId: { type: 'string', description: 'Company ID' },
+            userId: { type: 'string', description: 'User ID' }
+          },
+          required: ['accountId']
         }
       },
 
-      // ============================================================================
-      // BULK OPERATIONS (3 tools)
-      // ============================================================================
-
-
+      // CSV Operations Tools
       {
         name: 'upload_social_csv',
-        description: `Upload CSV file for bulk social media posts.
-
-Bulk create multiple posts from CSV. Each row becomes a post.
-
-Related Tools: get_csv_upload_status, set_csv_accounts`,
+        description: 'Upload CSV file for bulk social media posts',
         inputSchema: {
-          file: z.string().describe('CSV file data (base64 or file path)')
+          type: 'object',
+          properties: {
+            file: { type: 'string', description: 'CSV file data (base64 or file path)' }
+          },
+          required: ['file']
         }
       },
       {
         name: 'get_csv_upload_status',
-        description: `Get status of CSV uploads.
-
-Track progress of bulk post creation from CSV files.
-
-Related Tools: upload_social_csv, set_csv_accounts`,
+        description: 'Get status of CSV uploads',
         inputSchema: {
-          skip: z.number().optional().describe('Number to skip (default: 0)'),
-          limit: z.number().optional().describe('Number to return (default: 10)'),
-          includeUsers: z.boolean().optional().describe('Include user data'),
-          userId: z.string().optional().describe('Filter by user ID')
+          type: 'object',
+          properties: {
+            skip: { type: 'number', description: 'Number to skip', default: 0 },
+            limit: { type: 'number', description: 'Number to return', default: 10 },
+            includeUsers: { type: 'boolean', description: 'Include user data' },
+            userId: { type: 'string', description: 'Filter by user ID' }
+          }
         }
       },
       {
         name: 'set_csv_accounts',
-        description: `Set accounts for CSV import processing.
-
-Configure which social accounts to use for CSV bulk posting.
-
-Related Tools: upload_social_csv, get_csv_upload_status`,
+        description: 'Set accounts for CSV import processing',
         inputSchema: {
-          accountIds: z.array(z.string()).describe('Account IDs for CSV import'),
-          filePath: z.string().describe('CSV file path'),
-          rowsCount: z.number().describe('Number of rows to process'),
-          fileName: z.string().describe('CSV file name'),
-          approver: z.string().optional().describe('Approver user ID'),
-          userId: z.string().optional().describe('User ID')
+          type: 'object',
+          properties: {
+            accountIds: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Account IDs for CSV import'
+            },
+            filePath: { type: 'string', description: 'CSV file path' },
+            rowsCount: { type: 'number', description: 'Number of rows to process' },
+            fileName: { type: 'string', description: 'CSV file name' },
+            approver: { type: 'string', description: 'Approver user ID' },
+            userId: { type: 'string', description: 'User ID' }
+          },
+          required: ['accountIds', 'filePath', 'rowsCount', 'fileName']
         }
       },
 
-      // ============================================================================
-      // ORGANIZATION (4 tools)
-      // ============================================================================
-
-
+      // Categories & Tags Tools
       {
         name: 'get_social_categories',
-        description: `Get social media post categories.
-
-Categories help organize posts by topic or campaign.
-
-Related Tools: get_social_category, create_social_post`,
+        description: 'Get social media post categories',
         inputSchema: {
-          searchText: z.string().optional().describe('Search for categories'),
-          limit: z.number().optional().describe('Number to return (default: 10)'),
-          skip: z.number().optional().describe('Number to skip (default: 0)')
+          type: 'object',
+          properties: {
+            searchText: { type: 'string', description: 'Search for categories' },
+            limit: { type: 'number', description: 'Number to return', default: 10 },
+            skip: { type: 'number', description: 'Number to skip', default: 0 }
+          }
         }
       },
       {
         name: 'get_social_category',
-        description: `Get a specific social media category by ID.
-
-Related Tools: get_social_categories`,
+        description: 'Get a specific social media category by ID',
         inputSchema: {
-          categoryId: z.string().describe('Category ID')
+          type: 'object',
+          properties: {
+            categoryId: { type: 'string', description: 'Category ID' }
+          },
+          required: ['categoryId']
         }
       },
       {
         name: 'get_social_tags',
-        description: `Get social media post tags.
-
-Tags help organize and filter posts.
-
-Related Tools: get_social_tags_by_ids, create_social_post`,
+        description: 'Get social media post tags',
         inputSchema: {
-          searchText: z.string().optional().describe('Search for tags'),
-          limit: z.number().optional().describe('Number to return (default: 10)'),
-          skip: z.number().optional().describe('Number to skip (default: 0)')
+          type: 'object',
+          properties: {
+            searchText: { type: 'string', description: 'Search for tags' },
+            limit: { type: 'number', description: 'Number to return', default: 10 },
+            skip: { type: 'number', description: 'Number to skip', default: 0 }
+          }
         }
       },
       {
         name: 'get_social_tags_by_ids',
-        description: `Get specific social media tags by their IDs.
-
-Related Tools: get_social_tags`,
+        description: 'Get specific social media tags by their IDs',
         inputSchema: {
-          tagIds: z.array(z.string()).describe('Array of tag IDs')
+          type: 'object',
+          properties: {
+            tagIds: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of tag IDs'
+            }
+          },
+          required: ['tagIds']
         }
       },
 
-      // ============================================================================
-      // OAUTH INTEGRATION (2 tools)
-      // ============================================================================
-
-
+      // OAuth Integration Tools
       {
         name: 'start_social_oauth',
-        description: `Start OAuth process for social media platform.
-
-Connect a new social media account to GHL.
-
-Supported Platforms:
-- Google Business Profile
-- Facebook
-- Instagram
-- LinkedIn
-- Twitter
-- TikTok
-- TikTok Business
-
-Related Tools: get_platform_accounts, get_social_accounts`,
+        description: 'Start OAuth process for social media platform',
         inputSchema: {
-          platform: z.enum(['google', 'facebook', 'instagram', 'linkedin', 'twitter', 'tiktok', 'tiktok-business']).describe('Social media platform'),
-          userId: z.string().describe('User ID initiating OAuth'),
-          page: z.string().optional().describe('Page context'),
-          reconnect: z.boolean().optional().describe('Whether this is a reconnection')
+          type: 'object',
+          properties: {
+            platform: {
+              type: 'string',
+              enum: ['google', 'facebook', 'instagram', 'linkedin', 'twitter', 'tiktok', 'tiktok-business'],
+              description: 'Social media platform'
+            },
+            userId: { type: 'string', description: 'User ID initiating OAuth' },
+            page: { type: 'string', description: 'Page context' },
+            reconnect: { type: 'boolean', description: 'Whether this is a reconnection' }
+          },
+          required: ['platform', 'userId']
         }
       },
       {
         name: 'get_platform_accounts',
-        description: `Get available accounts for a specific platform after OAuth.
-
-After OAuth, retrieve the list of pages/profiles available to connect.
-
-Related Tools: start_social_oauth, get_social_accounts`,
+        description: 'Get available accounts for a specific platform after OAuth',
         inputSchema: {
-          platform: z.enum(['google', 'facebook', 'instagram', 'linkedin', 'twitter', 'tiktok', 'tiktok-business']).describe('Social media platform'),
-          accountId: z.string().describe('OAuth account ID')
+          type: 'object',
+          properties: {
+            platform: {
+              type: 'string',
+              enum: ['google', 'facebook', 'instagram', 'linkedin', 'twitter', 'tiktok', 'tiktok-business'],
+              description: 'Social media platform'
+            },
+            accountId: { type: 'string', description: 'OAuth account ID' }
+          },
+          required: ['platform', 'accountId']
         }
       }
     ];

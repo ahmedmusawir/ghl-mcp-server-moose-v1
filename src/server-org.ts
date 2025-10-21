@@ -155,14 +155,14 @@ class GHLMCPServer {
         const socialMediaToolDefinitions = this.socialMediaTools.getToolDefinitions();
         const mediaToolDefinitions = this.mediaTools.getToolDefinitions();
         const objectToolDefinitions = this.objectTools.getToolDefinitions();
-        const associationToolDefinitions = this.associationTools.getTools();
-        const customFieldV2ToolDefinitions = this.customFieldV2Tools.getTools();
-        const workflowToolDefinitions = this.workflowTools.getTools();
-        const surveyToolDefinitions = this.surveyTools.getTools();
-        const storeToolDefinitions = this.storeTools.getTools();
-        const productsToolDefinitions = this.productsTools.getTools();
-        const paymentsToolDefinitions = this.paymentsTools.getTools();
-        const invoicesToolDefinitions = this.invoicesTools.getTools();
+        const associationToolDefinitions = this.associationTools.getToolDefinitions();
+        const customFieldV2ToolDefinitions = this.customFieldV2Tools.getToolDefinitions();
+        const workflowToolDefinitions = this.workflowTools.getToolDefinitions();
+        const surveyToolDefinitions = this.surveyTools.getToolDefinitions();
+        const storeToolDefinitions = this.storeTools.getToolDefinitions();
+        const productsToolDefinitions = this.productsTools.getToolDefinitions();
+        const paymentsToolDefinitions = this.paymentsTools.getToolDefinitions();
+        const invoicesToolDefinitions = this.invoicesTools.getToolDefinitions();
         
         const allTools = [
           ...contactToolDefinitions,
@@ -650,14 +650,14 @@ class GHLMCPServer {
       const socialMediaToolCount = this.socialMediaTools.getToolDefinitions().length;
       const mediaToolCount = this.mediaTools.getToolDefinitions().length;
       const objectToolCount = this.objectTools.getToolDefinitions().length;
-      const associationToolCount = this.associationTools.getTools().length;
-      const customFieldV2ToolCount = this.customFieldV2Tools.getTools().length;
-      const workflowToolCount = this.workflowTools.getTools().length;
-      const surveyToolCount = this.surveyTools.getTools().length;
-      const storeToolCount = this.storeTools.getTools().length;
-      const productsToolCount = this.productsTools.getTools().length;
-      const paymentsToolCount = this.paymentsTools.getTools().length;
-      const invoicesToolCount = this.invoicesTools.getTools().length;
+      const associationToolCount = this.associationTools.getToolDefinitions().length;
+      const customFieldV2ToolCount = this.customFieldV2Tools.getToolDefinitions().length;
+      const workflowToolCount = this.workflowTools.getToolDefinitions().length;
+      const surveyToolCount = this.surveyTools.getToolDefinitions().length;
+      const storeToolCount = this.storeTools.getToolDefinitions().length;
+      const productsToolCount = this.productsTools.getToolDefinitions().length;
+      const paymentsToolCount = this.paymentsTools.getToolDefinitions().length;
+      const invoicesToolCount = this.invoicesTools.getToolDefinitions().length;
       const totalTools = contactToolCount + conversationToolCount + blogToolCount + opportunityToolCount + calendarToolCount + emailToolCount + locationToolCount + emailISVToolCount + socialMediaToolCount + mediaToolCount + objectToolCount + associationToolCount + customFieldV2ToolCount + workflowToolCount + surveyToolCount + storeToolCount + productsToolCount + paymentsToolCount + invoicesToolCount;
       
       process.stderr.write(`📋 Available tools: ${totalTools}\n`);
