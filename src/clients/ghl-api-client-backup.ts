@@ -2949,29 +2949,13 @@ export class GHLApiClient {
 
   /**
    * Search/List Social Media Posts
-   * Endpoint: POST /social-media-posting/{locationId}/posts/list
-   * IMPORTANT: GHL API requires ALL parameters as STRINGS (verified via Postman)
    */
   async searchSocialPosts(searchData: GHLSearchPostsRequest): Promise<GHLApiResponse<GHLSearchPostsResponse>> {
     try {
       const locationId = this.config.locationId;
-      
-      // GHL API quirk: ALL parameters must be strings, even numbers and booleans
-      // The parameters are already strings in GHLSearchPostsRequest interface
-      const requestBody: any = {};
-      
-      if (searchData.type) requestBody.type = searchData.type;
-      if (searchData.accounts) requestBody.accounts = searchData.accounts;
-      if (searchData.skip) requestBody.skip = searchData.skip;
-      if (searchData.limit) requestBody.limit = searchData.limit;
-      if (searchData.fromDate) requestBody.fromDate = searchData.fromDate;
-      if (searchData.toDate) requestBody.toDate = searchData.toDate;
-      if (searchData.includeUsers) requestBody.includeUsers = searchData.includeUsers;
-      if (searchData.postType) requestBody.postType = searchData.postType;
-      
       const response: AxiosResponse<GHLSearchPostsResponse> = await this.axiosInstance.post(
         `/social-media-posting/${locationId}/posts/list`,
-        requestBody
+        searchData
       );
       return this.wrapResponse(response.data);
     } catch (error) {
@@ -3061,7 +3045,6 @@ export class GHLApiClient {
 
   /**
    * Get Social Media Accounts and Groups
-   * Endpoint verified via Postman: GET /social-media-posting/{locationId}/accounts
    */
   async getSocialAccounts(): Promise<GHLApiResponse<GHLGetAccountsResponse>> {
     try {
@@ -3222,26 +3205,10 @@ export class GHLApiClient {
 
   /**
    * Get Social Media Categories
-   * Endpoint: GET /social-media-posting/{locationId}/categories
    */
   async getSocialCategories(searchText?: string, limit?: number, skip?: number): Promise<GHLApiResponse<GHLGetCategoriesResponse>> {
-    try {
-      const locationId = this.config.locationId;
-      
-      // Build query parameters
-      const params: any = {};
-      if (searchText) params.searchText = searchText;
-      if (limit) params.limit = limit.toString();
-      if (skip) params.skip = skip.toString();
-      
-      const response: AxiosResponse<GHLGetCategoriesResponse> = await this.axiosInstance.get(
-        `/social-media-posting/${locationId}/categories`,
-        { params }
-      );
-      return this.wrapResponse(response.data);
-    } catch (error) {
-      throw error;
-    }
+    // TODO: Implement this method properly
+    throw new Error('Method not yet implemented');
   }
 
   // TODO: Implement remaining social media API methods
@@ -3249,28 +3216,8 @@ export class GHLApiClient {
     throw new Error('Method not yet implemented');
   }
 
-  /**
-   * Get Social Media Tags
-   * Endpoint: GET /social-media-posting/{locationId}/tags
-   */
   async getSocialTags(searchText?: string, limit?: number, skip?: number): Promise<GHLApiResponse<GHLGetTagsResponse>> {
-    try {
-      const locationId = this.config.locationId;
-      
-      // Build query parameters
-      const params: any = {};
-      if (searchText) params.searchText = searchText;
-      if (limit) params.limit = limit.toString();
-      if (skip) params.skip = skip.toString();
-      
-      const response: AxiosResponse<GHLGetTagsResponse> = await this.axiosInstance.get(
-        `/social-media-posting/${locationId}/tags`,
-        { params }
-      );
-      return this.wrapResponse(response.data);
-    } catch (error) {
-      throw error;
-    }
+    throw new Error('Method not yet implemented');
   }
 
   async getSocialTagsByIds(tagData: GHLGetTagsByIdsRequest): Promise<GHLApiResponse<GHLGetTagsByIdsResponse>> {

@@ -2419,7 +2419,6 @@ export interface GHLSocialPost {
   summary: string;
   media?: GHLPostMedia[];
   status: GHLPostStatus;
-  scheduleDate?: string; // For scheduled posts
   createdBy?: string;
   type: GHLPostType;
   tags?: string[];
@@ -2522,7 +2521,7 @@ export interface GHLCreatePostRequest {
   createdBy?: string;
   followUpComment?: string;
   ogTagsDetails?: GHLOgTags;
-  type?: GHLPostType; // Optional, defaults to 'post'
+  type: GHLPostType;
   postApprovalDetails?: GHLPostApproval;
   scheduleTimeUpdated?: boolean;
   tags?: string[];
@@ -2691,10 +2690,8 @@ export interface GHLAttachTikTokAccountRequest {
 
 // Response Interfaces
 export interface GHLSearchPostsResponse {
-  results: {
-    posts: GHLSocialPost[];
-    count: number;
-  };
+  posts: GHLSocialPost[];
+  count: number;
 }
 
 export interface GHLGetPostResponse {
@@ -2702,10 +2699,7 @@ export interface GHLGetPostResponse {
 }
 
 export interface GHLCreatePostResponse {
-  results?: {
-    post: GHLSocialPost;
-  };
-  post?: GHLSocialPost; // Fallback if not nested
+  post: GHLSocialPost;
 }
 
 export interface GHLBulkDeleteResponse {
@@ -2714,10 +2708,8 @@ export interface GHLBulkDeleteResponse {
 }
 
 export interface GHLGetAccountsResponse {
-  results: {
-    accounts: GHLSocialAccount[];
-    groups: GHLSocialGroup[];
-  };
+  accounts: GHLSocialAccount[];
+  groups: GHLSocialGroup[];
 }
 
 export interface GHLUploadCSVResponse {

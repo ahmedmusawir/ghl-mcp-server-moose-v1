@@ -819,32 +819,46 @@ Related Tools: get_location_custom_values (find valueId), update_location_custom
 
 Templates are pre-defined message formats used in campaigns, workflows, and manual messaging.
 
-Use Cases:
-- List all available templates
-- Find template IDs for campaigns
-- Audit template usage
-- Export template content
-
-Parameters:
-- locationId: The location ID
-- originId: Origin ID (required by API)
+PARAMETERS:
+- locationId: Your GHL location ID (required)
+- originId: Origin ID (optional - defaults to locationId if not provided)
 - type: Filter by 'sms', 'email', or 'whatsapp'
 - deleted: Include deleted templates (default: false)
 - skip: Pagination offset (default: 0)
 - limit: Max results (default: 25)
 
-Returns: Array of templates with IDs, names, content, and metadata.
+USAGE EXAMPLES:
+
+Simple (recommended):
+{
+  "locationId": "4rKuULHASyQ99nwdL1XH"
+}
+
+With filters:
+{
+  "locationId": "4rKuULHASyQ99nwdL1XH",
+  "type": "sms",
+  "limit": 20
+}
+
+Explicit originId (rare):
+{
+  "locationId": "4rKuULHASyQ99nwdL1XH",
+  "originId": "differentOriginId123"
+}
+
+RETURNS: Array of templates with IDs, names, content, and metadata.
 
 Best Practices:
+- Usually just provide locationId (originId auto-populated)
 - Filter by type to narrow results
 - Use pagination for locations with many templates
-- Check deleted templates for recovery
 - Note template IDs for campaign/workflow use
 
 Related Tools: delete_location_template`,
         inputSchema: {
           locationId: z.string().describe('The location ID'),
-          originId: z.string().describe('Origin ID (required parameter)'),
+          originId: z.string().optional().describe('Origin ID (optional - defaults to locationId if not provided)'),
           type: z.enum(['sms', 'email', 'whatsapp']).optional().describe('Filter by template type'),
           deleted: z.boolean().optional().describe('Include deleted templates (default: false)'),
           skip: z.number().optional().describe('Number to skip for pagination (default: 0)'),
@@ -1361,7 +1375,9 @@ Related Tools: create_location (requires timezone), update_location (change time
   private async getLocationTemplates(params: MCPGetLocationTemplatesParams): Promise<{ success: boolean; templates: any[]; totalCount: number; message: string }> {
     try {
       const { locationId, ...templateParams } = params;
-      const response = await this.ghlClient.getLocationTemplates(locationId, templateParams);
+      // Auto-populate originId with locationId if not provided
+      const originId = params.originId || locationId;
+      const response = await this.ghlClient.getLocationTemplates(locationId, { ...templateParams, originId });
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);

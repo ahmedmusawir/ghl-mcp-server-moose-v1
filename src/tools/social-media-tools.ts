@@ -26,6 +26,8 @@ export class SocialMediaTools {
 
 Search posts by status, date range, accounts, and type across Google Business, Facebook, Instagram, LinkedIn, Twitter, and TikTok.
 
+Call with no parameters to list recent posts. All parameters are optional.
+
 Use Cases:
 - Find scheduled posts for review
 - Audit published content
@@ -33,13 +35,11 @@ Use Cases:
 - Monitor draft posts
 - Search posts by date range
 
-Required Parameters:
-- fromDate: Start date (ISO format)
-- toDate: End date (ISO format)
-
 Optional Parameters:
 - type: Filter by status (recent, all, scheduled, draft, failed, etc.)
 - accounts: Comma-separated account IDs
+- fromDate: Start date (ISO format, defaults to 30 days ago)
+- toDate: End date (ISO format, defaults to today)
 - skip: Pagination offset (default: 0)
 - limit: Max results (default: 10)
 - includeUsers: Include user data (default: true)
@@ -53,50 +53,73 @@ Related Tools: get_social_post, create_social_post, update_social_post`,
           accounts: z.string().optional().describe('Comma-separated account IDs to filter by'),
           skip: z.number().optional().describe('Number of posts to skip for pagination (default: 0)'),
           limit: z.number().optional().describe('Number of posts to return (default: 10)'),
-          fromDate: z.string().describe('Start date in ISO format (required)'),
-          toDate: z.string().describe('End date in ISO format (required)'),
+          fromDate: z.string().optional().describe('Start date in ISO format (defaults to 30 days ago)'),
+          toDate: z.string().optional().describe('End date in ISO format (defaults to today)'),
           includeUsers: z.boolean().optional().describe('Include user data in response (default: true)'),
           postType: z.enum(['post', 'story', 'reel']).optional().describe('Type of post to search for')
         }
       },
       {
         name: 'create_social_post',
-        description: `Create a new social media post for multiple platforms.
+        description: `Create a social media post for one or more connected accounts.
 
-Post to Google Business, Facebook, Instagram, LinkedIn, Twitter, and TikTok simultaneously.
+Supports Facebook, Instagram, LinkedIn, TikTok, Twitter, and Google My Business. Posts can be published immediately, scheduled for later, or saved as drafts.
+
+Use get_social_accounts to retrieve valid account IDs before creating posts.
 
 Required Parameters:
-- accountIds: Array of social account IDs to post to
-- summary: Post content/text
-- type: Post type (post/story/reel)
+- accountIds: Array of social account IDs (get from get_social_accounts)
+- summary: Post content/caption
 
 Optional Parameters:
-- media: Array of media attachments (images/videos)
-- status: draft/scheduled/published (default: draft)
-- scheduleDate: When to publish (ISO format)
+- media: Array of media attachments with URLs
+- status: "draft", "scheduled", or "published" (default: "published")
+- scheduleDate: ISO 8601 datetime for scheduled posts
+- type: "post", "story", or "reel" (default: "post")
 - followUpComment: Auto-comment after posting
-- tags: Tag IDs for organization
-- categoryId: Category for organization
-- userId: User creating the post
+- tags: Array of tag IDs for organization
+- categoryId: Category ID for organization
+- tiktokPostDetails: TikTok-specific settings (privacy, comments, etc.)
+- gmbPostDetails: Google My Business-specific settings (events, offers)
+- createdBy: User ID who created the post
 
-Returns: Created post with IDs for each platform.
+Examples:
+1. Simple text post: {accountIds: ["..."], summary: "Hello World"}
+2. Post with media: {accountIds: ["..."], summary: "Check this out!", media: [{url: "https://..."}]}
+3. Scheduled post: {accountIds: ["..."], summary: "...", status: "scheduled", scheduleDate: "2025-10-24T14:00:00.000Z"}
 
-Related Tools: search_social_posts, get_social_post, update_social_post`,
+Returns: Created post with ID and platform details.
+
+Related Tools: search_social_posts, get_social_post, update_social_post, get_social_accounts`,
         inputSchema: {
-          accountIds: z.array(z.string()).describe('Array of social media account IDs to post to'),
-          summary: z.string().describe('Post content/text'),
-          type: z.enum(['post', 'story', 'reel']).describe('Type of post'),
+          accountIds: z.array(z.string()).describe('Array of social media account IDs to post to (get from get_social_accounts)'),
+          summary: z.string().describe('Post content/caption text'),
+          type: z.enum(['post', 'story', 'reel']).optional().describe('Type of content (default: "post")'),
           media: z.array(z.object({
-            url: z.string().describe('Media URL'),
+            url: z.string().describe('Media URL (must be publicly accessible)'),
             caption: z.string().optional().describe('Media caption'),
-            type: z.string().optional().describe('Media MIME type')
-          })).optional().describe('Media attachments'),
-          status: z.enum(['draft', 'scheduled', 'published']).optional().describe('Post status (default: draft)'),
-          scheduleDate: z.string().optional().describe('Schedule date for post (ISO format)'),
-          followUpComment: z.string().optional().describe('Follow-up comment'),
-          tags: z.array(z.string()).optional().describe('Tag IDs to associate with post'),
-          categoryId: z.string().optional().describe('Category ID'),
-          userId: z.string().optional().describe('User ID creating the post')
+            type: z.string().optional().describe('Media MIME type (e.g., "image/png", "video/mp4")')
+          })).optional().describe('Media attachments (images/videos)'),
+          status: z.enum(['draft', 'scheduled', 'published']).optional().describe('Post status (default: "published")'),
+          scheduleDate: z.string().optional().describe('Schedule date in ISO 8601 format (e.g., "2025-10-24T14:00:00.000Z")'),
+          followUpComment: z.string().optional().describe('Auto-comment to post after publishing'),
+          tags: z.array(z.string()).optional().describe('Array of tag IDs to associate with post'),
+          categoryId: z.string().optional().describe('Category ID for organization'),
+          createdBy: z.string().optional().describe('User ID who created the post'),
+          tiktokPostDetails: z.object({
+            privacyLevel: z.string().optional().describe('Privacy level (e.g., "PUBLIC_TO_EVERYONE")'),
+            promoteOtherBrand: z.boolean().optional(),
+            enableComment: z.boolean().optional(),
+            enableDuet: z.boolean().optional(),
+            enableStitch: z.boolean().optional(),
+            videoDisclosure: z.boolean().optional(),
+            promoteYourBrand: z.boolean().optional()
+          }).optional().describe('TikTok-specific post settings (only for TikTok accounts)'),
+          gmbPostDetails: z.object({
+            gmbEventType: z.enum(['STANDARD', 'EVENT', 'OFFER']).optional(),
+            title: z.string().optional(),
+            actionType: z.enum(['book', 'order', 'shop', 'learn_more', 'sign_up', 'call']).optional()
+          }).optional().describe('Google My Business-specific settings (only for GMB accounts)')
         }
       },
       {
@@ -114,26 +137,120 @@ Related Tools: search_social_posts, update_social_post`,
         name: 'update_social_post',
         description: `Update an existing social media post.
 
-Only updates draft or scheduled posts. Published posts cannot be edited.
+⚠️ ⚠️ ⚠️ CRITICAL LIMITATIONS - READ THIS FIRST ⚠️ ⚠️ ⚠️
 
-Related Tools: get_social_post, search_social_posts`,
+GHL ONLY allows editing posts that are:
+1. In DRAFT status (not yet published)
+2. SCHEDULED for the future (not yet published)
+
+PUBLISHED POSTS CANNOT BE EDITED - the API will reject the update!
+
+🔄 IMPORTANT GHL BEHAVIOR - SCHEDULED POSTS:
+When you update a SCHEDULED post, GHL automatically changes its status to DRAFT!
+This means:
+1. Update scheduled post → Status changes to "draft"
+2. Post is NO LONGER scheduled (loses schedule date)
+3. You must RESCHEDULE it by setting scheduleDate + status: "scheduled"
+
+WORKFLOW for editing scheduled posts:
+1. Update the post content (it becomes draft automatically)
+2. Reschedule it: Set scheduleDate + status: "scheduled" + scheduleTimeUpdated: true
+
+WORKAROUND for editing published posts:
+If you need to edit a published post, you must:
+1. Delete the published post using delete_social_post
+2. Create a new post with the updated content using create_social_post
+
+This is a GHL platform limitation, not an MCP limitation.
+
+---
+
+Use this tool to edit draft or scheduled posts before they go live. Useful for fixing typos, rescheduling, adding media, or changing which accounts a post will be published to.
+
+Required Parameters:
+- postId: Post ID to update (from search_social_posts or create_social_post)
+- accountIds: Array of social account IDs
+- summary: Post content/caption
+
+Optional Parameters:
+- media: Array of media attachments
+- status: "draft", "scheduled", or "published"
+- scheduleDate: ISO 8601 datetime for scheduled posts
+- type: "post", "story", or "reel"
+- followUpComment: Auto-comment after posting
+- tags: Array of tag IDs
+- categoryId: Category ID
+- scheduleTimeUpdated: Set to true when changing schedule time
+- tiktokPostDetails: TikTok-specific settings
+- gmbPostDetails: Google My Business settings
+
+Examples:
+1. Update draft content: {postId: "...", accountIds: [...], summary: "Updated text"}
+2. Reschedule future post: {postId: "...", accountIds: [...], summary: "...", scheduleDate: "2025-10-27T14:00:00.000Z", scheduleTimeUpdated: true}
+3. Add media to draft: {postId: "...", accountIds: [...], summary: "...", media: [{url: "https://..."}]}
+
+Related Tools: get_social_post, search_social_posts, create_social_post, delete_social_post`,
         inputSchema: {
-          postId: z.string().describe('Social media post ID'),
-          summary: z.string().optional().describe('Updated post content'),
-          status: z.enum(['draft', 'scheduled', 'published']).optional().describe('Updated post status'),
-          scheduleDate: z.string().optional().describe('Updated schedule date'),
-          tags: z.array(z.string()).optional().describe('Updated tag IDs')
+          postId: z.string().describe('Social media post ID to update'),
+          accountIds: z.array(z.string()).describe('Array of social media account IDs'),
+          summary: z.string().describe('Post content/caption text'),
+          type: z.enum(['post', 'story', 'reel']).optional().describe('Type of content'),
+          media: z.array(z.object({
+            url: z.string().describe('Media URL'),
+            caption: z.string().optional().describe('Media caption'),
+            type: z.string().optional().describe('Media MIME type')
+          })).optional().describe('Media attachments'),
+          status: z.enum(['draft', 'scheduled', 'published']).optional().describe('Post status'),
+          scheduleDate: z.string().optional().describe('Schedule date in ISO 8601 format'),
+          followUpComment: z.string().optional().describe('Auto-comment after posting'),
+          tags: z.array(z.string()).optional().describe('Array of tag IDs'),
+          categoryId: z.string().optional().describe('Category ID'),
+          scheduleTimeUpdated: z.boolean().optional().describe('Set to true when changing schedule time'),
+          userId: z.string().optional().describe('User ID'),
+          tiktokPostDetails: z.object({
+            privacyLevel: z.string().optional(),
+            promoteOtherBrand: z.boolean().optional(),
+            enableComment: z.boolean().optional(),
+            enableDuet: z.boolean().optional(),
+            enableStitch: z.boolean().optional(),
+            videoDisclosure: z.boolean().optional(),
+            promoteYourBrand: z.boolean().optional()
+          }).optional().describe('TikTok-specific settings'),
+          gmbPostDetails: z.object({
+            gmbEventType: z.enum(['STANDARD', 'EVENT', 'OFFER']).optional(),
+            title: z.string().optional(),
+            actionType: z.enum(['book', 'order', 'shop', 'learn_more', 'sign_up', 'call']).optional()
+          }).optional().describe('Google My Business settings')
         }
       },
       {
         name: 'delete_social_post',
-        description: `Delete a social media post.
+        description: `Delete a social media post by ID.
 
-⚠️ WARNING: This is permanent and cannot be undone!
+⚠️ ⚠️ ⚠️ WARNING: PERMANENT DELETION - CANNOT BE UNDONE! ⚠️ ⚠️ ⚠️
 
-Related Tools: bulk_delete_social_posts (delete multiple)`,
+Can delete posts in any status:
+- ✅ DRAFT posts (removes from GHL)
+- ✅ SCHEDULED posts (prevents publishing and removes from GHL)
+- ✅ PUBLISHED posts (removes from GHL, but may not remove from actual social platforms)
+
+IMPORTANT NOTES:
+1. Deletion is permanent and irreversible
+2. For published posts, this removes the post from GHL's system but may NOT remove it from Facebook, Instagram, LinkedIn, etc.
+3. To remove from actual social platforms, you may need to delete directly on those platforms
+4. Deleting a scheduled post will prevent it from being published
+
+USE CASES:
+- Remove draft posts that are no longer needed
+- Cancel scheduled posts before they publish
+- Clean up posts from GHL (note: won't remove from social platforms)
+- Part of "edit published post" workaround (delete + recreate)
+
+Get post IDs from search_social_posts or create_social_post.
+
+Related Tools: bulk_delete_social_posts (delete multiple), create_social_post, update_social_post`,
         inputSchema: {
-          postId: z.string().describe('Social media post ID to delete')
+          postId: z.string().describe('Social media post ID to delete (24-character MongoDB ObjectId)')
         }
       },
       {
@@ -356,43 +473,85 @@ Related Tools: start_social_oauth, get_social_accounts`,
 
   // Implementation methods
   private async searchSocialPosts(params: any) {
+    // Provide sensible defaults for date range
+    const now = new Date();
+    let fromDate: string;
+    let toDate: string;
+    
+    // IMPORTANT: Different post types need different date ranges!
+    if (params.type === 'scheduled') {
+      // For scheduled posts, search FORWARD in time (future dates)
+      fromDate = params.fromDate || now.toISOString();
+      const oneYearFromNow = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+      toDate = params.toDate || oneYearFromNow.toISOString();
+    } else if (params.type === 'draft') {
+      // For draft posts, search WIDE range (could be created anytime)
+      // Search from 1 year ago to 1 year in future to catch all drafts
+      const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      const oneYearFromNow = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+      fromDate = params.fromDate || oneYearAgo.toISOString();
+      toDate = params.toDate || oneYearFromNow.toISOString();
+    } else {
+      // For other types (published, failed, etc.), search last 30 days (backward in time)
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      fromDate = params.fromDate || thirtyDaysAgo.toISOString();
+      toDate = params.toDate || now.toISOString();
+    }
+
     const response = await this.ghlClient.searchSocialPosts({
-      type: params.type,
+      type: params.type || 'all',
       accounts: params.accounts,
-      skip: params.skip?.toString(),
-      limit: params.limit?.toString(),
-      fromDate: params.fromDate,
-      toDate: params.toDate,
-      includeUsers: params.includeUsers?.toString() || 'true',
+      skip: params.skip?.toString() || '0',
+      limit: params.limit?.toString() || '10',
+      fromDate: fromDate,
+      toDate: toDate,
+      includeUsers: params.includeUsers !== undefined ? params.includeUsers.toString() : 'true',
       postType: params.postType
     });
 
+    // GHL API returns data nested under 'results'
+    const posts = response.data?.results?.posts || [];
+    const count = response.data?.results?.count || 0;
+
     return {
       success: true,
-      posts: response.data?.posts || [],
-      count: response.data?.count || 0,
-      message: `Found ${response.data?.count || 0} social media posts`
+      posts: posts,
+      count: count,
+      message: `Found ${count} social media posts (${fromDate} to ${toDate})`
     };
   }
 
   private async createSocialPost(params: any) {
-    const response = await this.ghlClient.createSocialPost({
+    // Build request body with all provided parameters
+    // IMPORTANT: GHL API requires media as array (even if empty), userId AND createdBy as non-empty strings
+    const requestBody: any = {
       accountIds: params.accountIds,
       summary: params.summary,
-      media: params.media,
-      status: params.status,
-      scheduleDate: params.scheduleDate,
-      followUpComment: params.followUpComment,
-      type: params.type,
-      tags: params.tags,
-      categoryId: params.categoryId,
-      userId: params.userId
-    });
+      type: params.type || 'post', // Default to 'post' if not specified
+      media: params.media || [], // Must be array, default to empty
+      userId: params.userId || params.createdBy || 'mcp-server', // Required by API
+      createdBy: params.createdBy || params.userId || 'mcp-server' // Also required!
+    };
+
+    // Add optional fields if provided
+    if (params.status) requestBody.status = params.status;
+    if (params.scheduleDate) requestBody.scheduleDate = params.scheduleDate;
+    if (params.followUpComment) requestBody.followUpComment = params.followUpComment;
+    if (params.tags) requestBody.tags = params.tags;
+    if (params.categoryId) requestBody.categoryId = params.categoryId;
+    if (params.tiktokPostDetails) requestBody.tiktokPostDetails = params.tiktokPostDetails;
+    if (params.gmbPostDetails) requestBody.gmbPostDetails = params.gmbPostDetails;
+
+    const response = await this.ghlClient.createSocialPost(requestBody);
+
+    // GHL API likely returns data nested under 'results' (following pattern)
+    const post = response.data?.results?.post || response.data?.post;
 
     return {
       success: true,
-      post: response.data?.post,
-      message: `Social media post created successfully`
+      post: post,
+      postId: post?._id,
+      message: `Social media post created successfully${params.status === 'scheduled' ? ' and scheduled' : params.status === 'draft' ? ' as draft' : ''}`
     };
   }
 
@@ -407,12 +566,49 @@ Related Tools: start_social_oauth, get_social_accounts`,
   }
 
   private async updateSocialPost(params: any) {
-    const { postId, ...updateData } = params;
-    const response = await this.ghlClient.updateSocialPost(postId, updateData);
+    const { postId, ...updateFields } = params;
+    
+    // CRITICAL: Get existing post first to preserve status if not explicitly changed
+    const existingPostResponse = await this.ghlClient.getSocialPost(postId);
+    const existingPost = existingPostResponse.data?.post;
+    
+    // Build request body similar to create_social_post
+    // IMPORTANT: GHL API requires media as array (even if empty), userId AND createdBy as non-empty strings
+    // CRITICAL: Must preserve existing status if not explicitly provided to prevent accidental publishing!
+    const requestBody: any = {
+      accountIds: updateFields.accountIds,
+      summary: updateFields.summary,
+      type: updateFields.type || existingPost?.type || 'post',
+      media: updateFields.media || existingPost?.media || [], // Must be array, default to empty
+      userId: updateFields.userId || 'mcp-server', // Required by API
+      createdBy: updateFields.createdBy || updateFields.userId || 'mcp-server', // Also required!
+      status: updateFields.status || existingPost?.status || 'draft' // CRITICAL: Preserve existing status!
+    };
+
+    // Add optional fields if provided
+    if (updateFields.scheduleDate) requestBody.scheduleDate = updateFields.scheduleDate;
+    if (updateFields.followUpComment) requestBody.followUpComment = updateFields.followUpComment;
+    if (updateFields.tags) requestBody.tags = updateFields.tags;
+    if (updateFields.categoryId) requestBody.categoryId = updateFields.categoryId;
+    if (updateFields.scheduleTimeUpdated !== undefined) requestBody.scheduleTimeUpdated = updateFields.scheduleTimeUpdated;
+    if (updateFields.tiktokPostDetails) requestBody.tiktokPostDetails = updateFields.tiktokPostDetails;
+    if (updateFields.gmbPostDetails) requestBody.gmbPostDetails = updateFields.gmbPostDetails;
+    
+    // If existing post has scheduleDate and we're not changing it, preserve it
+    if (!updateFields.scheduleDate && existingPost?.scheduleDate) {
+      requestBody.scheduleDate = existingPost.scheduleDate;
+    }
+
+    const response = await this.ghlClient.updateSocialPost(postId, requestBody);
+    
+    // GHL API likely returns data nested under 'results' (following pattern)
+    const post = response.data?.results?.post || response.data?.post;
     
     return {
       success: true,
-      message: `Social media post ${postId} updated successfully`
+      post: post,
+      postId: post?._id,
+      message: `Social media post updated successfully${updateFields.scheduleDate ? ' and rescheduled' : ''}`
     };
   }
 
@@ -438,11 +634,15 @@ Related Tools: start_social_oauth, get_social_accounts`,
   private async getSocialAccounts(params: any) {
     const response = await this.ghlClient.getSocialAccounts();
     
+    // GHL API returns data nested under 'results'
+    const accounts = response.data?.results?.accounts || [];
+    const groups = response.data?.results?.groups || [];
+    
     return {
       success: true,
-      accounts: response.data?.accounts || [],
-      groups: response.data?.groups || [],
-      message: `Retrieved ${response.data?.accounts?.length || 0} social media accounts and ${response.data?.groups?.length || 0} groups`
+      accounts: accounts,
+      groups: groups,
+      message: `Retrieved ${accounts.length} social media accounts and ${groups.length} groups`
     };
   }
 

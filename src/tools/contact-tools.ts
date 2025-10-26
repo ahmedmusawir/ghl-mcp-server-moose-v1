@@ -99,7 +99,26 @@ export class ContactTools {
       },
       {
         name: "update_contact",
-        description: "Update contact information",
+        description: `Update contact information including custom fields.
+
+Use this tool to update standard contact fields (name, email, phone, tags) AND custom field values.
+
+CUSTOM FIELDS:
+To update custom field values, provide an array of objects with 'id' and 'field_value':
+- id: The custom field ID (get from create_location_custom_field)
+- field_value: The value to set (string, number, array, or object depending on field type)
+
+EXAMPLE:
+{
+  "contactId": "abc123",
+  "firstName": "John",
+  "customFields": [
+    {"id": "KG6BuozCm6hthcrFJskq", "field_value": "MCP-12345"},
+    {"id": "anotherFieldId", "field_value": "Some value"}
+  ]
+}
+
+Related Tools: create_contact, get_contact, create_location_custom_field`,
         inputSchema: {
           contactId: z.string().describe("Contact ID"),
           firstName: z.string().optional().describe("Contact first name"),
@@ -110,6 +129,20 @@ export class ContactTools {
             .array(z.string())
             .optional()
             .describe("Tags to assign to contact"),
+          customFields: z
+            .array(
+              z.object({
+                id: z.string().describe("Custom field ID"),
+                field_value: z.union([
+                  z.string(),
+                  z.number(),
+                  z.array(z.string()),
+                  z.record(z.any())
+                ]).describe("Custom field value (string, number, array, or object)")
+              })
+            )
+            .optional()
+            .describe("Array of custom field values to update. Each object must have 'id' (custom field ID) and 'field_value' (the value to set)"),
         },
       },
       {
@@ -593,6 +626,7 @@ export class ContactTools {
       email: params.email,
       phone: params.phone,
       tags: params.tags,
+      customFields: params.customFields,
     });
 
     if (!response.success) {
