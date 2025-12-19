@@ -3770,6 +3770,9 @@ export class GHLApiClient {
       if (uploadData.parentId) {
         formData.append('parentId', uploadData.parentId);
       }
+      if (uploadData.contentType) {
+        formData.append('contentType', uploadData.contentType);
+      }
 
       const response: AxiosResponse<GHLUploadMediaFileResponse> = await this.axiosInstance.post(
         '/medias/upload-file',

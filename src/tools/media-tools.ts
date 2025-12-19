@@ -25,29 +25,37 @@ export class MediaTools {
     return [
       {
         name: 'get_media_files',
-        description: `Get list of files and folders from the media library.
+        description: `Search and retrieve files from the media library.
 
-Search and filter media with pagination and sorting.
+**Optimized for Search & Retrieval** - Find specific files quickly to get their URLs.
 
 Use Cases:
-- Browse media library
-- Search for specific files
-- List files in a folder
-- Filter by file type
+- Search for files by name (e.g., "Find the logo image")
+- Get file URLs for use in posts, emails, etc.
+- List files in a specific folder
+- Browse media library (files + folders)
 
-Returns: Array of files/folders with URLs, sizes, and metadata.
+Smart Behavior:
+- No type specified → Returns BOTH files AND folders (limit 10 each) - "Hybrid View"
+- With query → Searches files only (type='file')
+- type='file' → Returns only files
+- type='folder' → Returns only folders
+
+Returns: 
+- If type specified: { files: [...] } or { folders: [...] }
+- If no type (Hybrid View): { files: [...], folders: [...] }
+
+Example: "Find image named 'logo'" → Use query='logo'
 
 Related Tools: upload_media_file, delete_media_file`,
         inputSchema: {
-          offset: z.number().min(0).optional().describe('Number of files to skip (default: 0)'),
-          limit: z.number().min(1).max(100).optional().describe('Number of files to return (max 100, default: 20)'),
-          sortBy: z.string().optional().describe('Field to sort by (createdAt, name, size)'),
-          sortOrder: z.enum(['asc', 'desc']).optional().describe('Sort direction (default: desc)'),
-          type: z.enum(['file', 'folder']).optional().describe('Filter by type'),
-          query: z.string().optional().describe('Search query to filter files by name'),
-          altType: z.enum(['location', 'agency']).optional().describe('Context type (default: location)'),
-          altId: z.string().optional().describe('Location or Agency ID (uses default if not provided)'),
-          parentId: z.string().optional().describe('Parent folder ID to list files within')
+          query: z.string().optional().describe('Search term to find files by name (e.g., "logo", "banner"). When provided, searches for files only.'),
+          parentId: z.string().optional().describe('Folder ID to list contents within.'),
+          type: z.enum(['file', 'folder']).optional().describe('Filter by type. If omitted, returns BOTH files and folders (Hybrid View).'),
+          limit: z.number().min(1).max(100).optional().describe('Number of results per type (default: 10, max: 100)'),
+          offset: z.number().min(0).optional().describe('Number of results to skip for pagination (default: 0)'),
+          sortBy: z.string().optional().describe('Field to sort by: createdAt, name, size (default: createdAt)'),
+          sortOrder: z.enum(['asc', 'desc']).optional().describe('Sort direction (default: desc)')
         }
       },
       {
@@ -60,6 +68,8 @@ Two upload modes:
 1. Direct upload: Provide file data
 2. Hosted URL: Provide fileUrl (set hosted=true)
 
+💡 For hosted URLs: ALWAYS provide contentType (e.g., 'image/png') to avoid "Unable to determine content type" errors.
+
 Use Cases:
 - Upload images for social posts
 - Store documents
@@ -70,10 +80,11 @@ Returns: Uploaded file with URL and metadata.
 
 Related Tools: get_media_files, delete_media_file`,
         inputSchema: {
-          file: z.string().optional().describe('File data (binary) for direct upload'),
-          hosted: z.boolean().optional().describe('Set to true if providing a fileUrl (default: false)'),
           fileUrl: z.string().optional().describe('URL of hosted file (required if hosted=true)'),
-          name: z.string().optional().describe('Custom name for the uploaded file'),
+          hosted: z.boolean().optional().describe('Set to true if providing a fileUrl (default: false)'),
+          contentType: z.string().optional().describe('MIME type of the file (e.g., "image/png", "image/jpeg", "application/pdf"). REQUIRED for hosted URLs to avoid content type errors.'),
+          name: z.string().optional().describe('Custom name for the file (e.g., "logo.png")'),
+          file: z.string().optional().describe('File data (binary) for direct upload'),
           parentId: z.string().optional().describe('Parent folder ID to upload into'),
           altType: z.enum(['location', 'agency']).optional().describe('Context type (default: location)'),
           altId: z.string().optional().describe('Location or Agency ID (uses default if not provided)')
@@ -116,36 +127,87 @@ Related Tools: get_media_files, upload_media_file`,
   }
 
   /**
-   * GET MEDIA FILES
+   * GET MEDIA FILES - Hybrid View Support
    */
-  private async getMediaFiles(params: any = {}): Promise<{ success: boolean; files: any[]; total?: number; message: string }> {
+  private async getMediaFiles(params: any = {}): Promise<{ success: boolean; files?: any[]; folders?: any[]; total?: number; message: string }> {
     try {
-      const requestParams: any = {
+      const baseParams: any = {
         sortBy: params.sortBy || 'createdAt',
         sortOrder: params.sortOrder || 'desc',
+        limit: params.limit || 10,
+        offset: params.offset || 0,
         altType: params.altType || 'location',
         altId: params.altId || this.ghlClient.getConfig().locationId,
-        ...(params.offset !== undefined && { offset: params.offset }),
-        ...(params.limit !== undefined && { limit: params.limit }),
-        ...(params.type && { type: params.type }),
-        ...(params.query && { query: params.query }),
         ...(params.parentId && { parentId: params.parentId })
       };
 
-      const response = await this.ghlClient.getMediaFiles(requestParams);
-      
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Unknown API error';
-        throw new Error(`API request failed: ${errorMsg}`);
+      // If query is provided, always search for files only
+      if (params.query) {
+        const response = await this.ghlClient.getMediaFiles({
+          ...baseParams,
+          type: 'file',
+          query: params.query
+        });
+        
+        if (!response.success || !response.data) {
+          throw new Error(response.error?.message || 'Unknown API error');
+        }
+
+        const files = Array.isArray(response.data.files) ? response.data.files : [];
+        return {
+          success: true,
+          files,
+          total: response.data.total,
+          message: `Found ${files.length} files matching "${params.query}"`
+        };
       }
 
-      const files = Array.isArray(response.data.files) ? response.data.files : [];
-      
+      // If type is specified, return only that type
+      if (params.type) {
+        const response = await this.ghlClient.getMediaFiles({
+          ...baseParams,
+          type: params.type
+        });
+        
+        if (!response.success || !response.data) {
+          throw new Error(response.error?.message || 'Unknown API error');
+        }
+
+        const items = Array.isArray(response.data.files) ? response.data.files : [];
+        
+        if (params.type === 'folder') {
+          return {
+            success: true,
+            folders: items,
+            total: response.data.total,
+            message: `Retrieved ${items.length} folders`
+          };
+        } else {
+          return {
+            success: true,
+            files: items,
+            total: response.data.total,
+            message: `Retrieved ${items.length} files`
+          };
+        }
+      }
+
+      // HYBRID VIEW: No type specified - fetch BOTH files and folders in parallel
+      const [filesResponse, foldersResponse] = await Promise.all([
+        this.ghlClient.getMediaFiles({ ...baseParams, type: 'file' }),
+        this.ghlClient.getMediaFiles({ ...baseParams, type: 'folder' })
+      ]);
+
+      const files = filesResponse.success && filesResponse.data?.files 
+        ? filesResponse.data.files : [];
+      const folders = foldersResponse.success && foldersResponse.data?.files 
+        ? foldersResponse.data.files : [];
+
       return {
         success: true,
         files,
-        total: response.data.total,
-        message: `Retrieved ${files.length} media files/folders`
+        folders,
+        message: `Retrieved ${files.length} files and ${folders.length} folders`
       };
     } catch (error) {
       throw new Error(`Failed to get media files: ${error instanceof Error ? error.message : String(error)}`);
@@ -172,7 +234,8 @@ Related Tools: get_media_files, upload_media_file`,
         ...(params.fileUrl && { fileUrl: params.fileUrl }),
         ...(params.file && { file: params.file }),
         ...(params.name && { name: params.name }),
-        ...(params.parentId && { parentId: params.parentId })
+        ...(params.parentId && { parentId: params.parentId }),
+        ...(params.contentType && { contentType: params.contentType })
       };
 
       const response = await this.ghlClient.uploadMediaFile(uploadData);

@@ -72,7 +72,7 @@ Best Practices:
 
 Related Tools: Contact management tools for updating verified contacts`,
         inputSchema: {
-          locationId: z.string().describe('Location ID - charges will be deducted from this location wallet'),
+          locationId: z.string().optional().describe('Location ID (optional - uses configured location if not provided). Note: charges will be deducted from this location wallet'),
           type: z.enum(['email', 'contact']).describe('Verification type: "email" for direct email verification, "contact" for contact ID verification'),
           verify: z.string().describe('Email address to verify (if type=email) or contact ID (if type=contact)')
         }
@@ -98,7 +98,8 @@ Related Tools: Contact management tools for updating verified contacts`,
    */
   private async verifyEmail(params: any): Promise<any> {
     try {
-      const result = await this.ghlClient.verifyEmail(params.locationId, {
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const result = await this.ghlClient.verifyEmail(locationId, {
         type: params.type,
         verify: params.verify
       });

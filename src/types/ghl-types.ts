@@ -3330,6 +3330,7 @@ export interface GHLUploadMediaFileRequest {
   parentId?: string;
   altType?: 'location' | 'agency';
   altId?: string;
+  contentType?: string; // MIME type (e.g., 'image/png') - helps GHL determine file type for hosted URLs
 }
 
 export interface GHLUploadMediaFileResponse {

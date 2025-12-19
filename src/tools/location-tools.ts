@@ -285,7 +285,7 @@ Best Practices:
 
 Related Tools: create_location_tag, update_location_tag, delete_location_tag`,
         inputSchema: {
-          locationId: z.string().describe('The location ID to get tags from')
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)')
         }
       },
       {
@@ -319,7 +319,7 @@ Best Practices:
 
 Related Tools: get_location_tags (check existing), update_location_tag, delete_location_tag`,
         inputSchema: {
-          locationId: z.string().describe('The location ID to create tag in'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           name: z.string().describe('Name of the tag (must be unique within location)')
         }
       },
@@ -342,7 +342,7 @@ Returns: Tag object with ID, name, and metadata.
 
 Related Tools: get_location_tags (list all tags), update_location_tag, delete_location_tag`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           tagId: z.string().describe('The tag ID to retrieve')
         }
       },
@@ -373,7 +373,7 @@ Best Practices:
 
 Related Tools: get_location_tags (find tagId), create_location_tag, delete_location_tag`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           tagId: z.string().describe('The tag ID to update'),
           name: z.string().describe('Updated name for the tag (must be unique within location)')
         }
@@ -410,7 +410,7 @@ Best Practices:
 
 Related Tools: get_location_tags (find tagId), update_location_tag (rename instead)`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           tagId: z.string().describe('The tag ID to delete')
         }
       },
@@ -450,7 +450,7 @@ Best Practices:
 
 Related Tools: Contact task tools for individual contact task management`,
         inputSchema: {
-          locationId: z.string().describe('The location ID to search tasks in'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           contactId: z.array(z.string()).optional().describe('Filter by specific contact IDs'),
           completed: z.boolean().optional().describe('Filter by completion status'),
           assignedTo: z.array(z.string()).optional().describe('Filter by assigned user IDs'),
@@ -500,7 +500,7 @@ Best Practices:
 
 Related Tools: create_location_custom_field, update_location_custom_field, get_location_custom_values`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           model: z.enum(['contact', 'opportunity', 'all']).optional().describe('Filter by model type (default: all)')
         }
       },
@@ -545,7 +545,7 @@ Best Practices:
 
 Related Tools: get_location_custom_fields (check existing), update_location_custom_field, create_location_custom_value (set values)`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           name: z.string().describe('Name/label of the custom field (shown to users)'),
           dataType: z.enum(['TEXT', 'TEXTAREA', 'NUMBER', 'CHECKBOX', 'SELECT', 'RADIO', 'DATE']).describe('Data type of the field'),
           model: z.enum(['contact', 'opportunity']).describe('Model to create the field for'),
@@ -572,7 +572,7 @@ Returns: Custom field definition with type, options, and settings.
 
 Related Tools: get_location_custom_fields (list all), update_location_custom_field`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           customFieldId: z.string().describe('The custom field ID to retrieve')
         }
       },
@@ -610,7 +610,7 @@ Best Practices:
 
 Related Tools: get_location_custom_fields (find fieldId), create_location_custom_field`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           customFieldId: z.string().describe('The custom field ID to update'),
           name: z.string().describe('Updated name/label of the custom field'),
           placeholder: z.string().optional().describe('Updated placeholder text'),
@@ -648,7 +648,7 @@ Best Practices:
 
 Related Tools: get_location_custom_fields (find fieldId), get_location_custom_values (export data first)`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           customFieldId: z.string().describe('The custom field ID to delete')
         }
       },
@@ -681,7 +681,7 @@ Best Practices:
 
 Related Tools: get_location_custom_fields (field definitions), create_location_custom_value, update_location_custom_value`,
         inputSchema: {
-          locationId: z.string().describe('The location ID')
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)')
         }
       },
       {
@@ -711,7 +711,7 @@ Best Practices:
 
 Related Tools: get_location_custom_fields (verify field), update_location_custom_value, get_location_custom_values`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           name: z.string().describe('Name of the custom field'),
           value: z.string().describe('Value to set for the custom field')
         }
@@ -735,7 +735,7 @@ Returns: Custom value record with field name and value.
 
 Related Tools: get_location_custom_values (list all), update_location_custom_value`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           customValueId: z.string().describe('The custom value ID to retrieve')
         }
       },
@@ -767,7 +767,7 @@ Best Practices:
 
 Related Tools: get_location_custom_values (find valueId), create_location_custom_value, get_location_custom_fields`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           customValueId: z.string().describe('The custom value ID to update'),
           name: z.string().describe('Name of the custom field'),
           value: z.string().describe('New value for the custom field')
@@ -804,7 +804,7 @@ Best Practices:
 
 Related Tools: get_location_custom_values (find valueId), update_location_custom_value (set to empty instead)`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           customValueId: z.string().describe('The custom value ID to delete')
         }
       },
@@ -857,7 +857,7 @@ Best Practices:
 
 Related Tools: delete_location_template`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           originId: z.string().optional().describe('Origin ID (optional - defaults to locationId if not provided)'),
           type: z.enum(['sms', 'email', 'whatsapp']).optional().describe('Filter by template type'),
           deleted: z.boolean().optional().describe('Include deleted templates (default: false)'),
@@ -897,7 +897,7 @@ Best Practices:
 
 Related Tools: get_location_templates (find templateId)`,
         inputSchema: {
-          locationId: z.string().describe('The location ID'),
+          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)'),
           templateId: z.string().describe('The template ID to delete')
         }
       },
@@ -1045,7 +1045,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async getLocationTags(params: MCPGetLocationTagsParams): Promise<{ success: boolean; tags: GHLLocationTag[]; message: string }> {
     try {
-      const response = await this.ghlClient.getLocationTags(params.locationId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.getLocationTags(locationId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1114,7 +1115,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async createLocationTag(params: MCPCreateLocationTagParams): Promise<{ success: boolean; tag: GHLLocationTag; message: string }> {
     try {
-      const response = await this.ghlClient.createLocationTag(params.locationId, { name: params.name });
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.createLocationTag(locationId, { name: params.name });
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1131,7 +1133,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async getLocationTag(params: MCPGetLocationTagParams): Promise<{ success: boolean; tag: GHLLocationTag; message: string }> {
     try {
-      const response = await this.ghlClient.getLocationTag(params.locationId, params.tagId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.getLocationTag(locationId, params.tagId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1148,7 +1151,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async updateLocationTag(params: MCPUpdateLocationTagParams): Promise<{ success: boolean; tag: GHLLocationTag; message: string }> {
     try {
-      const response = await this.ghlClient.updateLocationTag(params.locationId, params.tagId, { name: params.name });
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.updateLocationTag(locationId, params.tagId, { name: params.name });
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1165,7 +1169,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async deleteLocationTag(params: MCPDeleteLocationTagParams): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await this.ghlClient.deleteLocationTag(params.locationId, params.tagId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.deleteLocationTag(locationId, params.tagId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1181,7 +1186,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async searchLocationTasks(params: MCPSearchLocationTasksParams): Promise<{ success: boolean; tasks: any[]; message: string }> {
     try {
-      const { locationId, ...searchParams } = params;
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const { locationId: _, ...searchParams } = params;
       const response = await this.ghlClient.searchLocationTasks(locationId, searchParams);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
@@ -1200,7 +1206,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async getLocationCustomFields(params: MCPGetCustomFieldsParams): Promise<{ success: boolean; customFields: GHLLocationCustomField[]; message: string }> {
     try {
-      const response = await this.ghlClient.getLocationCustomFields(params.locationId, params.model);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.getLocationCustomFields(locationId, params.model);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1218,7 +1225,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async createLocationCustomField(params: MCPCreateCustomFieldParams): Promise<{ success: boolean; customField: GHLLocationCustomField; message: string }> {
     try {
-      const { locationId, ...fieldData } = params;
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const { locationId: _, ...fieldData } = params;
       const response = await this.ghlClient.createLocationCustomField(locationId, fieldData);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
@@ -1236,7 +1244,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async getLocationCustomField(params: MCPGetCustomFieldParams): Promise<{ success: boolean; customField: GHLLocationCustomField; message: string }> {
     try {
-      const response = await this.ghlClient.getLocationCustomField(params.locationId, params.customFieldId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.getLocationCustomField(locationId, params.customFieldId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1253,7 +1262,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async updateLocationCustomField(params: MCPUpdateCustomFieldParams): Promise<{ success: boolean; customField: GHLLocationCustomField; message: string }> {
     try {
-      const { locationId, customFieldId, ...fieldData } = params;
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const { locationId: _, customFieldId, ...fieldData } = params;
       const response = await this.ghlClient.updateLocationCustomField(locationId, customFieldId, fieldData);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
@@ -1271,7 +1281,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async deleteLocationCustomField(params: MCPDeleteCustomFieldParams): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await this.ghlClient.deleteLocationCustomField(params.locationId, params.customFieldId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.deleteLocationCustomField(locationId, params.customFieldId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1287,7 +1298,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async getLocationCustomValues(params: MCPGetCustomValuesParams): Promise<{ success: boolean; customValues: GHLLocationCustomValue[]; message: string }> {
     try {
-      const response = await this.ghlClient.getLocationCustomValues(params.locationId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.getLocationCustomValues(locationId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1305,7 +1317,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async createLocationCustomValue(params: MCPCreateCustomValueParams): Promise<{ success: boolean; customValue: GHLLocationCustomValue; message: string }> {
     try {
-      const { locationId, ...valueData } = params;
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const { locationId: _, ...valueData } = params;
       const response = await this.ghlClient.createLocationCustomValue(locationId, valueData);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
@@ -1323,7 +1336,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async getLocationCustomValue(params: MCPGetCustomValueParams): Promise<{ success: boolean; customValue: GHLLocationCustomValue; message: string }> {
     try {
-      const response = await this.ghlClient.getLocationCustomValue(params.locationId, params.customValueId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.getLocationCustomValue(locationId, params.customValueId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1340,7 +1354,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async updateLocationCustomValue(params: MCPUpdateCustomValueParams): Promise<{ success: boolean; customValue: GHLLocationCustomValue; message: string }> {
     try {
-      const { locationId, customValueId, ...valueData } = params;
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const { locationId: _, customValueId, ...valueData } = params;
       const response = await this.ghlClient.updateLocationCustomValue(locationId, customValueId, valueData);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
@@ -1358,7 +1373,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async deleteLocationCustomValue(params: MCPDeleteCustomValueParams): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await this.ghlClient.deleteLocationCustomValue(params.locationId, params.customValueId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.deleteLocationCustomValue(locationId, params.customValueId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1374,7 +1390,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async getLocationTemplates(params: MCPGetLocationTemplatesParams): Promise<{ success: boolean; templates: any[]; totalCount: number; message: string }> {
     try {
-      const { locationId, ...templateParams } = params;
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const { locationId: _, ...templateParams } = params;
       // Auto-populate originId with locationId if not provided
       const originId = params.originId || locationId;
       const response = await this.ghlClient.getLocationTemplates(locationId, { ...templateParams, originId });
@@ -1397,7 +1414,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async deleteLocationTemplate(params: MCPDeleteLocationTemplateParams): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await this.ghlClient.deleteLocationTemplate(params.locationId, params.templateId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.deleteLocationTemplate(locationId, params.templateId);
       if (!response.success) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
@@ -1413,7 +1431,8 @@ Related Tools: create_location (requires timezone), update_location (change time
 
   private async getTimezones(params: MCPGetTimezonesParams): Promise<{ success: boolean; timezones: string[]; message: string }> {
     try {
-      const response = await this.ghlClient.getTimezones(params.locationId);
+      const locationId = params.locationId || this.ghlClient.getConfig().locationId;
+      const response = await this.ghlClient.getTimezones(locationId);
       if (!response.success || !response.data) {
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);

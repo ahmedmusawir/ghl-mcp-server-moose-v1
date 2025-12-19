@@ -796,7 +796,7 @@ Returns: Created custom provider integration with ID.
 
 Related Tools: delete_custom_provider_integration, create_custom_provider_config, get_custom_provider_config`,
         inputSchema: {
-          locationId: z.string().describe('Location ID'),
+          locationId: z.string().optional().describe('Location ID (optional - uses configured location if not provided)'),
           name: z.string().describe('Payment gateway name'),
           description: z.string().describe('Description of the payment gateway'),
           paymentsUrl: z.string().url().describe('Payment checkout URL (loaded in iframe)'),
@@ -839,7 +839,7 @@ Returns: Confirmation of deletion.
 
 Related Tools: create_custom_provider_integration, disconnect_custom_provider_config`,
         inputSchema: {
-          locationId: z.string().describe('Location ID')
+          locationId: z.string().optional().describe('Location ID (optional - uses configured location if not provided)')
         }
       },
       {
@@ -880,7 +880,7 @@ Returns: Payment configuration with API keys (may be masked).
 
 Related Tools: create_custom_provider_config, disconnect_custom_provider_config`,
         inputSchema: {
-          locationId: z.string().describe('Location ID')
+          locationId: z.string().optional().describe('Location ID (optional - uses configured location if not provided)')
         }
       },
       {
@@ -933,7 +933,7 @@ Returns: Confirmation of configuration.
 
 Related Tools: get_custom_provider_config, disconnect_custom_provider_config, create_custom_provider_integration`,
         inputSchema: {
-          locationId: z.string().describe('Location ID'),
+          locationId: z.string().optional().describe('Location ID (optional - uses configured location if not provided)'),
           live: z.object({
             apiKey: z.string().describe('Private API key for live payments (keep secret!)'),
             publishableKey: z.string().describe('Public key for live payments (client-side safe)')
@@ -990,7 +990,7 @@ Returns: Confirmation of disconnection.
 
 Related Tools: create_custom_provider_config, get_custom_provider_config, delete_custom_provider_integration`,
         inputSchema: {
-          locationId: z.string().describe('Location ID'),
+          locationId: z.string().optional().describe('Location ID (optional - uses configured location if not provided)'),
           liveMode: z.boolean().describe('true = disconnect live mode, false = disconnect test mode')
         }
       }
@@ -1053,21 +1053,26 @@ Related Tools: create_custom_provider_config, get_custom_provider_config, delete
 
       // Custom Provider Handlers
       case 'create_custom_provider_integration':
-        const { locationId: createLocationId, ...createProviderData } = args;
+        const createLocationId = args.locationId || this.client.getConfig().locationId;
+        const { locationId: _createLocId, ...createProviderData } = args;
         return this.client.createCustomProviderIntegration(createLocationId, createProviderData as CreateCustomProviderDto);
 
       case 'delete_custom_provider_integration':
-        return this.client.deleteCustomProviderIntegration(args.locationId);
+        const deleteProviderLocationId = args.locationId || this.client.getConfig().locationId;
+        return this.client.deleteCustomProviderIntegration(deleteProviderLocationId);
 
       case 'get_custom_provider_config':
-        return this.client.getCustomProviderConfig(args.locationId);
+        const getConfigLocationId = args.locationId || this.client.getConfig().locationId;
+        return this.client.getCustomProviderConfig(getConfigLocationId);
 
       case 'create_custom_provider_config':
-        const { locationId: configLocationId, ...configData } = args;
+        const configLocationId = args.locationId || this.client.getConfig().locationId;
+        const { locationId: _configLocId, ...configData } = args;
         return this.client.createCustomProviderConfig(configLocationId, configData as ConnectCustomProviderConfigDto);
 
       case 'disconnect_custom_provider_config':
-        const { locationId: disconnectLocationId, ...disconnectData } = args;
+        const disconnectLocationId = args.locationId || this.client.getConfig().locationId;
+        const { locationId: _disconnectLocId, ...disconnectData } = args;
         return this.client.disconnectCustomProviderConfig(disconnectLocationId, disconnectData as DeleteCustomProviderConfigDto);
 
       default:
