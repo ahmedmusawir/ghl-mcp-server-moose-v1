@@ -1999,7 +1999,8 @@ export interface MCPUploadCustomFieldFileParams {
 
 // Custom Values MCP Parameters
 export interface MCPGetCustomValuesParams {
-  locationId: string;
+  locationId?: string;
+  limit?: number;
 }
 
 export interface MCPCreateCustomValueParams {

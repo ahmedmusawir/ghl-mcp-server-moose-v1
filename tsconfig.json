@@ -12,5 +12,5 @@
     "types": ["node", "jest"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests/**/*", "src/**/*-org.ts", "src/server.ts", "src/server-backup.ts"]
+  "exclude": ["node_modules", "dist", "tests/**/*", "src/**/*-org.ts", "src/**/*-old.ts", "src/**/*-1.ts", "src/**/*-backup.ts", "src/server.ts", "src/server-backup.ts"]
 } 

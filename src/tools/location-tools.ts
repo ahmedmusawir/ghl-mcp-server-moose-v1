@@ -659,29 +659,23 @@ Related Tools: get_location_custom_fields (find fieldId), get_location_custom_va
 
       {
         name: 'get_location_custom_values',
-        description: `Get all custom field values for a location.
+        description: `Get custom field values for a location.
 
-Retrieves the actual data stored in custom fields across all contacts and opportunities.
+Retrieves custom values (location-level variables like domain, company info, etc).
 
 Use Cases:
-- Audit custom field usage
-- Export custom field data
-- Verify data entry
-- Analyze custom field values
+- View location custom values
+- Get value IDs for updates
+- Audit custom value usage
 
-Parameters:
-- locationId: The location to get custom values from
+Returns: Array of custom values with IDs, names, keys, and values (if populated).
 
-Returns: Array of custom field values with field IDs, names, and values.
+NOTE: GHL API omits the 'value' field if empty. Use get_location_custom_value (singular) with ID to get full details.
 
-Best Practices:
-- Use with get_location_custom_fields to understand field definitions
-- Values are returned for all contacts/opportunities
-- May return large datasets for locations with many records
-
-Related Tools: get_location_custom_fields (field definitions), create_location_custom_value, update_location_custom_value`,
+Related Tools: get_location_custom_value (get single by ID), update_location_custom_value`,
         inputSchema: {
-          locationId: z.string().optional().describe('The location ID (optional - uses configured location if not provided)')
+          locationId: z.string().optional().describe('Location ID (optional - uses configured location)'),
+          limit: z.number().optional().describe('Max number of values to return (default: 25, use smaller values to avoid timeout)')
         }
       },
       {
@@ -1296,7 +1290,7 @@ Related Tools: create_location (requires timezone), update_location (change time
     }
   }
 
-  private async getLocationCustomValues(params: MCPGetCustomValuesParams): Promise<{ success: boolean; customValues: GHLLocationCustomValue[]; message: string }> {
+  private async getLocationCustomValues(params: MCPGetCustomValuesParams): Promise<{ success: boolean; customValues: GHLLocationCustomValue[]; total: number; returned: number; hasMore: boolean; message: string }> {
     try {
       const locationId = params.locationId || this.ghlClient.getConfig().locationId;
       const response = await this.ghlClient.getLocationCustomValues(locationId);
@@ -1304,11 +1298,23 @@ Related Tools: create_location (requires timezone), update_location (change time
         const errorMsg = response.error?.message || 'Unknown API error';
         throw new Error(`API request failed: ${errorMsg}`);
       }
-      const customValues = response.data.customValues || [];
+      const allCustomValues = response.data.customValues || [];
+      
+      // Apply limit to prevent response size issues
+      const limit = params.limit || 25;
+      const customValues = allCustomValues.slice(0, limit);
+      const hasMore = allCustomValues.length > limit;
+      
+      // DEBUG: Log count only (not full response to avoid log bloat)
+      process.stderr.write(`[DEBUG get_location_custom_values] Total: ${allCustomValues.length}, Returning: ${customValues.length}\n`);
+      
       return {
         success: true,
         customValues,
-        message: `Retrieved ${customValues.length} custom values`
+        total: allCustomValues.length,
+        returned: customValues.length,
+        hasMore,
+        message: `Retrieved ${customValues.length} of ${allCustomValues.length} custom values${hasMore ? ' (use limit parameter to get more)' : ''}`
       };
     } catch (error) {
       throw new Error(`Failed to get custom values: ${error instanceof Error ? error.message : String(error)}`);

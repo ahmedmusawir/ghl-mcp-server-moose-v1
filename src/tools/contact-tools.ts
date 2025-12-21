@@ -614,7 +614,13 @@ Related Tools: create_contact, get_contact, create_location_custom_field`,
       throw new Error(response.error?.message || "Failed to get contact");
     }
 
-    return response.data!;
+    // DEBUG: Log customFields count to verify GHL API response
+    const contact = response.data!;
+    const customFieldsCount = contact.customFields?.length || 0;
+    const customFieldIds = contact.customFields?.map(f => f.id) || [];
+    process.stderr.write(`[DEBUG get_contact] customFields count: ${customFieldsCount}, IDs: ${JSON.stringify(customFieldIds)}\n`);
+
+    return contact;
   }
 
   private async updateContact(

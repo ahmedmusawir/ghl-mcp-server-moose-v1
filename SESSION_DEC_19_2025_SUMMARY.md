@@ -214,8 +214,41 @@ contentType: z.string().optional().describe('MIME type of the file (e.g., "image
 
 ---
 
+### 7. Custom Values Investigation (Dec 20, 5:27 PM)
+**Issue Reported:** Agent reported `get_location_custom_values` only shows `name`, `id`, `key` but not the `value` field.
+
+**Investigation:**
+1. Added debug logging to `get_location_custom_values` in `location-tools.ts`
+2. Tested with ADK agent
+
+**Root Cause Discovered:**
+> **GHL API omits the `value` key entirely when the value is empty/null.** The field only appears in the response when a value has been populated.
+
+**Test Confirmation:**
+- Before populating value in GHL portal → `value` key missing from response
+- After manually adding value in portal → `value` key appears: `"value": "cyberizegroup.com"`
+
+**Workflow Confirmed Working:**
+1. `get_location_custom_values` → List all (get IDs)
+2. `get_location_custom_value` → Get single by ID (shows value if populated)
+3. `update_location_custom_value` → Update the value
+
+**Status:** ✅ Working as expected (GHL API behavior documented)
+
+---
+
+### 8. Debug Logging Added (Dec 20)
+**Files Modified:**
+- `src/tools/contact-tools.ts` - Added debug log for `customFields` count in `get_contact`
+- `src/tools/location-tools.ts` - Added debug log for raw response in `get_location_custom_values`
+
+**Purpose:** Diagnose data visibility issues between GHL API and agent responses.
+
+---
+
 ## ⏳ **Pending Tasks**
-- Awaiting next instructions from user
+- Testing custom values UPDATE workflow (in progress)
+- Remove debug logging after testing complete
 
 ---
 
@@ -237,6 +270,8 @@ contentType: z.string().optional().describe('MIME type of the file (e.g., "image
 8. ❌ `src/types/ghl-types.ts` - Added `contentType` to `GHLUploadMediaFileRequest` (GHL API ignores)
 9. ❌ `src/clients/ghl-api-client.ts` - Pass `contentType` in FormData for uploads (GHL API ignores)
 10. ❌ `src/tools/media-tools.ts` - Added `contentType` parameter to upload tool (GHL API ignores)
+11. 🔍 `src/tools/contact-tools.ts` - Added debug logging for customFields count (Dec 20)
+12. 🔍 `src/tools/location-tools.ts` - Added debug logging for custom values raw response (Dec 20)
 
 ---
 
@@ -252,4 +287,4 @@ contentType: z.string().optional().describe('MIME type of the file (e.g., "image
 
 ---
 
-**Last Updated:** 3:00 PM (UTC+06:00)
+**Last Updated:** Dec 20, 5:31 PM (UTC+06:00)
