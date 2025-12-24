@@ -61,33 +61,27 @@ export class ProductsTools {
         throw new Error('No data returned from API');
       }
       
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        message: 'Product created successfully',
+        product: response.data
+      };
+      
       return {
         content: [{
           type: 'text',
-          text: `🛍️ **Product Created Successfully!**
-
-📦 **Product Details:**
-• **ID:** ${response.data._id}
-• **Name:** ${response.data.name}
-• **Type:** ${response.data.productType}
-• **Location:** ${response.data.locationId}
-• **Available in Store:** ${response.data.availableInStore ? '✅ Yes' : '❌ No'}
-• **Created:** ${new Date(response.data.createdAt).toLocaleString()}
-
-${response.data.description ? `📝 **Description:** ${response.data.description}` : ''}
-${response.data.image ? `🖼️ **Image:** ${response.data.image}` : ''}
-${response.data.collectionIds?.length ? `📂 **Collections:** ${response.data.collectionIds.length} assigned` : ''}
-${response.data.variants?.length ? `🔧 **Variants:** ${response.data.variants.length} configured` : ''}
-${response.data.medias?.length ? `📸 **Media Files:** ${response.data.medias.length} attached` : ''}
-
-✨ **Status:** Product successfully created and ready for configuration!`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Creating Product**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -106,36 +100,41 @@ ${response.data.medias?.length ? `📸 **Media Files:** ${response.data.medias.l
         throw new Error('No data returned from API');
       }
       
-      const products = response.data.products;
       const total = response.data.total[0]?.total || 0;
+      
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        products: response.data.products,
+        pagination: {
+          total,
+          returned: response.data.products.length,
+          limit: params.limit || 20,
+          offset: params.offset || 0,
+          hasMore: (params.offset || 0) + response.data.products.length < total
+        },
+        filters: {
+          search: params.search || null,
+          storeId: params.storeId || null,
+          includedInStore: params.includedInStore ?? null,
+          availableInStore: params.availableInStore ?? null
+        }
+      };
       
       return {
         content: [{
           type: 'text',
-          text: `🛍️ **Products List** (${products.length} of ${total} total)
-
-${products.length === 0 ? '📭 **No products found**' : products.map((product, index) => `
-**${index + 1}. ${product.name}** (${product.productType})
-• **ID:** ${product._id}
-• **Store Status:** ${product.availableInStore ? '✅ Available' : '❌ Not Available'}
-• **Created:** ${new Date(product.createdAt).toLocaleString()}
-${product.description ? `• **Description:** ${product.description.substring(0, 100)}${product.description.length > 100 ? '...' : ''}` : ''}
-${product.collectionIds?.length ? `• **Collections:** ${product.collectionIds.length}` : ''}
-`).join('\n')}
-
-📊 **Summary:**
-• **Total Products:** ${total}
-• **Displayed:** ${products.length}
-${params.search ? `• **Search:** "${params.search}"` : ''}
-${params.storeId ? `• **Store Filter:** ${params.storeId}` : ''}
-${params.includedInStore !== undefined ? `• **Store Status:** ${params.includedInStore ? 'Included only' : 'Excluded only'}` : ''}`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Listing Products**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -150,38 +149,44 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
 
 Add products to sell through your GHL e-commerce platform.
 
-Use Cases:
-- Add digital products (courses, ebooks, downloads)
-- List physical products (merchandise, equipment)
-- Offer services (consulting, coaching)
-- Create hybrid products (physical + digital)
-
 Product Types:
 - **DIGITAL**: Downloads, courses, digital content (no shipping)
 - **PHYSICAL**: Physical items that require shipping
 - **SERVICE**: Services, appointments, consultations
 - **PHYSICAL/DIGITAL**: Combo products (book + course)
 
-How It Works:
-1. Create product with name and type
-2. Add description and image
-3. Set availability in store
-4. Create prices (one-time or recurring)
-5. Product appears in your store
+USAGE EXAMPLES:
 
-Examples:
-- Digital course: name="Marketing Mastery", productType="DIGITAL", description="Complete marketing course"
-- Physical product: name="T-Shirt", productType="PHYSICAL", image="https://..."
-- Service: name="1-Hour Consultation", productType="SERVICE"
+1. Create a digital course:
+{
+  "name": "Marketing Mastery Course",
+  "productType": "DIGITAL",
+  "description": "Complete 10-module marketing course",
+  "availableInStore": true
+}
 
-💡 Best Practices:
-- Use clear, descriptive names
-- Add high-quality images (recommended: 1200x1200px)
-- Write compelling descriptions
-- Use SEO-friendly slugs (auto-generated if not provided)
-- Set availableInStore=true to make visible
+2. Create a physical product with image:
+{
+  "name": "Company T-Shirt",
+  "productType": "PHYSICAL",
+  "description": "Premium cotton t-shirt with logo",
+  "image": "https://example.com/tshirt.jpg",
+  "availableInStore": true
+}
 
-Returns: Created product with ID and configuration.
+3. Create a service:
+{
+  "name": "1-Hour Strategy Consultation",
+  "productType": "SERVICE",
+  "description": "One-on-one business strategy session"
+}
+
+WORKFLOW:
+1. Create product with this tool
+2. Use ghl_create_price to add pricing
+3. Product appears in your store
+
+Returns: Complete product object with _id, name, productType, and all fields.
 
 Related Tools: ghl_create_price, ghl_update_product, ghl_list_products`,
         inputSchema: {
@@ -200,30 +205,41 @@ Related Tools: ghl_create_price, ghl_update_product, ghl_list_products`,
 
 Browse and search your product catalog.
 
-Use Cases:
-- View all products in catalog
-- Search products by name
-- Filter by availability
-- Find products in specific store
-- Paginate through large catalogs
+USAGE EXAMPLES:
 
-Filtering Options:
-- search: Find products by name
-- availableInStore: Show only visible products
-- includedInStore: Filter by store inclusion
-- storeId: Products in specific store
+1. Get all products (no filters):
+{}
 
-Pagination:
-- limit: How many products per page (default: 20)
-- offset: Skip N products (for page 2, offset=20)
+2. Search by name:
+{
+  "search": "shirt"
+}
 
-Examples:
-- All products: {} (no filters)
-- Search: {search: "shirt"}
-- Available only: {availableInStore: true}
-- Page 2: {limit: 20, offset: 20}
+3. Get only visible products:
+{
+  "availableInStore": true
+}
 
-Returns: Array of products with details and pagination info.
+4. Paginate (page 2 with 20 per page):
+{
+  "limit": 20,
+  "offset": 20
+}
+
+5. Count digital products (get all, then filter in response):
+{
+  "limit": 100
+}
+Then filter response: products.filter(p => p.productType === "DIGITAL").length
+
+RESPONSE FORMAT:
+{
+  "success": true,
+  "products": [...],  // Array of product objects
+  "pagination": { "total": 50, "returned": 20, "hasMore": true }
+}
+
+Returns: Array of complete product objects with _id, name, productType, availableInStore, etc.
 
 Related Tools: ghl_get_product, ghl_create_product, ghl_update_product`,
         inputSchema: {
@@ -240,29 +256,33 @@ Related Tools: ghl_get_product, ghl_create_product, ghl_update_product`,
         name: 'ghl_get_product',
         description: `Get a specific product by ID.
 
-Retrieve complete product details.
+Retrieve complete product details. REQUIRED before updating a product.
 
-Use Cases:
-- View product before updating
-- Check product configuration
-- Get product for display
-- Verify product settings
-- Retrieve product data for integration
+USAGE EXAMPLE:
+{
+  "productId": "6889e92370362859b6bdd6a1"
+}
 
-What You Get:
-- Product ID, name, and type
-- Description and image
-- Availability settings
-- URL slug
-- Associated prices
-- Creation and update timestamps
+RESPONSE FORMAT:
+{
+  "success": true,
+  "product": {
+    "_id": "6889e92370362859b6bdd6a1",
+    "name": "Marketing Course",
+    "productType": "DIGITAL",
+    "description": "...",
+    "availableInStore": true,
+    "medias": [...],
+    "collectionIds": [...],
+    "seo": {...},
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
+}
 
-Common Workflow:
-1. List products to find product ID
-2. Get specific product for details
-3. Update product if needed
+IMPORTANT: Always call this BEFORE ghl_update_product to get the current name and productType (both required for updates).
 
-Returns: Complete product configuration.
+Returns: Complete product object with all fields from GHL API.
 
 Related Tools: ghl_list_products, ghl_update_product, ghl_list_prices`,
         inputSchema: {
@@ -274,46 +294,48 @@ Related Tools: ghl_list_products, ghl_update_product, ghl_list_prices`,
         name: 'ghl_update_product',
         description: `Update an existing product.
 
-Modify product details and settings.
+⚠️ REQUIRED WORKFLOW:
+1. FIRST call ghl_get_product to get current name and productType
+2. Include BOTH name and productType in your update (even if not changing them)
+3. Add the fields you want to change
 
-Use Cases:
-- Update product name or description
-- Change product image
-- Toggle store availability
-- Update product type
-- Refresh product information
+USAGE EXAMPLES:
 
-What You Can Update:
-- name: Change product name
-- description: Update product details
-- image: Replace product image
-- productType: Change type (DIGITAL/PHYSICAL/SERVICE)
-- availableInStore: Show/hide in store
+1. Update description (must include name + productType):
+{
+  "productId": "6889e92370362859b6bdd6a1",
+  "name": "Marketing Course",
+  "productType": "DIGITAL",
+  "description": "Updated course description here"
+}
 
-Examples:
-- Update name: {productId, name: "New Product Name"}
-- Hide from store: {productId, availableInStore: false}
-- Change image: {productId, image: "https://new-image.jpg"}
+2. Hide product from store:
+{
+  "productId": "6889e92370362859b6bdd6a1",
+  "name": "Marketing Course",
+  "productType": "DIGITAL",
+  "availableInStore": false
+}
 
-💡 Best Practices:
-1. Get current product first
-2. Update only fields that changed
-3. Test product display after update
-4. Keep product type consistent with content
+3. Change product name:
+{
+  "productId": "6889e92370362859b6bdd6a1",
+  "name": "NEW Product Name Here",
+  "productType": "DIGITAL"
+}
 
-⚠️ Important:
-- Provide only fields you want to update
-- Changes visible immediately in store
-- Existing orders not affected
-- Prices remain unchanged (update separately)
+⚠️ API CONSTRAINTS:
+- name: REQUIRED in every update
+- productType: REQUIRED in every update (but CANNOT be changed - pass current value)
+- If you omit name or productType, you will get a 422 validation error
 
-Returns: Updated product configuration.
+Returns: Updated product object with all fields.
 
 Related Tools: ghl_get_product, ghl_create_product, ghl_create_price`,
         inputSchema: {
           productId: z.string().describe('Product ID to update'),
-          name: z.string().min(1).optional().describe('New product name (optional)'),
-          productType: z.enum(['DIGITAL', 'PHYSICAL', 'SERVICE', 'PHYSICAL/DIGITAL']).optional().describe('New product type (optional)'),
+          name: z.string().min(1).describe('Product name (REQUIRED - include current name even if not changing it)'),
+          productType: z.enum(['DIGITAL', 'PHYSICAL', 'SERVICE', 'PHYSICAL/DIGITAL']).describe('Product type (REQUIRED - must match current type, cannot be changed)'),
           description: z.string().optional().describe('New description (optional)'),
           image: z.string().url().optional().describe('New image URL (optional)'),
           availableInStore: z.boolean().optional().describe('Update store visibility (optional)'),
@@ -377,40 +399,52 @@ Related Tools: ghl_update_product, ghl_get_product, ghl_list_products`,
         name: 'ghl_create_price',
         description: `Create a price for a product.
 
-Define pricing options and variants for your products.
-
-Use Cases:
-- Set product price (one-time purchase)
-- Create subscription pricing (recurring)
-- Add product variants (sizes, colors)
-- Set up payment plans
-- Offer discounted pricing
+⚠️ IMPORTANT: Amount is in CENTS (9900 = $99.00)
 
 Price Types:
 - **one_time**: Single payment (buy once)
-- **recurring**: Subscription/membership (monthly, yearly)
+- **recurring**: Subscription/membership
 
-How It Works:
-1. Create product first
-2. Add price with amount in cents
-3. Choose one-time or recurring
-4. Optionally add compareAtPrice for discounts
-5. Price appears as purchase option
+USAGE EXAMPLES:
 
-Examples:
-- Basic price: productId, name="Standard", type="one_time", currency="USD", amount=9900 ($99.00)
-- Subscription: productId, name="Monthly", type="recurring", amount=2900 ($29/month)
-- Sale price: amount=4900, compareAtPrice=9900 (was $99, now $49)
-- Variant: name="Large - Blue", amount=3900
+1. Basic one-time price ($99.00):
+{
+  "productId": "6889e92370362859b6bdd6a1",
+  "name": "Standard",
+  "type": "one_time",
+  "currency": "USD",
+  "amount": 9900
+}
 
-💡 Best Practices:
-- Amount always in cents (9900 = $99.00)
-- Use clear variant names ("Small", "Medium", "Large")
-- Set compareAtPrice to show savings
-- Create multiple prices for options
-- Test checkout with each price
+2. Monthly subscription ($29/month):
+{
+  "productId": "6889e92370362859b6bdd6a1",
+  "name": "Monthly Plan",
+  "type": "recurring",
+  "currency": "USD",
+  "amount": 2900
+}
 
-Returns: Created price with ID and configuration.
+3. Sale price (was $99, now $49):
+{
+  "productId": "6889e92370362859b6bdd6a1",
+  "name": "Holiday Sale",
+  "type": "one_time",
+  "currency": "USD",
+  "amount": 4900,
+  "compareAtPrice": 9900
+}
+
+4. Product variant (size/color):
+{
+  "productId": "6889e92370362859b6bdd6a1",
+  "name": "Large - Blue",
+  "type": "one_time",
+  "currency": "USD",
+  "amount": 3900
+}
+
+Returns: Created price object with _id and all fields.
 
 Related Tools: ghl_list_prices, ghl_create_product, ghl_list_products`,
         inputSchema: {
@@ -429,33 +463,38 @@ Related Tools: ghl_list_prices, ghl_create_product, ghl_list_products`,
 
 View all pricing options and variants for a product.
 
-Use Cases:
-- See all price points for a product
-- Review product variants
-- Check pricing configuration
-- Find price IDs for updates
-- Audit product pricing
+USAGE EXAMPLE:
+{
+  "productId": "6889e92370362859b6bdd6a1"
+}
 
-What You Get:
-- All prices for the product
-- Price names and amounts
-- One-time vs recurring
-- Currency information
-- Compare at prices (discounts)
-- Price IDs
+RESPONSE FORMAT:
+{
+  "success": true,
+  "productId": "6889e92370362859b6bdd6a1",
+  "prices": [
+    {
+      "_id": "price123",
+      "name": "Standard",
+      "type": "one_time",
+      "amount": 9900,
+      "currency": "USD",
+      "compareAtPrice": null
+    },
+    {
+      "_id": "price456",
+      "name": "Monthly Plan",
+      "type": "recurring",
+      "amount": 2900,
+      "currency": "USD"
+    }
+  ],
+  "pagination": { "total": 2, "returned": 2 }
+}
 
-Common Workflow:
-1. Get product ID
-2. List prices for that product
-3. Review pricing options
-4. Update or add prices as needed
+NOTE: Amount is in cents (9900 = $99.00)
 
-Example Response:
-- "Standard" - $99.00 (one_time)
-- "Monthly Plan" - $29.00/month (recurring)
-- "Large - Blue" - $39.00 (one_time)
-
-Returns: Array of all prices for the product.
+Returns: Array of price objects with _id, name, type, amount, currency.
 
 Related Tools: ghl_create_price, ghl_get_product, ghl_list_products`,
         inputSchema: {
@@ -666,33 +705,26 @@ Related Tools: ghl_create_product_collection, ghl_list_products, ghl_create_prod
         throw new Error('No data returned from API');
       }
       
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        product: response.data
+      };
+      
       return {
         content: [{
           type: 'text',
-          text: `🛍️ **Product Details**
-
-📦 **${response.data.name}** (${response.data.productType})
-• **ID:** ${response.data._id}
-• **Location:** ${response.data.locationId}
-• **Available in Store:** ${response.data.availableInStore ? '✅ Yes' : '❌ No'}
-• **Created:** ${new Date(response.data.createdAt).toLocaleString()}
-• **Updated:** ${new Date(response.data.updatedAt).toLocaleString()}
-
-${response.data.description ? `📝 **Description:** ${response.data.description}` : ''}
-${response.data.image ? `🖼️ **Image:** ${response.data.image}` : ''}
-${response.data.slug ? `🔗 **Slug:** ${response.data.slug}` : ''}
-${response.data.collectionIds?.length ? `📂 **Collections:** ${response.data.collectionIds.length} assigned` : ''}
-${response.data.variants?.length ? `🔧 **Variants:** ${response.data.variants.length} configured` : ''}
-${response.data.medias?.length ? `📸 **Media Files:** ${response.data.medias.length} attached` : ''}
-${response.data.isTaxesEnabled ? `💰 **Taxes:** Enabled` : ''}
-${response.data.isLabelEnabled ? `🏷️ **Labels:** Enabled` : ''}`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Getting Product**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -711,26 +743,27 @@ ${response.data.isLabelEnabled ? `🏷️ **Labels:** Enabled` : ''}`
         throw new Error('No data returned from API');
       }
       
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        message: 'Product updated successfully',
+        product: response.data
+      };
+      
       return {
         content: [{
           type: 'text',
-          text: `✅ **Product Updated Successfully!**
-
-📦 **Updated Product:**
-• **ID:** ${response.data._id}
-• **Name:** ${response.data.name}
-• **Type:** ${response.data.productType}
-• **Available in Store:** ${response.data.availableInStore ? '✅ Yes' : '❌ No'}
-• **Last Updated:** ${new Date(response.data.updatedAt).toLocaleString()}
-
-🔄 **Product has been successfully updated with the new information!**`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Updating Product**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -747,22 +780,27 @@ ${response.data.isLabelEnabled ? `🏷️ **Labels:** Enabled` : ''}`
         throw new Error('No data returned from API');
       }
       
+      const result = {
+        success: true,
+        message: 'Product deleted successfully',
+        productId: params.productId,
+        status: response.data.status
+      };
+      
       return {
         content: [{
           type: 'text',
-          text: `🗑️ **Product Deleted Successfully!**
-
-✅ **Status:** ${response.data.status ? 'Product successfully deleted' : 'Deletion failed'}
-🗂️ **Product ID:** ${params.productId}
-
-⚠️ **Note:** This action cannot be undone. The product and all associated data have been permanently removed.`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Deleting Product**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -781,31 +819,27 @@ ${response.data.isLabelEnabled ? `🏷️ **Labels:** Enabled` : ''}`
         throw new Error('No data returned from API');
       }
       
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        message: 'Price created successfully',
+        price: response.data
+      };
+      
       return {
         content: [{
           type: 'text',
-          text: `💰 **Price Created Successfully!**
-
-🏷️ **Price Details:**
-• **ID:** ${response.data._id}
-• **Name:** ${response.data.name}
-• **Type:** ${response.data.type}
-• **Amount:** ${response.data.amount / 100} ${response.data.currency}
-• **Product ID:** ${response.data.product}
-• **Created:** ${new Date(response.data.createdAt).toLocaleString()}
-
-${response.data.compareAtPrice ? `💸 **Compare At:** ${response.data.compareAtPrice / 100} ${response.data.currency}` : ''}
-${response.data.recurring ? `🔄 **Recurring:** ${response.data.recurring.intervalCount} ${response.data.recurring.interval}(s)` : ''}
-${response.data.sku ? `📦 **SKU:** ${response.data.sku}` : ''}
-
-✨ **Price is ready for use in your product catalog!**`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Creating Price**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -824,33 +858,31 @@ ${response.data.sku ? `📦 **SKU:** ${response.data.sku}` : ''}
         throw new Error('No data returned from API');
       }
       
-      const prices = response.data.prices;
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        productId: params.productId,
+        prices: response.data.prices,
+        pagination: {
+          total: response.data.total,
+          returned: response.data.prices.length
+        }
+      };
       
       return {
         content: [{
           type: 'text',
-          text: `💰 **Product Prices** (${prices.length} of ${response.data.total} total)
-
-${prices.length === 0 ? '📭 **No prices found**' : prices.map((price, index) => `
-**${index + 1}. ${price.name}** (${price.type})
-• **ID:** ${price._id}
-• **Amount:** ${price.amount / 100} ${price.currency}
-${price.compareAtPrice ? `• **Compare At:** ${price.compareAtPrice / 100} ${price.currency}` : ''}
-${price.recurring ? `• **Recurring:** ${price.recurring.intervalCount} ${price.recurring.interval}(s)` : ''}
-${price.sku ? `• **SKU:** ${price.sku}` : ''}
-• **Created:** ${new Date(price.createdAt).toLocaleString()}
-`).join('\n')}
-
-📊 **Summary:**
-• **Total Prices:** ${response.data.total}
-• **Product ID:** ${params.productId}`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Listing Prices**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -870,36 +902,35 @@ ${price.sku ? `• **SKU:** ${price.sku}` : ''}
         throw new Error('No data returned from API');
       }
       
-      const inventory = response.data.inventory;
       const total = response.data.total.total;
+      
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        inventory: response.data.inventory,
+        pagination: {
+          total,
+          returned: response.data.inventory.length
+        },
+        filters: {
+          search: params.search || null
+        }
+      };
       
       return {
         content: [{
           type: 'text',
-          text: `📦 **Inventory Items** (${inventory.length} of ${total} total)
-
-${inventory.length === 0 ? '📭 **No inventory items found**' : inventory.map((item, index) => `
-**${index + 1}. ${item.name}** ${item.productName ? `(${item.productName})` : ''}
-• **ID:** ${item._id}
-• **Available Quantity:** ${item.availableQuantity}
-• **SKU:** ${item.sku || 'N/A'}
-• **Out of Stock Purchases:** ${item.allowOutOfStockPurchases ? '✅ Allowed' : '❌ Not Allowed'}
-• **Product ID:** ${item.product}
-• **Last Updated:** ${new Date(item.updatedAt).toLocaleString()}
-${item.image ? `• **Image:** ${item.image}` : ''}
-`).join('\n')}
-
-📊 **Summary:**
-• **Total Items:** ${total}
-• **Displayed:** ${inventory.length}
-${params.search ? `• **Search:** "${params.search}"` : ''}`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Listing Inventory**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -919,30 +950,27 @@ ${params.search ? `• **Search:** "${params.search}"` : ''}`
         throw new Error('No data returned from API');
       }
       
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        message: 'Collection created successfully',
+        collection: response.data.data
+      };
+      
       return {
         content: [{
           type: 'text',
-          text: `📂 **Product Collection Created Successfully!**
-
-🏷️ **Collection Details:**
-• **ID:** ${response.data.data._id}
-• **Name:** ${response.data.data.name}
-• **Slug:** ${response.data.data.slug}
-• **Location:** ${response.data.data.altId}
-• **Created:** ${new Date(response.data.data.createdAt).toLocaleString()}
-
-${response.data.data.image ? `🖼️ **Image:** ${response.data.data.image}` : ''}
-${response.data.data.seo?.title ? `🔍 **SEO Title:** ${response.data.data.seo.title}` : ''}
-${response.data.data.seo?.description ? `📝 **SEO Description:** ${response.data.data.seo.description}` : ''}
-
-✨ **Collection is ready to organize your products!**`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Creating Collection**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }
@@ -962,33 +990,33 @@ ${response.data.data.seo?.description ? `📝 **SEO Description:** ${response.da
         throw new Error('No data returned from API');
       }
       
-      const collections = response.data.data;
+      // Return raw API data for maximum flexibility
+      const result = {
+        success: true,
+        collections: response.data.data,
+        pagination: {
+          total: response.data.total,
+          returned: response.data.data.length
+        },
+        filters: {
+          name: params.name || null
+        }
+      };
       
       return {
         content: [{
           type: 'text',
-          text: `📂 **Product Collections** (${collections.length} of ${response.data.total} total)
-
-${collections.length === 0 ? '📭 **No collections found**' : collections.map((collection: any, index: number) => `
-**${index + 1}. ${collection.name}**
-• **ID:** ${collection._id}
-• **Slug:** ${collection.slug}
-${collection.image ? `• **Image:** ${collection.image}` : ''}
-${collection.seo?.title ? `• **SEO Title:** ${collection.seo.title}` : ''}
-• **Created:** ${new Date(collection.createdAt).toLocaleString()}
-`).join('\n')}
-
-📊 **Summary:**
-• **Total Collections:** ${response.data.total}
-• **Displayed:** ${collections.length}
-${params.name ? `• **Search:** "${params.name}"` : ''}`
+          text: JSON.stringify(result, null, 2)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: 'text', 
-          text: `❌ **Error Listing Collections**\n\n${error instanceof Error ? error.message : 'Unknown error occurred'}`
+          text: JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          }, null, 2)
         }]
       };
     }

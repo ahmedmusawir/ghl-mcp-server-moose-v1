@@ -79,41 +79,72 @@ export class InvoicesTools {
 
 Build professional invoice templates for recurring billing scenarios.
 
-Use Cases:
-- Create templates for monthly services
-- Standardize invoice formatting
-- Save time on recurring invoices
-- Maintain brand consistency
-- Pre-configure payment terms
+USAGE EXAMPLE:
+{
+  "name": "Monthly Service Template",
+  "currency": "USD",
+  "businessDetails": {
+    "name": "My Company",
+    "phoneNo": "+1234567890",
+    "website": "https://example.com"
+  },
+  "items": [
+    {
+      "name": "Monthly Service Fee",
+      "description": "Web hosting service",
+      "currency": "USD",
+      "amount": 9900,
+      "qty": 1,
+      "type": "recurring"
+    }
+  ],
+  "discount": {
+    "type": "percentage",
+    "value": 0
+  },
+  "title": "Monthly Service Invoice"
+}
 
-Template Components:
-- **name**: Internal template identifier
-- **title**: Customer-facing invoice title
-- **currency**: Billing currency (USD, EUR, etc.)
-- **issueDate**: When invoice is generated
-- **dueDate**: Payment deadline
+REQUIRED FIELDS:
+- name: Template name (internal identifier)
+- currency: Currency code (USD, EUR, etc.)
+- businessDetails: Your business info (name, phone, website)
+- items: Array of line items (name, amount in cents, qty, currency, type)
+- discount: Discount settings (type: "percentage" or "fixed", value: number)
 
-Examples:
-- Monthly service: {name: "Monthly Hosting", title: "Web Hosting Invoice", currency: "USD"}
-- Consulting: {name: "Consulting Template", title: "Professional Services", dueDate: "Net 30"}
-
-💡 Best Practices:
-- Use descriptive template names
-- Set clear payment terms
-- Include all necessary line items
-- Test template before using
+OPTIONAL FIELDS:
+- title: Customer-facing invoice title
+- termsNotes: Terms and conditions text
+- invoiceNumberPrefix: Prefix for invoice numbers
 
 Returns: Created template with ID.
 
 Related Tools: list_invoice_templates, update_invoice_template, delete_invoice_template`,
         inputSchema: {
-          altId: z.string().describe('Location ID'),
-          altType: z.enum(['location']).optional().describe('Type of identifier (location)'),
-          name: z.string().describe('Template name (internal identifier)'),
-          title: z.string().optional().describe('Invoice title (customer-facing)'),
-          currency: z.string().optional().describe('Currency code (USD, EUR, GBP, etc.)'),
-          issueDate: z.string().optional().describe('Default issue date'),
-          dueDate: z.string().optional().describe('Default due date or payment terms')
+          altId: z.string().optional().describe('Location ID'),
+          name: z.string().describe('Template name (REQUIRED)'),
+          currency: z.string().describe('Currency code like USD, EUR (REQUIRED)'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website'),
+            logoUrl: z.string().optional().describe('Logo URL')
+          }).describe('Business details (REQUIRED)'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents (e.g., 9900 = $99.00)'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type: "one_time" or "recurring" (REQUIRED)')
+          })).describe('Line items array (REQUIRED)'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value')
+          }).describe('Discount settings (REQUIRED)'),
+          title: z.string().optional().describe('Customer-facing invoice title'),
+          termsNotes: z.string().optional().describe('Terms and conditions'),
+          invoiceNumberPrefix: z.string().optional().describe('Prefix for invoice numbers')
         }
       },
       {
@@ -182,19 +213,30 @@ Related Tools: list_invoice_templates, update_invoice_template`,
 
 Modify template settings and configuration.
 
-Use Cases:
-- Update template name or title
-- Change currency settings
-- Modify payment terms
-- Update line items
-- Adjust template configuration
+USAGE EXAMPLE:
+{
+  "templateId": "template123",
+  "name": "Updated Service Template",
+  "currency": "USD",
+  "businessDetails": {
+    "name": "My Company Updated"
+  },
+  "items": [
+    {
+      "name": "Updated Service",
+      "currency": "USD",
+      "amount": 12900,
+      "qty": 1,
+      "type": "recurring"
+    }
+  ],
+  "discount": {
+    "type": "percentage",
+    "value": 10
+  }
+}
 
-What You Can Update:
-- Template name
-- Invoice title
-- Currency
-- Payment terms
-- All template settings
+NOTE: When updating, you must provide the complete template data including businessDetails, items, and discount.
 
 Returns: Updated template.
 
@@ -202,9 +244,28 @@ Related Tools: get_invoice_template, create_invoice_template`,
         inputSchema: {
           templateId: z.string().describe('Template ID to update'),
           altId: z.string().optional().describe('Location ID'),
-          name: z.string().optional().describe('Template name'),
-          title: z.string().optional().describe('Invoice title'),
-          currency: z.string().optional().describe('Currency code')
+          name: z.string().describe('Template name'),
+          currency: z.string().describe('Currency code like USD, EUR'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website'),
+            logoUrl: z.string().optional().describe('Logo URL')
+          }).describe('Business details'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type: "one_time" or "recurring"')
+          })).describe('Line items array'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value')
+          }).describe('Discount settings'),
+          title: z.string().optional().describe('Customer-facing invoice title'),
+          termsNotes: z.string().optional().describe('Terms and conditions')
         }
       },
       {
@@ -287,24 +348,118 @@ Related Tools: create_invoice_template, update_invoice_template`,
 
 Automate invoice generation with recurring schedules.
 
-Use Cases:
-- Monthly subscription billing
-- Recurring service invoices
-- Automated payment reminders
-- Scheduled billing cycles
+USAGE EXAMPLE:
+{
+  "name": "Monthly Retainer",
+  "currency": "USD",
+  "liveMode": false,
+  "businessDetails": {
+    "name": "My Company",
+    "phoneNo": "+1234567890"
+  },
+  "contactDetails": {
+    "id": "contact123",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "items": [
+    {
+      "name": "Monthly Service Fee",
+      "currency": "USD",
+      "amount": 100000,
+      "qty": 1,
+      "type": "recurring"
+    }
+  ],
+  "discount": {
+    "type": "percentage",
+    "value": 0
+  },
+  "schedule": {
+    "rrule": {
+      "intervalType": "monthly",
+      "interval": 1,
+      "startDate": "2025-01-01",
+      "dayOfMonth": 1,
+      "dayOfWeek": "mo",
+      "numOfWeek": 1
+    }
+  }
+}
 
-Frequency Options:
-- daily, weekly, monthly, quarterly, yearly
+REQUIRED FIELDS:
+- name: Schedule name
+- currency: Currency code (USD, EUR, etc.)
+- liveMode: Set false for test, true for production
+- businessDetails: Your business info (name, phone, website)
+- contactDetails: Customer info (id, name, email required)
+- items: Array of line items (name, amount in cents, qty, currency, type)
+- discount: Discount settings (type: "percentage" or "fixed", value: number)
+- schedule: Schedule options with executeAt date and rrule for recurrence
+
+OPTIONAL FIELDS:
+- title: Schedule title (MAX 40 CHARACTERS)
+- termsNotes: Terms and conditions
+
+IMPORTANT CONSTRAINTS:
+- Use executeAt OR rrule, NOT BOTH at the same time
+- executeAt: For one-time scheduled invoice on specific date
+- rrule: For recurring invoices with frequency pattern
+
+SCHEDULE RRULE OPTIONS (use only if NOT using executeAt):
+- intervalType: "daily", "weekly", "monthly", "yearly" (REQUIRED)
+- interval: Number of periods between invoices (REQUIRED)
+- startDate: Start date YYYY-MM-DD (REQUIRED)
+- dayOfMonth: Day of month (-1 to 28, not 0) (REQUIRED)
+- dayOfWeek: Day of week "mo", "tu", "we", "th", "fr", "sa", "su" (REQUIRED)
+- numOfWeek: Week number in month (-1 to 4) (REQUIRED)
+- count: Number of invoices to generate (optional)
 
 Returns: Created schedule with ID.
 
 Related Tools: list_invoice_schedules, update_invoice_schedule, schedule_invoice_schedule`,
         inputSchema: {
           altId: z.string().optional().describe('Location ID'),
-          name: z.string().describe('Schedule name'),
-          templateId: z.string().describe('Invoice template ID'),
-          contactId: z.string().describe('Contact ID to bill'),
-          frequency: z.string().optional().describe('Billing frequency (daily, weekly, monthly, etc.)')
+          name: z.string().describe('Schedule name (REQUIRED)'),
+          currency: z.string().describe('Currency code like USD, EUR (REQUIRED)'),
+          liveMode: z.boolean().describe('Set false for test, true for production (REQUIRED)'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website')
+          }).describe('Business details (REQUIRED)'),
+          contactDetails: z.object({
+            id: z.string().describe('Contact ID (REQUIRED)'),
+            name: z.string().describe('Contact name (REQUIRED)'),
+            email: z.string().optional().describe('Contact email'),
+            phoneNo: z.string().optional().describe('Contact phone')
+          }).describe('Customer contact details (REQUIRED)'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type')
+          })).describe('Line items array (REQUIRED)'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value')
+          }).describe('Discount settings (REQUIRED)'),
+          schedule: z.object({
+            executeAt: z.string().optional().describe('One-time execution date YYYY-MM-DD (use this OR rrule, not both)'),
+            rrule: z.object({
+              intervalType: z.enum(['daily', 'weekly', 'monthly', 'yearly']).describe('Frequency type (REQUIRED)'),
+              interval: z.number().describe('Interval between invoices (REQUIRED)'),
+              startDate: z.string().describe('Start date YYYY-MM-DD (REQUIRED)'),
+              dayOfMonth: z.number().describe('Day of month (-1 to 28, not 0) (REQUIRED)'),
+              dayOfWeek: z.enum(['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su']).describe('Day of week (REQUIRED)'),
+              numOfWeek: z.number().describe('Week number in month (-1 to 4) (REQUIRED)'),
+              count: z.number().optional().describe('Number of invoices to generate')
+            }).optional().describe('Recurrence rule (use this OR executeAt, not both)')
+          }).describe('Schedule options (REQUIRED)'),
+          title: z.string().optional().describe('Schedule title (MAX 40 CHARACTERS)'),
+          termsNotes: z.string().optional().describe('Terms and conditions')
         }
       },
       {
@@ -389,9 +544,15 @@ Related Tools: list_invoice_schedules, cancel_invoice_schedule`,
 
 Start automated invoice generation.
 
-Use Cases:
-- Activate new schedule
-- Resume paused schedule
+USAGE EXAMPLE:
+{
+  "scheduleId": "schedule123",
+  "liveMode": false
+}
+
+REQUIRED FIELDS:
+- scheduleId: The schedule ID to activate
+- liveMode: Set false for test, true for production
 
 Returns: Scheduled invoice schedule.
 
@@ -399,7 +560,7 @@ Related Tools: create_invoice_schedule, cancel_invoice_schedule`,
         inputSchema: {
           scheduleId: z.string().describe('Schedule ID to activate'),
           altId: z.string().optional().describe('Location ID'),
-          startDate: z.string().optional().describe('Start date for schedule')
+          liveMode: z.boolean().describe('Set false for test, true for production (REQUIRED)')
         }
       },
       {
@@ -408,9 +569,27 @@ Related Tools: create_invoice_schedule, cancel_invoice_schedule`,
 
 Automate payment collection for recurring invoices.
 
-Use Cases:
-- Enable auto-charge
-- Set up automatic billing
+USAGE EXAMPLE:
+{
+  "scheduleId": "schedule123",
+  "id": "paymentMethod123",
+  "autoPayment": {
+    "enable": true,
+    "type": "Card",
+    "paymentMethodId": "pm_123"
+  }
+}
+
+REQUIRED FIELDS:
+- scheduleId: The schedule ID to configure
+- id: Payment method ID or customer ID
+- autoPayment: Auto payment configuration object
+  - enable: true to enable, false to disable (REQUIRED)
+  - type: "card", "us_bank_account" (REQUIRED)
+  - paymentMethodId: Payment method ID (optional)
+  - customerId: Customer ID (optional)
+  - card: Object with brand/last4 if type is "card" (optional)
+  - usBankAccount: Object with bank_name/last4 if type is "us_bank_account" (optional)
 
 Returns: Updated schedule with auto-payment enabled.
 
@@ -418,7 +597,14 @@ Related Tools: schedule_invoice_schedule`,
         inputSchema: {
           scheduleId: z.string().describe('Schedule ID'),
           altId: z.string().optional().describe('Location ID'),
-          enabled: z.boolean().describe('Enable/disable auto-payment')
+          id: z.string().describe('Payment method ID or customer ID (REQUIRED)'),
+          autoPayment: z.object({
+            enable: z.boolean().describe('Enable/disable auto-payment (REQUIRED)'),
+            type: z.string().describe('Payment type (e.g., "card", "us_bank_account") (REQUIRED)'),
+            paymentMethodId: z.string().optional().describe('Payment method ID'),
+            customerId: z.string().optional().describe('Customer ID'),
+            cardId: z.string().optional().describe('Card ID')
+          }).describe('Auto payment configuration (REQUIRED)')
         }
       },
       {
@@ -447,22 +633,99 @@ Related Tools: schedule_invoice_schedule, delete_invoice_schedule`,
 
 Generate professional invoices for products and services.
 
-Use Cases:
-- Bill customers for services
-- One-time product sales
-- Custom invoicing
+USAGE EXAMPLE:
+{
+  "name": "Invoice for Services",
+  "currency": "USD",
+  "issueDate": "2025-12-24",
+  "liveMode": false,
+  "businessDetails": {
+    "name": "My Company",
+    "phoneNo": "+1234567890"
+  },
+  "contactDetails": {
+    "id": "contact123",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "items": [
+    {
+      "name": "Security System Upgrade",
+      "currency": "USD",
+      "amount": 15000000,
+      "qty": 1,
+      "type": "one_time"
+    }
+  ],
+  "discount": {
+    "type": "percentage",
+    "value": 0
+  },
+  "sentTo": {
+    "email": ["john@example.com"]
+  },
+  "title": "Security Upgrade",
+  "dueDate": "2026-01-23"
+}
+
+REQUIRED FIELDS:
+- name: Invoice name (internal identifier)
+- currency: Currency code (USD, EUR, etc.)
+- issueDate: Issue date (YYYY-MM-DD format)
+- liveMode: Set false for test, true for production
+- businessDetails: Your business info (name, phone, website)
+- contactDetails: Customer info (id, name, email required)
+- items: Array of line items (name, amount in cents, qty, currency, type)
+- discount: Discount settings (type: "percentage" or "fixed", value: number)
+- sentTo: Recipient info with email array
+
+OPTIONAL FIELDS:
+- title: Customer-facing invoice title (MAX 40 CHARACTERS)
+- dueDate: Payment due date (YYYY-MM-DD)
+- termsNotes: Terms and conditions
+
+IMPORTANT CONSTRAINTS:
+- title: Maximum 40 characters
 
 Returns: Created invoice with ID.
 
 Related Tools: list_invoices, send_invoice, record_invoice_payment`,
         inputSchema: {
           altId: z.string().optional().describe('Location ID'),
-          contactId: z.string().describe('Contact ID to bill'),
-          title: z.string().describe('Invoice title'),
-          currency: z.string().optional().describe('Currency code (USD, EUR, etc.)'),
-          issueDate: z.string().optional().describe('Issue date'),
-          dueDate: z.string().optional().describe('Payment due date'),
-          items: z.array(z.any()).optional().describe('Invoice line items')
+          name: z.string().describe('Invoice name (REQUIRED)'),
+          currency: z.string().describe('Currency code like USD, EUR (REQUIRED)'),
+          issueDate: z.string().describe('Issue date YYYY-MM-DD (REQUIRED)'),
+          liveMode: z.boolean().describe('Set false for test, true for production (REQUIRED)'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website'),
+            logoUrl: z.string().optional().describe('Logo URL')
+          }).describe('Business details (REQUIRED)'),
+          contactDetails: z.object({
+            id: z.string().describe('Contact ID (REQUIRED)'),
+            name: z.string().describe('Contact name (REQUIRED)'),
+            email: z.string().optional().describe('Contact email'),
+            phoneNo: z.string().optional().describe('Contact phone')
+          }).describe('Customer contact details (REQUIRED)'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents (e.g., 15000000 = $150,000.00)'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type: "one_time" or "recurring" (REQUIRED)')
+          })).describe('Line items array (REQUIRED)'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value')
+          }).describe('Discount settings (REQUIRED)'),
+          sentTo: z.object({
+            email: z.array(z.string()).optional().describe('Array of recipient emails')
+          }).describe('Recipient info (REQUIRED)'),
+          title: z.string().optional().describe('Customer-facing invoice title (MAX 40 characters)'),
+          dueDate: z.string().optional().describe('Payment due date (YYYY-MM-DD)'),
+          termsNotes: z.string().optional().describe('Terms and conditions')
         }
       },
       {
@@ -564,14 +827,23 @@ Related Tools: delete_invoice, record_invoice_payment`,
       },
       {
         name: 'send_invoice',
-        description: `Send invoice to customer via email.
+        description: `Send invoice to customer via email/SMS.
 
 Deliver invoice with payment link.
 
-Use Cases:
-- Email invoice to customer
-- Send payment reminders
-- Resend invoices
+USAGE EXAMPLE:
+{
+  "invoiceId": "invoice123",
+  "action": "email",
+  "liveMode": false,
+  "userId": "user123"
+}
+
+REQUIRED FIELDS:
+- invoiceId: The invoice ID to send
+- action: Delivery method - "email", "sms", "sms_and_email", or "send_manually"
+- liveMode: Set false for test, true for production
+- userId: User ID sending the invoice
 
 Returns: Confirmation of send.
 
@@ -579,9 +851,9 @@ Related Tools: create_invoice, text2pay_invoice`,
         inputSchema: {
           invoiceId: z.string().describe('Invoice ID to send'),
           altId: z.string().optional().describe('Location ID'),
-          emailTo: z.string().optional().describe('Recipient email'),
-          subject: z.string().optional().describe('Email subject'),
-          message: z.string().optional().describe('Email message')
+          action: z.enum(['email', 'sms', 'sms_and_email', 'send_manually']).describe('Delivery method (REQUIRED)'),
+          liveMode: z.boolean().describe('Set false for test, true for production (REQUIRED)'),
+          userId: z.string().describe('User ID sending the invoice (REQUIRED)')
         }
       },
       {
@@ -590,10 +862,23 @@ Related Tools: create_invoice, text2pay_invoice`,
 
 Log offline or external payments.
 
-Use Cases:
-- Record cash payments
-- Log check payments
-- Manual payment entry
+USAGE EXAMPLE:
+{
+  "invoiceId": "invoice123",
+  "mode": "bank_transfer",
+  "notes": "Wire transfer received",
+  "amount": 25000000
+}
+
+REQUIRED FIELDS:
+- invoiceId: The invoice ID to record payment for
+- mode: Payment mode - "cash", "card", "cheque", "bank_transfer", or "other"
+- notes: Payment notes/description
+
+OPTIONAL FIELDS:
+- amount: Payment amount in cents (if partial payment)
+- card: Card details object (if mode is "card")
+- cheque: Cheque details object (if mode is "cheque")
 
 Returns: Updated invoice with payment recorded.
 
@@ -601,9 +886,9 @@ Related Tools: get_invoice, list_invoices`,
         inputSchema: {
           invoiceId: z.string().describe('Invoice ID'),
           altId: z.string().optional().describe('Location ID'),
-          amount: z.number().describe('Payment amount'),
-          paymentMethod: z.string().optional().describe('Payment method (cash, check, etc.)'),
-          date: z.string().optional().describe('Payment date')
+          mode: z.enum(['cash', 'card', 'cheque', 'bank_transfer', 'other']).describe('Payment mode (REQUIRED)'),
+          notes: z.string().describe('Payment notes/description (REQUIRED)'),
+          amount: z.number().optional().describe('Payment amount in cents (for partial payments)')
         }
       },
       {
@@ -625,23 +910,92 @@ Related Tools: create_invoice`,
       },
       {
         name: 'text2pay_invoice',
-        description: `Send invoice via SMS with payment link.
+        description: `Create and send invoice via SMS with payment link (Text2Pay).
 
-Deliver invoice through text message.
+Creates a new invoice and delivers it via SMS in one step.
 
-Use Cases:
-- SMS invoice delivery
-- Quick payment requests
-- Mobile-first billing
+USAGE EXAMPLE:
+{
+  "name": "SMS Invoice",
+  "currency": "USD",
+  "issueDate": "2025-12-24",
+  "liveMode": false,
+  "action": "send",
+  "userId": "user123",
+  "contactDetails": {
+    "id": "contact123",
+    "name": "John Doe",
+    "phoneNo": "+1234567890"
+  },
+  "items": [
+    {
+      "name": "Service Fee",
+      "currency": "USD",
+      "amount": 10000,
+      "qty": 1,
+      "type": "one_time"
+    }
+  ],
+  "sentTo": {
+    "phoneNo": ["+1234567890"]
+  }
+}
 
-Returns: Confirmation of SMS sent.
+REQUIRED FIELDS:
+- name: Invoice name
+- currency: Currency code (USD, EUR, etc.)
+- issueDate: Issue date (YYYY-MM-DD format)
+- liveMode: Set false for test, true for production
+- action: "draft" or "send"
+- userId: User ID creating/sending the invoice
+- contactDetails: Customer info (id, name, phoneNo required for SMS)
+- items: Array of line items (name, amount in cents, qty, currency, type)
+- sentTo: Recipient info with phoneNo array for SMS
 
-Related Tools: send_invoice`,
+OPTIONAL FIELDS:
+- title: Invoice title (MAX 40 CHARACTERS)
+- discount: Discount settings
+- businessDetails: Your business info
+
+Returns: Created invoice with SMS confirmation.
+
+Related Tools: send_invoice, create_invoice`,
         inputSchema: {
-          invoiceId: z.string().describe('Invoice ID'),
           altId: z.string().optional().describe('Location ID'),
-          phoneNumber: z.string().optional().describe('Customer phone number'),
-          message: z.string().optional().describe('SMS message')
+          name: z.string().describe('Invoice name (REQUIRED)'),
+          currency: z.string().describe('Currency code like USD, EUR (REQUIRED)'),
+          issueDate: z.string().describe('Issue date YYYY-MM-DD (REQUIRED)'),
+          liveMode: z.boolean().describe('Set false for test, true for production (REQUIRED)'),
+          action: z.enum(['draft', 'send']).describe('Action: "draft" or "send" (REQUIRED)'),
+          userId: z.string().describe('User ID creating/sending the invoice (REQUIRED)'),
+          contactDetails: z.object({
+            id: z.string().describe('Contact ID (REQUIRED)'),
+            name: z.string().describe('Contact name (REQUIRED)'),
+            phoneNo: z.string().optional().describe('Contact phone for SMS'),
+            email: z.string().optional().describe('Contact email')
+          }).describe('Customer contact details (REQUIRED)'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type')
+          })).describe('Line items array (REQUIRED)'),
+          sentTo: z.object({
+            phoneNo: z.array(z.string()).optional().describe('Array of phone numbers for SMS'),
+            email: z.array(z.string()).optional().describe('Array of emails')
+          }).describe('Recipient info (REQUIRED)'),
+          title: z.string().optional().describe('Invoice title (MAX 40 CHARACTERS)'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value')
+          }).optional().describe('Discount settings'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website')
+          }).optional().describe('Business details')
         }
       },
 
@@ -652,21 +1006,94 @@ Related Tools: send_invoice`,
 
 Provide pricing quotes before invoicing.
 
-Use Cases:
-- Send project quotes
-- Provide service estimates
-- Pre-sale pricing
+USAGE EXAMPLE:
+{
+  "name": "Project Quote",
+  "currency": "USD",
+  "businessDetails": {
+    "name": "My Company",
+    "phoneNo": "+1234567890",
+    "website": "https://example.com"
+  },
+  "contactDetails": {
+    "id": "contact123",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "items": [
+    {
+      "name": "Consulting Service",
+      "description": "Initial consultation",
+      "currency": "USD",
+      "amount": 15000,
+      "qty": 1,
+      "type": "one_time"
+    }
+  ],
+  "discount": {
+    "type": "percentage",
+    "value": 0
+  },
+  "frequencySettings": {
+    "enabled": false
+  },
+  "title": "Service Estimate",
+  "expiryDate": "2025-01-31"
+}
+
+REQUIRED FIELDS:
+- name: Estimate name (internal identifier)
+- currency: Currency code (USD, EUR, etc.)
+- businessDetails: Your business info (name, phone, website)
+- contactDetails: Customer info (id, name, email required)
+- items: Array of line items (name, amount in cents, qty, currency, type)
+- discount: Discount settings (type: "percentage" or "fixed", value: number)
+- frequencySettings: { enabled: false } for one-time estimates
+
+OPTIONAL FIELDS:
+- title: Customer-facing estimate title
+- expiryDate: Expiration date (YYYY-MM-DD format)
+- issueDate: Issue date (YYYY-MM-DD format)
+- termsNotes: Terms and conditions
 
 Returns: Created estimate with ID.
 
 Related Tools: send_estimate, create_invoice_from_estimate`,
         inputSchema: {
           altId: z.string().optional().describe('Location ID'),
-          contactId: z.string().describe('Contact ID'),
-          title: z.string().describe('Estimate title'),
-          currency: z.string().optional().describe('Currency code'),
-          issueDate: z.string().optional().describe('Issue date'),
-          validUntil: z.string().optional().describe('Expiration date')
+          name: z.string().describe('Estimate name (REQUIRED)'),
+          currency: z.string().describe('Currency code like USD, EUR (REQUIRED)'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website'),
+            logoUrl: z.string().optional().describe('Logo URL')
+          }).describe('Business details (REQUIRED)'),
+          contactDetails: z.object({
+            id: z.string().describe('Contact ID (REQUIRED)'),
+            name: z.string().describe('Contact name (REQUIRED)'),
+            email: z.string().optional().describe('Contact email'),
+            phoneNo: z.string().optional().describe('Contact phone')
+          }).describe('Customer contact details (REQUIRED)'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents (e.g., 15000 = $150.00)'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type: "one_time" or "recurring" (REQUIRED)')
+          })).describe('Line items array (REQUIRED)'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value')
+          }).describe('Discount settings (REQUIRED)'),
+          frequencySettings: z.object({
+            enabled: z.boolean().describe('Enable recurring estimates (usually false for one-time)')
+          }).describe('Frequency settings (REQUIRED) - set enabled: false for one-time estimates'),
+          title: z.string().optional().describe('Customer-facing estimate title'),
+          expiryDate: z.string().optional().describe('Expiration date (YYYY-MM-DD)'),
+          issueDate: z.string().optional().describe('Issue date (YYYY-MM-DD)'),
+          termsNotes: z.string().optional().describe('Terms and conditions')
         }
       },
       {
@@ -712,10 +1139,34 @@ Related Tools: list_estimates, update_estimate`,
 
 Modify estimate details before sending.
 
-Use Cases:
-- Update pricing
-- Change expiration date
-- Modify items
+USAGE EXAMPLE:
+{
+  "estimateId": "estimate123",
+  "name": "Updated Project Quote",
+  "currency": "USD",
+  "businessDetails": {
+    "name": "My Company"
+  },
+  "contactDetails": {
+    "id": "contact123",
+    "name": "John Doe"
+  },
+  "items": [
+    {
+      "name": "Updated Service",
+      "currency": "USD",
+      "amount": 20000,
+      "qty": 1,
+      "type": "one_time"
+    }
+  ],
+  "discount": {
+    "type": "percentage",
+    "value": 10
+  }
+}
+
+NOTE: When updating, you must provide the complete estimate data including businessDetails, contactDetails, items, and discount.
 
 Returns: Updated estimate.
 
@@ -723,9 +1174,38 @@ Related Tools: get_estimate, send_estimate`,
         inputSchema: {
           estimateId: z.string().describe('Estimate ID to update'),
           altId: z.string().optional().describe('Location ID'),
-          title: z.string().optional().describe('Estimate title'),
-          currency: z.string().optional().describe('Currency code'),
-          validUntil: z.string().optional().describe('Expiration date')
+          name: z.string().describe('Estimate name'),
+          currency: z.string().describe('Currency code like USD, EUR'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website'),
+            logoUrl: z.string().optional().describe('Logo URL')
+          }).describe('Business details'),
+          contactDetails: z.object({
+            id: z.string().describe('Contact ID'),
+            name: z.string().describe('Contact name'),
+            email: z.string().optional().describe('Contact email'),
+            phoneNo: z.string().optional().describe('Contact phone')
+          }).describe('Customer contact details'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type: "one_time" or "recurring"')
+          })).describe('Line items array'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value')
+          }).describe('Discount settings'),
+          frequencySettings: z.object({
+            enabled: z.boolean().describe('Enable recurring estimates')
+          }).describe('Frequency settings'),
+          title: z.string().optional().describe('Customer-facing estimate title'),
+          expiryDate: z.string().optional().describe('Expiration date (YYYY-MM-DD)'),
+          termsNotes: z.string().optional().describe('Terms and conditions')
         }
       },
       {
@@ -748,14 +1228,26 @@ Related Tools: list_estimates`,
       },
       {
         name: 'send_estimate',
-        description: `Send estimate to customer via email.
+        description: `Send estimate to customer.
 
 Deliver quote with acceptance link.
 
-Use Cases:
-- Email estimate to customer
-- Send pricing quotes
-- Follow up on estimates
+USAGE EXAMPLE:
+{
+  "estimateId": "estimate123",
+  "action": "email",
+  "liveMode": false,
+  "userId": "user123"
+}
+
+REQUIRED FIELDS:
+- estimateId: The estimate ID to send
+- action: Delivery method - "email", "sms", "sms_and_email", or "send_manually"
+- liveMode: Set to false for test mode, true for production
+- userId: The user ID sending the estimate
+
+OPTIONAL FIELDS:
+- estimateName: Custom name for the estimate
 
 Returns: Confirmation of send.
 
@@ -763,9 +1255,10 @@ Related Tools: create_estimate, create_invoice_from_estimate`,
         inputSchema: {
           estimateId: z.string().describe('Estimate ID to send'),
           altId: z.string().optional().describe('Location ID'),
-          emailTo: z.string().optional().describe('Recipient email'),
-          subject: z.string().optional().describe('Email subject'),
-          message: z.string().optional().describe('Email message')
+          action: z.enum(['email', 'sms', 'sms_and_email', 'send_manually']).describe('Delivery method (REQUIRED)'),
+          liveMode: z.boolean().describe('Set false for test, true for production (REQUIRED)'),
+          userId: z.string().describe('User ID sending the estimate (REQUIRED)'),
+          estimateName: z.string().optional().describe('Custom estimate name')
         }
       },
       {
@@ -774,10 +1267,18 @@ Related Tools: create_estimate, create_invoice_from_estimate`,
 
 Turn approved quotes into billable invoices.
 
-Use Cases:
-- Convert accepted estimates
-- Bill approved quotes
-- Streamline quote-to-invoice
+USAGE EXAMPLE:
+{
+  "estimateId": "estimate123",
+  "markAsInvoiced": true
+}
+
+REQUIRED FIELDS:
+- estimateId: The estimate ID to convert
+- markAsInvoiced: Set to true to mark the estimate as invoiced
+
+OPTIONAL FIELDS:
+- version: API version ("v1" or "v2")
 
 Returns: Created invoice from estimate.
 
@@ -785,8 +1286,8 @@ Related Tools: send_estimate, create_invoice`,
         inputSchema: {
           estimateId: z.string().describe('Estimate ID to convert'),
           altId: z.string().optional().describe('Location ID'),
-          issueDate: z.string().optional().describe('Invoice issue date'),
-          dueDate: z.string().optional().describe('Invoice due date')
+          markAsInvoiced: z.boolean().describe('Mark estimate as invoiced (REQUIRED) - usually true'),
+          version: z.enum(['v1', 'v2']).optional().describe('API version')
         }
       },
       {
@@ -853,20 +1354,71 @@ Related Tools: list_estimate_templates, update_estimate_template`,
 
 Build professional estimate templates for quotes.
 
-Use Cases:
-- Create templates for common quotes
-- Standardize estimate formatting
-- Save time on recurring estimates
+USAGE EXAMPLE:
+{
+  "name": "Standard Quote Template",
+  "currency": "USD",
+  "businessDetails": {
+    "name": "My Company",
+    "phoneNo": "+1234567890",
+    "website": "https://example.com"
+  },
+  "items": [
+    {
+      "name": "Consulting Service",
+      "description": "1 hour consultation",
+      "currency": "USD",
+      "amount": 15000,
+      "qty": 1
+    }
+  ],
+  "discount": {
+    "type": "percentage",
+    "value": 0
+  },
+  "title": "Service Estimate"
+}
+
+REQUIRED FIELDS:
+- name: Template name
+- currency: Currency code (USD, EUR, etc.)
+- businessDetails: Your business info (name, phone, website, address)
+- items: Array of line items (name, amount in cents, qty, currency)
+- discount: Discount settings (type: "percentage" or "fixed", value: number)
+
+OPTIONAL FIELDS:
+- title: Estimate title
+- termsNotes: Terms and conditions text
+- estimateNumberPrefix: Prefix for estimate numbers
 
 Returns: Created estimate template with ID.
 
 Related Tools: list_estimate_templates, update_estimate_template`,
         inputSchema: {
           altId: z.string().optional().describe('Location ID'),
-          name: z.string().describe('Template name'),
+          name: z.string().describe('Template name (REQUIRED)'),
+          currency: z.string().describe('Currency code like USD, EUR (REQUIRED)'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website'),
+            logoUrl: z.string().optional().describe('Logo URL')
+          }).describe('Business details (REQUIRED)'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents (e.g., 15000 = $150.00)'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type: "one_time" or "recurring" (REQUIRED)')
+          })).describe('Line items array (REQUIRED)'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value (percentage or fixed amount in cents)')
+          }).describe('Discount settings (REQUIRED)'),
           title: z.string().optional().describe('Estimate title'),
-          currency: z.string().optional().describe('Currency code'),
-          validityDays: z.number().optional().describe('Days estimate is valid')
+          termsNotes: z.string().optional().describe('Terms and conditions'),
+          estimateNumberPrefix: z.string().optional().describe('Prefix for estimate numbers')
         }
       },
       {
@@ -875,10 +1427,29 @@ Related Tools: list_estimate_templates, update_estimate_template`,
 
 Modify template settings and configuration.
 
-Use Cases:
-- Update template name or title
-- Change currency settings
-- Modify validity period
+USAGE EXAMPLE:
+{
+  "templateId": "template123",
+  "name": "Updated Quote Template",
+  "currency": "USD",
+  "businessDetails": {
+    "name": "My Company Updated"
+  },
+  "items": [
+    {
+      "name": "Updated Service",
+      "currency": "USD",
+      "amount": 20000,
+      "qty": 1
+    }
+  ],
+  "discount": {
+    "type": "percentage",
+    "value": 10
+  }
+}
+
+NOTE: When updating, you must provide the complete template data including businessDetails, items, and discount.
 
 Returns: Updated estimate template.
 
@@ -886,9 +1457,28 @@ Related Tools: get_estimate_template, create_estimate_template`,
         inputSchema: {
           templateId: z.string().describe('Template ID to update'),
           altId: z.string().optional().describe('Location ID'),
-          name: z.string().optional().describe('Template name'),
+          name: z.string().describe('Template name'),
+          currency: z.string().describe('Currency code like USD, EUR'),
+          businessDetails: z.object({
+            name: z.string().optional().describe('Business name'),
+            phoneNo: z.string().optional().describe('Business phone'),
+            website: z.string().optional().describe('Business website'),
+            logoUrl: z.string().optional().describe('Logo URL')
+          }).describe('Business details'),
+          items: z.array(z.object({
+            name: z.string().describe('Item name'),
+            description: z.string().optional().describe('Item description'),
+            currency: z.string().describe('Currency code'),
+            amount: z.number().describe('Amount in cents'),
+            qty: z.number().describe('Quantity'),
+            type: z.enum(['one_time', 'recurring']).describe('Item type: "one_time" or "recurring"')
+          })).describe('Line items array'),
+          discount: z.object({
+            type: z.enum(['percentage', 'fixed']).describe('Discount type'),
+            value: z.number().optional().describe('Discount value')
+          }).describe('Discount settings'),
           title: z.string().optional().describe('Estimate title'),
-          currency: z.string().optional().describe('Currency code')
+          termsNotes: z.string().optional().describe('Terms and conditions')
         }
       },
       {
@@ -1027,13 +1617,15 @@ Related Tools: create_estimate_template, update_estimate_template`,
         return this.client.listEstimates(args);
 
       case 'get_estimate':
-        throw new Error('get_estimate: API method not yet implemented in GHL client');
+        return this.client.getEstimate(args.estimateId, args.altId);
 
       case 'update_estimate':
-        throw new Error('update_estimate: API method not yet implemented in GHL client');
+        const { estimateId: updateEstimateId, ...updateEstimateData } = args;
+        return this.client.updateEstimate(updateEstimateId, updateEstimateData as UpdateEstimateDto);
 
       case 'delete_estimate':
-        throw new Error('delete_estimate: API method not yet implemented in GHL client');
+        const { estimateId: deleteEstimateId, ...deleteEstimateData } = args;
+        return this.client.deleteEstimate(deleteEstimateId, deleteEstimateData as AltDto);
 
       case 'send_estimate':
         const { estimateId: sendEstimateId, ...sendEstimateData } = args;
@@ -1055,19 +1647,21 @@ Related Tools: create_estimate_template, update_estimate_template`,
         return this.client.listEstimateTemplates(args);
 
       case 'get_estimate_template':
-        throw new Error('get_estimate_template: API method not yet implemented in GHL client');
+        return this.client.getEstimateTemplate(args.templateId, args.altId);
 
       case 'create_estimate_template':
         return this.client.createEstimateTemplate(args as EstimateTemplatesDto);
 
       case 'update_estimate_template':
-        throw new Error('update_estimate_template: API method not yet implemented in GHL client');
+        const { templateId: updateEstTemplateId, ...updateEstTemplateData } = args;
+        return this.client.updateEstimateTemplate(updateEstTemplateId, updateEstTemplateData as EstimateTemplatesDto);
 
       case 'delete_estimate_template':
-        throw new Error('delete_estimate_template: API method not yet implemented in GHL client');
+        const { templateId: deleteEstTemplateId, ...deleteEstTemplateData } = args;
+        return this.client.deleteEstimateTemplate(deleteEstTemplateId, deleteEstTemplateData as AltDto);
 
       case 'preview_estimate_template':
-        return this.client.previewEstimateTemplate(args.templateId);
+        return this.client.previewEstimateTemplate({ templateId: args.templateId, altId: args.altId });
 
       default:
         throw new Error(`Unknown invoices tool: ${name}`);

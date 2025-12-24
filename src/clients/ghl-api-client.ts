@@ -430,6 +430,10 @@ export class GHLApiClient {
           message: error.response?.data?.message,
           url: error.config?.url
         });
+        // Log full response data for debugging 422 errors
+        if (error.response?.status === 422) {
+          console.error('[GHL API] Full 422 error response:', JSON.stringify(error.response?.data, null, 2));
+        }
         return Promise.reject(this.handleApiError(error));
       }
     );
@@ -6592,15 +6596,19 @@ export class GHLApiClient {
    */
   async sendEstimate(estimateId: string, sendData: SendEstimateDto): Promise<GHLApiResponse<EstimateResponseDto>> {
     try {
-      const payload = {
-        ...sendData,
+      const bodyPayload = {
         altId: sendData.altId || this.config.locationId,
-        altType: 'location' as const
+        altType: 'location' as const,
+        action: sendData.action,
+        liveMode: sendData.liveMode,
+        userId: sendData.userId,
+        ...(sendData.estimateName && { estimateName: sendData.estimateName }),
+        ...(sendData.sentFrom && { sentFrom: sendData.sentFrom })
       };
 
       const response: AxiosResponse<EstimateResponseDto> = await this.axiosInstance.post(
         `/invoices/estimate/${estimateId}/send`,
-        payload
+        bodyPayload
       );
 
       return this.wrapResponse(response.data);
@@ -6627,6 +6635,34 @@ export class GHLApiClient {
       );
 
       return this.wrapResponse(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get estimate by ID
+   * Uses list endpoint and filters by ID since GHL API has no direct GET by ID endpoint
+   */
+  async getEstimate(estimateId: string, altId?: string): Promise<GHLApiResponse<EstimateResponseDto>> {
+    try {
+      // Use list endpoint and search for the specific estimate
+      const listResponse = await this.listEstimates({
+        altId: altId || this.config.locationId,
+        altType: 'location',
+        limit: '100',
+        offset: '0'
+      });
+
+      // Find the estimate with matching ID
+      const estimates = (listResponse.data as any)?.estimates || [];
+      const estimate = estimates.find((e: any) => e._id === estimateId);
+
+      if (!estimate) {
+        throw new Error(`Estimate with ID ${estimateId} not found`);
+      }
+
+      return this.wrapResponse(estimate as EstimateResponseDto);
     } catch (error) {
       throw error;
     }
@@ -6680,6 +6716,28 @@ export class GHLApiClient {
       const response: AxiosResponse<void> = await this.axiosInstance.patch(
         '/invoices/estimate/stats/last-visited-at',
         statsData
+      );
+
+      return this.wrapResponse(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get estimate template by ID
+   * GET /invoices/estimate/template/{templateId}
+   */
+  async getEstimateTemplate(templateId: string, altId?: string): Promise<GHLApiResponse<EstimateTemplateResponseDto>> {
+    try {
+      const queryParams = {
+        altId: altId || this.config.locationId,
+        altType: 'location' as const
+      };
+
+      const response: AxiosResponse<EstimateTemplateResponseDto> = await this.axiosInstance.get(
+        `/invoices/estimate/template/${templateId}`,
+        { params: queryParams }
       );
 
       return this.wrapResponse(response.data);
@@ -6821,11 +6879,27 @@ export class GHLApiClient {
    */
   async createInvoice(invoiceData: CreateInvoiceDto): Promise<GHLApiResponse<CreateInvoiceResponseDto>> {
     try {
+      // Build payload matching GHL API example structure exactly
       const payload = {
-        ...invoiceData,
         altId: invoiceData.altId || this.config.locationId,
-        altType: 'location' as const
+        altType: 'location' as const,
+        name: invoiceData.name,
+        businessDetails: invoiceData.businessDetails,
+        currency: invoiceData.currency,
+        items: invoiceData.items,
+        discount: invoiceData.discount,
+        contactDetails: invoiceData.contactDetails,
+        issueDate: invoiceData.issueDate,
+        sentTo: invoiceData.sentTo,
+        liveMode: invoiceData.liveMode,
+        ...(invoiceData.title && { title: invoiceData.title }),
+        ...(invoiceData.dueDate && { dueDate: invoiceData.dueDate }),
+        ...(invoiceData.termsNotes && { termsNotes: invoiceData.termsNotes }),
+        ...(invoiceData.invoiceNumber && { invoiceNumber: invoiceData.invoiceNumber }),
+        ...(invoiceData.automaticTaxesEnabled !== undefined && { automaticTaxesEnabled: invoiceData.automaticTaxesEnabled })
       };
+
+      console.log('[GHL API] createInvoice payload:', JSON.stringify(payload, null, 2));
 
       const response: AxiosResponse<CreateInvoiceResponseDto> = await this.axiosInstance.post(
         '/invoices/',
@@ -6834,6 +6908,10 @@ export class GHLApiClient {
 
       return this.wrapResponse(response.data);
     } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      console.log('[GHL API] createInvoice error response data:', JSON.stringify(axiosError.response?.data, null, 2));
+      console.log('[GHL API] createInvoice error response status:', axiosError.response?.status);
+      console.log('[GHL API] createInvoice error response headers:', JSON.stringify(axiosError.response?.headers, null, 2));
       throw error;
     }
   }
