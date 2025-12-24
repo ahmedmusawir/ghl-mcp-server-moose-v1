@@ -8,7 +8,7 @@ export class CustomFieldV2Tools {
     return [
       // Custom Field Management Tools
       {
-        name: 'ghl_get_custom_field_by_id',
+        name: 'get_custom_field_by_id',
         description: `Get a custom field or folder by its ID.
 
 Retrieve detailed information about a specific custom field or folder.
@@ -23,13 +23,13 @@ Supports custom objects and company (business) fields.
 
 Returns: Field or folder details with all configuration.
 
-Related Tools: ghl_get_custom_fields_by_object_key, ghl_update_custom_field`,
+Related Tools: get_custom_fields_by_object_key, update_custom_field`,
         inputSchema: {
           id: z.string().describe('The ID of the custom field or folder to retrieve')
         }
       },
       {
-        name: 'ghl_create_custom_field',
+        name: 'create_custom_field',
         description: `Create a new custom field for custom objects or company.
 
 Add custom fields to collect specific data for your business needs.
@@ -56,7 +56,7 @@ Examples:
 
 Returns: Created field with ID and configuration.
 
-Related Tools: ghl_update_custom_field, ghl_get_custom_fields_by_object_key`,
+Related Tools: update_custom_field, get_custom_fields_by_object_key`,
         inputSchema: {
           dataType: z.enum(['TEXT', 'LARGE_TEXT', 'NUMERICAL', 'PHONE', 'MONETORY', 'CHECKBOX', 'SINGLE_OPTIONS', 'MULTIPLE_OPTIONS', 'DATE', 'TEXTBOX_LIST', 'FILE_UPLOAD', 'RADIO', 'EMAIL']).describe('Type of field to create'),
           fieldKey: z.string().describe('Field key. Format: "custom_object.{objectKey}.{fieldKey}" (e.g., "custom_object.pet.name")'),
@@ -78,7 +78,7 @@ Related Tools: ghl_update_custom_field, ghl_get_custom_fields_by_object_key`,
         }
       },
       {
-        name: 'ghl_update_custom_field',
+        name: 'update_custom_field',
         description: `Update an existing custom field by ID.
 
 Modify field properties including name, description, options, and settings.
@@ -93,7 +93,7 @@ Use Cases:
 
 Returns: Updated field configuration.
 
-Related Tools: ghl_get_custom_field_by_id, ghl_create_custom_field`,
+Related Tools: get_custom_field_by_id, create_custom_field`,
         inputSchema: {
           id: z.string().describe('The ID of the custom field to update'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
@@ -111,7 +111,7 @@ Related Tools: ghl_get_custom_field_by_id, ghl_create_custom_field`,
         }
       },
       {
-        name: 'ghl_delete_custom_field',
+        name: 'delete_custom_field',
         description: `Delete a custom field by ID.
 
 ⚠️ WARNING: This is permanent and cannot be undone!
@@ -122,13 +122,13 @@ Use Cases:
 - Clean up test fields
 - Reorganize field structure
 
-Related Tools: ghl_get_custom_field_by_id, ghl_get_custom_fields_by_object_key`,
+Related Tools: get_custom_field_by_id, get_custom_fields_by_object_key`,
         inputSchema: {
           id: z.string().describe('The ID of the custom field to delete')
         }
       },
       {
-        name: 'ghl_get_custom_fields_by_object_key',
+        name: 'get_custom_fields_by_object_key',
         description: `Get all custom fields and folders for a specific object.
 
 Retrieve complete field structure for custom objects or company.
@@ -141,7 +141,7 @@ Use Cases:
 
 Returns: All fields and folders with complete configuration.
 
-Related Tools: ghl_get_custom_field_by_id, ghl_create_custom_field`,
+Related Tools: get_custom_field_by_id, create_custom_field`,
         inputSchema: {
           objectKey: z.string().describe('Object key. Format: "custom_object.{objectKey}" (e.g., "custom_object.pet")'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
@@ -149,7 +149,7 @@ Related Tools: ghl_get_custom_field_by_id, ghl_create_custom_field`,
       },
       // Custom Field Folder Management Tools
       {
-        name: 'ghl_create_custom_field_folder',
+        name: 'create_custom_field_folder',
         description: `Create a new custom field folder.
 
 Organize custom fields into folders for better structure.
@@ -166,7 +166,7 @@ Examples:
 
 Returns: Created folder with ID.
 
-Related Tools: ghl_update_custom_field_folder, ghl_delete_custom_field_folder`,
+Related Tools: update_custom_field_folder, delete_custom_field_folder`,
         inputSchema: {
           objectKey: z.string().describe('Object key. Format: "custom_object.{objectKey}" (e.g., "custom_object.pet")'),
           name: z.string().describe('Name of the folder'),
@@ -174,7 +174,7 @@ Related Tools: ghl_update_custom_field_folder, ghl_delete_custom_field_folder`,
         }
       },
       {
-        name: 'ghl_update_custom_field_folder',
+        name: 'update_custom_field_folder',
         description: `Update the name of an existing custom field folder.
 
 Rename folders to better reflect their contents.
@@ -186,7 +186,7 @@ Use Cases:
 
 Returns: Updated folder configuration.
 
-Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_key`,
+Related Tools: create_custom_field_folder, get_custom_fields_by_object_key`,
         inputSchema: {
           id: z.string().describe('The ID of the folder to update'),
           name: z.string().describe('New name for the folder'),
@@ -194,7 +194,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
         }
       },
       {
-        name: 'ghl_delete_custom_field_folder',
+        name: 'delete_custom_field_folder',
         description: `Delete a custom field folder.
 
 ⚠️ WARNING: This may affect fields within the folder!
@@ -205,7 +205,7 @@ Use Cases:
 - Reorganize field structure
 - Clean up folder hierarchy
 
-Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_key`,
+Related Tools: create_custom_field_folder, get_custom_fields_by_object_key`,
         inputSchema: {
           id: z.string().describe('The ID of the folder to delete'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
@@ -217,7 +217,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
   async executeCustomFieldV2Tool(name: string, args: any): Promise<any> {
     try {
       switch (name) {
-        case 'ghl_get_custom_field_by_id': {
+        case 'get_custom_field_by_id': {
           const result = await this.apiClient.getCustomFieldV2ById(args.id);
           return {
             success: true,
@@ -226,7 +226,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
           };
         }
 
-        case 'ghl_create_custom_field': {
+        case 'create_custom_field': {
           const result = await this.apiClient.createCustomFieldV2({
             locationId: args.locationId || '',
             name: args.name,
@@ -249,7 +249,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
           };
         }
 
-        case 'ghl_update_custom_field': {
+        case 'update_custom_field': {
           const result = await this.apiClient.updateCustomFieldV2(args.id, {
             locationId: args.locationId || '',
             name: args.name,
@@ -267,7 +267,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
           };
         }
 
-        case 'ghl_delete_custom_field': {
+        case 'delete_custom_field': {
           const result = await this.apiClient.deleteCustomFieldV2(args.id);
           return {
             success: true,
@@ -276,7 +276,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
           };
         }
 
-        case 'ghl_get_custom_fields_by_object_key': {
+        case 'get_custom_fields_by_object_key': {
           const result = await this.apiClient.getCustomFieldsV2ByObjectKey({
             objectKey: args.objectKey,
             locationId: args.locationId || ''
@@ -288,7 +288,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
           };
         }
 
-        case 'ghl_create_custom_field_folder': {
+        case 'create_custom_field_folder': {
           const result = await this.apiClient.createCustomFieldV2Folder({
             objectKey: args.objectKey,
             name: args.name,
@@ -301,7 +301,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
           };
         }
 
-        case 'ghl_update_custom_field_folder': {
+        case 'update_custom_field_folder': {
           const result = await this.apiClient.updateCustomFieldV2Folder(args.id, {
             name: args.name,
             locationId: args.locationId || ''
@@ -313,7 +313,7 @@ Related Tools: ghl_create_custom_field_folder, ghl_get_custom_fields_by_object_k
           };
         }
 
-        case 'ghl_delete_custom_field_folder': {
+        case 'delete_custom_field_folder': {
           const result = await this.apiClient.deleteCustomFieldV2Folder({
             id: args.id,
             locationId: args.locationId || ''

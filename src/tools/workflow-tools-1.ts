@@ -10,7 +10,7 @@ export class WorkflowTools {
   getTools(): Tool[] {
     return [
       {
-        name: 'ghl_get_workflows',
+        name: 'get_workflows',
         description: 'Retrieve all workflows for a location. Workflows represent automation sequences that can be triggered by various events in the system.',
         inputSchema: {
           type: 'object',
@@ -29,7 +29,7 @@ export class WorkflowTools {
   async executeWorkflowTool(name: string, params: any): Promise<any> {
     try {
       switch (name) {
-        case 'ghl_get_workflows':
+        case 'get_workflows':
           return await this.getWorkflows(params as MCPGetWorkflowsParams);
         
         default:
@@ -78,7 +78,7 @@ export class WorkflowTools {
 // Helper function to check if a tool name belongs to workflow tools
 export function isWorkflowTool(toolName: string): boolean {
   const workflowToolNames = [
-    'ghl_get_workflows'
+    'get_workflows'
   ];
   
   return workflowToolNames.includes(toolName);

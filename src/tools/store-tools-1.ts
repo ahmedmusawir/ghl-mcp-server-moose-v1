@@ -1048,7 +1048,7 @@ These settings control your store's shipping origin and email notification prefe
     return [
       // Shipping Zones Tools
       {
-        name: 'ghl_create_shipping_zone',
+        name: 'create_shipping_zone',
         description: 'Create a new shipping zone with specific countries and states',
         inputSchema: {
           type: 'object',
@@ -1082,7 +1082,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_list_shipping_zones',
+        name: 'list_shipping_zones',
         description: 'List all shipping zones for a location',
         inputSchema: {
           type: 'object',
@@ -1095,7 +1095,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_get_shipping_zone',
+        name: 'get_shipping_zone',
         description: 'Get details of a specific shipping zone',
         inputSchema: {
           type: 'object',
@@ -1108,7 +1108,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_update_shipping_zone',
+        name: 'update_shipping_zone',
         description: 'Update a shipping zone\'s name or countries',
         inputSchema: {
           type: 'object',
@@ -1143,7 +1143,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_delete_shipping_zone',
+        name: 'delete_shipping_zone',
         description: 'Delete a shipping zone and all its associated shipping rates',
         inputSchema: {
           type: 'object',
@@ -1157,7 +1157,7 @@ These settings control your store's shipping origin and email notification prefe
 
       // Shipping Rates Tools (key ones)
       {
-        name: 'ghl_get_available_shipping_rates',
+        name: 'get_available_shipping_rates',
         description: 'Get available shipping rates for an order based on destination and order details',
         inputSchema: {
           type: 'object',
@@ -1193,7 +1193,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_create_shipping_rate',
+        name: 'create_shipping_rate',
         description: 'Create a new shipping rate for a shipping zone',
         inputSchema: {
           type: 'object',
@@ -1209,7 +1209,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_list_shipping_rates',
+        name: 'list_shipping_rates',
         description: 'List all shipping rates for a specific shipping zone',
         inputSchema: {
           type: 'object',
@@ -1221,7 +1221,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_get_shipping_rate',
+        name: 'get_shipping_rate',
         description: 'Get details of a specific shipping rate',
         inputSchema: {
           type: 'object',
@@ -1234,7 +1234,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_update_shipping_rate',
+        name: 'update_shipping_rate',
         description: 'Update a shipping rate\'s properties',
         inputSchema: {
           type: 'object',
@@ -1247,7 +1247,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_delete_shipping_rate',
+        name: 'delete_shipping_rate',
         description: 'Delete a shipping rate',
         inputSchema: {
           type: 'object',
@@ -1262,7 +1262,7 @@ These settings control your store's shipping origin and email notification prefe
 
       // Shipping Carriers Tools
       {
-        name: 'ghl_create_shipping_carrier',
+        name: 'create_shipping_carrier',
         description: 'Create a new shipping carrier for dynamic rate calculation',
         inputSchema: {
           type: 'object',
@@ -1287,7 +1287,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_list_shipping_carriers',
+        name: 'list_shipping_carriers',
         description: 'List all shipping carriers for a location',
         inputSchema: {
           type: 'object',
@@ -1297,7 +1297,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_get_shipping_carrier',
+        name: 'get_shipping_carrier',
         description: 'Get details of a specific shipping carrier',
         inputSchema: {
           type: 'object',
@@ -1309,7 +1309,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_update_shipping_carrier',
+        name: 'update_shipping_carrier',
         description: 'Update a shipping carrier\'s properties',
         inputSchema: {
           type: 'object',
@@ -1321,7 +1321,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_delete_shipping_carrier',
+        name: 'delete_shipping_carrier',
         description: 'Delete a shipping carrier',
         inputSchema: {
           type: 'object',
@@ -1335,7 +1335,7 @@ These settings control your store's shipping origin and email notification prefe
 
       // Store Settings Tools
       {
-        name: 'ghl_create_store_setting',
+        name: 'create_store_setting',
         description: 'Create or update store settings including shipping origin and notifications',
         inputSchema: {
           type: 'object',
@@ -1358,7 +1358,7 @@ These settings control your store's shipping origin and email notification prefe
         }
       },
       {
-        name: 'ghl_get_store_setting',
+        name: 'get_store_setting',
         description: 'Get current store settings',
         inputSchema: {
           type: 'object',
@@ -1376,47 +1376,47 @@ These settings control your store's shipping origin and email notification prefe
   async executeStoreTool(toolName: string, params: any): Promise<StoreToolResult> {
     switch (toolName) {
       // Shipping Zones
-      case 'ghl_create_shipping_zone':
+      case 'create_shipping_zone':
         return this.createShippingZone(params);
-      case 'ghl_list_shipping_zones':
+      case 'list_shipping_zones':
         return this.listShippingZones(params);
-      case 'ghl_get_shipping_zone':
+      case 'get_shipping_zone':
         return this.getShippingZone(params);
-      case 'ghl_update_shipping_zone':
+      case 'update_shipping_zone':
         return this.updateShippingZone(params);
-      case 'ghl_delete_shipping_zone':
+      case 'delete_shipping_zone':
         return this.deleteShippingZone(params);
 
       // Shipping Rates
-      case 'ghl_get_available_shipping_rates':
+      case 'get_available_shipping_rates':
         return this.getAvailableShippingRates(params);
-      case 'ghl_create_shipping_rate':
+      case 'create_shipping_rate':
         return this.createShippingRate(params);
-      case 'ghl_list_shipping_rates':
+      case 'list_shipping_rates':
         return this.listShippingRates(params);
-      case 'ghl_get_shipping_rate':
+      case 'get_shipping_rate':
         return this.getShippingRate(params);
-      case 'ghl_update_shipping_rate':
+      case 'update_shipping_rate':
         return this.updateShippingRate(params);
-      case 'ghl_delete_shipping_rate':
+      case 'delete_shipping_rate':
         return this.deleteShippingRate(params);
 
       // Shipping Carriers
-      case 'ghl_create_shipping_carrier':
+      case 'create_shipping_carrier':
         return this.createShippingCarrier(params);
-      case 'ghl_list_shipping_carriers':
+      case 'list_shipping_carriers':
         return this.listShippingCarriers(params);
-      case 'ghl_get_shipping_carrier':
+      case 'get_shipping_carrier':
         return this.getShippingCarrier(params);
-      case 'ghl_update_shipping_carrier':
+      case 'update_shipping_carrier':
         return this.updateShippingCarrier(params);
-      case 'ghl_delete_shipping_carrier':
+      case 'delete_shipping_carrier':
         return this.deleteShippingCarrier(params);
 
       // Store Settings
-      case 'ghl_create_store_setting':
+      case 'create_store_setting':
         return this.createStoreSetting(params);
-      case 'ghl_get_store_setting':
+      case 'get_store_setting':
         return this.getStoreSetting(params);
 
       default:

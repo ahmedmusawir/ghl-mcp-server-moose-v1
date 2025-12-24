@@ -2,9 +2,27 @@
 
 ## Project Status
 - Current objective: Testing Custom Objects tools (Phase 1-3: Schema, Records, Search)
-- Last completed: Invoice tools testing - 7/9 working, 2 blocked by GHL API bugs (Dec 24 3:00 PM)
+- Last completed: Fixed `update_object_record` locationId issue (Dec 24 4:15 PM)
+- Current finding: Cannot add properties to records that don't exist in schema (expected behavior)
 
 ## Code Changes
+- [6:16 PM] - Fixed `get_survey_submissions` tool - 404 "Cannot GET" error
+  - Root cause: Incorrect endpoint path `/locations/{locationId}/surveys/submissions`
+  - Fix: Changed to correct path `/surveys/submissions` with locationId as query param
+  - Changed in `src/clients/ghl-api-client.ts`: `getSurveySubmissions` method
+  - Also fixed error handling to use `handleApiError` instead of raw throw
+  - Build: ✅ Successful
+- [4:15 PM] - Fixed `update_object_record` tool - 422 error "property locationId should not exist"
+  - Root cause: `locationId` was being sent in request body AND query params
+  - Fix: Extract `locationId` from body, send only in query params
+  - Changed in `src/clients/ghl-api-client.ts`: `updateObjectRecord` method
+  - Build: ✅ Successful
+- [4:00 PM] - **STANDARDIZED ALL TOOL NAMING** - Removed `ghl_` prefix from 98 tools across 12 files
+  - Files updated: `association-tools.ts`, `association-tools-1.ts`, `custom-field-v2-tools.ts`, `custom-field-v2-tools-1.ts`, `products-tools.ts`, `products-tools-1.ts`, `store-tools.ts`, `store-tools-1.ts`, `survey-tools.ts`, `survey-tools-1.ts`, `workflow-tools.ts`, `workflow-tools-1.ts`
+  - Changed: `ghl_get_workflows` → `get_workflows`, `ghl_create_association` → `create_association`, etc.
+  - Updated: Tool names, switch cases, helper functions, and all documentation references
+  - Result: Consistent naming across entire MCP server (no more `ghl_` prefixes)
+  - Build: ✅ Successful
 - [10:19 AM] - Fixed `create_invoice` tool schema in `src/tools/invoices-tools.ts`
   - Added required fields: `name`, `businessDetails`, `contactDetails`, `items` (with `type`), `discount`, `sentTo`, `liveMode`, `issueDate`
   - Removed invalid field: `contactId` (moved to `contactDetails.id`)

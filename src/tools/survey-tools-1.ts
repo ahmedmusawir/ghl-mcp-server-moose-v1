@@ -11,7 +11,7 @@ export class SurveyTools {
   getTools(): Tool[] {
     return [
       {
-        name: 'ghl_get_surveys',
+        name: 'get_surveys',
         description: 'Retrieve all surveys for a location. Surveys are used to collect information from contacts through forms and questionnaires.',
         inputSchema: {
           type: 'object',
@@ -37,7 +37,7 @@ export class SurveyTools {
         }
       },
       {
-        name: 'ghl_get_survey_submissions',
+        name: 'get_survey_submissions',
         description: 'Retrieve survey submissions with advanced filtering and pagination. Get responses from contacts who have completed surveys.',
         inputSchema: {
           type: 'object',
@@ -80,10 +80,10 @@ export class SurveyTools {
   async executeSurveyTool(name: string, params: any): Promise<any> {
     try {
       switch (name) {
-        case 'ghl_get_surveys':
+        case 'get_surveys':
           return await this.getSurveys(params as MCPGetSurveysParams);
         
-        case 'ghl_get_survey_submissions':
+        case 'get_survey_submissions':
           return await this.getSurveySubmissions(params as MCPGetSurveySubmissionsParams);
         
         default:
@@ -185,8 +185,8 @@ export class SurveyTools {
 // Helper function to check if a tool name belongs to survey tools
 export function isSurveyTool(toolName: string): boolean {
   const surveyToolNames = [
-    'ghl_get_surveys',
-    'ghl_get_survey_submissions'
+    'get_surveys',
+    'get_survey_submissions'
   ];
   
   return surveyToolNames.includes(toolName);

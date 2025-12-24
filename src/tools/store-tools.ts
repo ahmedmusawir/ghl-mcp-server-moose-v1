@@ -1030,7 +1030,7 @@ These settings control your store's shipping origin and email notification prefe
     return [
       // Shipping Zones Tools
       {
-        name: 'ghl_create_shipping_zone',
+        name: 'create_shipping_zone',
         description: `Create a new shipping zone with specific countries and states.
 
 Define geographic regions where you ship products and set up location-based shipping rules.
@@ -1062,7 +1062,7 @@ Examples:
 
 Returns: Created zone with ID, name, and configured countries/states.
 
-Related Tools: ghl_list_shipping_zones, ghl_update_shipping_zone, ghl_create_shipping_rate`,
+Related Tools: list_shipping_zones, update_shipping_zone, create_shipping_rate`,
         inputSchema: {
           name: z.string().describe('Name of the shipping zone (e.g., "US Mainland", "West Coast", "International")'),
           countries: z.array(z.object({
@@ -1075,7 +1075,7 @@ Related Tools: ghl_list_shipping_zones, ghl_update_shipping_zone, ghl_create_shi
         }
       },
       {
-        name: 'ghl_list_shipping_zones',
+        name: 'list_shipping_zones',
         description: `List all shipping zones for a location.
 
 View all configured shipping zones to understand your shipping coverage.
@@ -1098,7 +1098,7 @@ withShippingRate Option:
 
 Returns: Array of zones with names, countries, states, and optionally rates.
 
-Related Tools: ghl_get_shipping_zone, ghl_create_shipping_zone, ghl_list_shipping_rates`,
+Related Tools: get_shipping_zone, create_shipping_zone, list_shipping_rates`,
         inputSchema: {
           locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
           limit: z.number().min(1).optional().describe('Maximum zones to return (for pagination)'),
@@ -1107,7 +1107,7 @@ Related Tools: ghl_get_shipping_zone, ghl_create_shipping_zone, ghl_list_shippin
         }
       },
       {
-        name: 'ghl_get_shipping_zone',
+        name: 'get_shipping_zone',
         description: `Get details of a specific shipping zone.
 
 Retrieve complete configuration for a single shipping zone.
@@ -1133,7 +1133,7 @@ Common Workflow:
 
 Returns: Complete zone configuration with countries, states, and optionally rates.
 
-Related Tools: ghl_list_shipping_zones, ghl_update_shipping_zone, ghl_list_shipping_rates`,
+Related Tools: list_shipping_zones, update_shipping_zone, list_shipping_rates`,
         inputSchema: {
           shippingZoneId: z.string().describe('ID of the shipping zone to retrieve'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
@@ -1141,7 +1141,7 @@ Related Tools: ghl_list_shipping_zones, ghl_update_shipping_zone, ghl_list_shipp
         }
       },
       {
-        name: 'ghl_update_shipping_zone',
+        name: 'update_shipping_zone',
         description: `Update a shipping zone's name or countries.
 
 Modify existing shipping zones to adjust geographic coverage.
@@ -1176,7 +1176,7 @@ Best Practice:
 
 Returns: Updated zone with new name and/or countries.
 
-Related Tools: ghl_get_shipping_zone, ghl_list_shipping_zones, ghl_delete_shipping_zone`,
+Related Tools: get_shipping_zone, list_shipping_zones, delete_shipping_zone`,
         inputSchema: {
           shippingZoneId: z.string().describe('ID of the shipping zone to update'),
           name: z.string().optional().describe('New name for the zone (optional)'),
@@ -1190,7 +1190,7 @@ Related Tools: ghl_get_shipping_zone, ghl_list_shipping_zones, ghl_delete_shippi
         }
       },
       {
-        name: 'ghl_delete_shipping_zone',
+        name: 'delete_shipping_zone',
         description: `Delete a shipping zone and all its associated shipping rates.
 
 ⚠️ WARNING: This is PERMANENT and cannot be undone!
@@ -1209,7 +1209,7 @@ What Gets Deleted:
 - Zone name and metadata
 
 ⚠️ Before Deleting:
-1. Verify this is the correct zone (use ghl_get_shipping_zone)
+1. Verify this is the correct zone (use get_shipping_zone)
 2. Check if zone has active shipping rates
 3. Ensure no orders are pending with these rates
 4. Consider updating instead of deleting
@@ -1227,7 +1227,7 @@ Safer Alternative:
 
 Returns: Confirmation of deletion.
 
-Related Tools: ghl_get_shipping_zone, ghl_update_shipping_zone, ghl_list_shipping_zones`,
+Related Tools: get_shipping_zone, update_shipping_zone, list_shipping_zones`,
         inputSchema: {
           shippingZoneId: z.string().describe('ID of the shipping zone to permanently delete'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
@@ -1236,7 +1236,7 @@ Related Tools: ghl_get_shipping_zone, ghl_update_shipping_zone, ghl_list_shippin
 
       // Shipping Rates Tools
       {
-        name: 'ghl_get_available_shipping_rates',
+        name: 'get_available_shipping_rates',
         description: `Get available shipping rates for an order based on destination.
 
 Calculate which shipping options are available for a customer's order based on their location and order details.
@@ -1274,7 +1274,7 @@ Examples:
 
 Returns: Array of available shipping rates with names, costs, and delivery estimates.
 
-Related Tools: ghl_list_shipping_zones, ghl_list_shipping_rates, ghl_create_shipping_rate`,
+Related Tools: list_shipping_zones, list_shipping_rates, create_shipping_rate`,
         inputSchema: {
           country: z.string().describe('Destination country code (2-letter ISO: "US", "CA", "GB")'),
           address: z.object({
@@ -1292,7 +1292,7 @@ Related Tools: ghl_list_shipping_zones, ghl_list_shipping_rates, ghl_create_ship
         }
       },
       {
-        name: 'ghl_create_shipping_rate',
+        name: 'create_shipping_rate',
         description: `Create a new shipping rate for a shipping zone.
 
 Define shipping costs and conditions for a specific geographic zone.
@@ -1325,11 +1325,11 @@ Examples:
 - Use clear, customer-friendly names
 - Amount always in cents (999 = $9.99)
 - Create multiple rates per zone for options
-- Test rates with ghl_get_available_shipping_rates
+- Test rates with get_available_shipping_rates
 
 Returns: Created rate with ID, name, amount, and conditions.
 
-Related Tools: ghl_list_shipping_rates, ghl_update_shipping_rate, ghl_create_shipping_zone`,
+Related Tools: list_shipping_rates, update_shipping_rate, create_shipping_zone`,
         inputSchema: {
           shippingZoneId: z.string().describe('ID of the shipping zone for this rate'),
           name: z.string().describe('Customer-facing rate name (e.g., "Standard Ground", "Express")'),
@@ -1343,7 +1343,7 @@ Related Tools: ghl_list_shipping_rates, ghl_update_shipping_rate, ghl_create_shi
         }
       },
       {
-        name: 'ghl_list_shipping_rates',
+        name: 'list_shipping_rates',
         description: `List all shipping rates for a specific shipping zone.
 
 View all configured shipping options for a geographic zone.
@@ -1374,7 +1374,7 @@ Example Response:
 
 Returns: Array of all shipping rates configured for the zone.
 
-Related Tools: ghl_get_shipping_rate, ghl_create_shipping_rate, ghl_list_shipping_zones`,
+Related Tools: get_shipping_rate, create_shipping_rate, list_shipping_zones`,
         inputSchema: {
           shippingZoneId: z.string().describe('ID of the shipping zone to get rates for'),
           limit: z.number().min(1).optional().describe('Maximum rates to return (for pagination)'),
@@ -1383,7 +1383,7 @@ Related Tools: ghl_get_shipping_rate, ghl_create_shipping_rate, ghl_list_shippin
         }
       },
       {
-        name: 'ghl_get_shipping_rate',
+        name: 'get_shipping_rate',
         description: `Get details of a specific shipping rate.
 
 Retrieve complete configuration for a single shipping rate.
@@ -1410,7 +1410,7 @@ Common Workflow:
 
 Returns: Complete rate configuration with all settings.
 
-Related Tools: ghl_list_shipping_rates, ghl_update_shipping_rate, ghl_delete_shipping_rate`,
+Related Tools: list_shipping_rates, update_shipping_rate, delete_shipping_rate`,
         inputSchema: {
           shippingZoneId: z.string().describe('ID of the shipping zone'),
           shippingRateId: z.string().describe('ID of the shipping rate to retrieve'),
@@ -1418,7 +1418,7 @@ Related Tools: ghl_list_shipping_rates, ghl_update_shipping_rate, ghl_delete_shi
         }
       },
       {
-        name: 'ghl_update_shipping_rate',
+        name: 'update_shipping_rate',
         description: `Update a shipping rate's properties.
 
 Modify existing shipping rates to adjust pricing or conditions.
@@ -1446,7 +1446,7 @@ Examples:
 💡 Best Practices:
 1. Get current rate configuration first
 2. Modify only the fields you want to change
-3. Test with ghl_get_available_shipping_rates
+3. Test with get_available_shipping_rates
 4. Communicate changes to customers
 
 ⚠️ Important:
@@ -1457,7 +1457,7 @@ Examples:
 
 Returns: Updated rate with new configuration.
 
-Related Tools: ghl_get_shipping_rate, ghl_list_shipping_rates, ghl_delete_shipping_rate`,
+Related Tools: get_shipping_rate, list_shipping_rates, delete_shipping_rate`,
         inputSchema: {
           shippingZoneId: z.string().describe('ID of the shipping zone'),
           shippingRateId: z.string().describe('ID of the shipping rate to update'),
@@ -1472,7 +1472,7 @@ Related Tools: ghl_get_shipping_rate, ghl_list_shipping_rates, ghl_delete_shippi
         }
       },
       {
-        name: 'ghl_delete_shipping_rate',
+        name: 'delete_shipping_rate',
         description: `Delete a shipping rate.
 
 ⚠️ WARNING: This is PERMANENT and cannot be undone!
@@ -1490,7 +1490,7 @@ What Gets Deleted:
 - Rate configuration
 
 ⚠️ Before Deleting:
-1. Verify this is the correct rate (use ghl_get_shipping_rate)
+1. Verify this is the correct rate (use get_shipping_rate)
 2. Check if customers are using this rate
 3. Ensure other rates are available for the zone
 4. Consider updating instead of deleting
@@ -1515,7 +1515,7 @@ Safer Alternative:
 
 Returns: Confirmation of deletion.
 
-Related Tools: ghl_get_shipping_rate, ghl_list_shipping_rates, ghl_update_shipping_rate`,
+Related Tools: get_shipping_rate, list_shipping_rates, update_shipping_rate`,
         inputSchema: {
           shippingZoneId: z.string().describe('ID of the shipping zone'),
           shippingRateId: z.string().describe('ID of the shipping rate to permanently delete'),
@@ -1525,7 +1525,7 @@ Related Tools: ghl_get_shipping_rate, ghl_list_shipping_rates, ghl_update_shippi
 
       // Shipping Carriers Tools
       {
-        name: 'ghl_create_shipping_carrier',
+        name: 'create_shipping_carrier',
         description: `Create a new shipping carrier for dynamic rate calculation.
 
 ⚠️ ADVANCED FEATURE: Integrates external shipping APIs for real-time rates.
@@ -1570,7 +1570,7 @@ Examples:
 
 Returns: Created carrier with ID and configuration.
 
-Related Tools: ghl_list_shipping_carriers, ghl_update_shipping_carrier, ghl_get_available_shipping_rates`,
+Related Tools: list_shipping_carriers, update_shipping_carrier, get_available_shipping_rates`,
         inputSchema: {
           name: z.string().describe('Carrier name (e.g., "UPS", "FedEx", "Custom Carrier")'),
           callbackUrl: z.string().url().describe('HTTPS URL that receives rate requests and returns shipping options'),
@@ -1583,7 +1583,7 @@ Related Tools: ghl_list_shipping_carriers, ghl_update_shipping_carrier, ghl_get_
         }
       },
       {
-        name: 'ghl_list_shipping_carriers',
+        name: 'list_shipping_carriers',
         description: `List all shipping carriers for a location.
 
 View all configured carrier integrations.
@@ -1609,13 +1609,13 @@ Common Workflow:
 
 Returns: Array of all shipping carriers with their configurations.
 
-Related Tools: ghl_get_shipping_carrier, ghl_create_shipping_carrier, ghl_update_shipping_carrier`,
+Related Tools: get_shipping_carrier, create_shipping_carrier, update_shipping_carrier`,
         inputSchema: {
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
-        name: 'ghl_get_shipping_carrier',
+        name: 'get_shipping_carrier',
         description: `Get details of a specific shipping carrier.
 
 Retrieve complete configuration for a carrier integration.
@@ -1642,14 +1642,14 @@ Common Workflow:
 
 Returns: Complete carrier configuration with all services.
 
-Related Tools: ghl_list_shipping_carriers, ghl_update_shipping_carrier, ghl_delete_shipping_carrier`,
+Related Tools: list_shipping_carriers, update_shipping_carrier, delete_shipping_carrier`,
         inputSchema: {
           shippingCarrierId: z.string().describe('ID of the shipping carrier to retrieve'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
-        name: 'ghl_update_shipping_carrier',
+        name: 'update_shipping_carrier',
         description: `Update a shipping carrier's properties.
 
 Modify existing carrier integrations.
@@ -1686,7 +1686,7 @@ Examples:
 
 Returns: Updated carrier with new configuration.
 
-Related Tools: ghl_get_shipping_carrier, ghl_list_shipping_carriers, ghl_delete_shipping_carrier`,
+Related Tools: get_shipping_carrier, list_shipping_carriers, delete_shipping_carrier`,
         inputSchema: {
           shippingCarrierId: z.string().describe('ID of the shipping carrier to update'),
           name: z.string().optional().describe('New carrier name (optional)'),
@@ -1700,7 +1700,7 @@ Related Tools: ghl_get_shipping_carrier, ghl_list_shipping_carriers, ghl_delete_
         }
       },
       {
-        name: 'ghl_delete_shipping_carrier',
+        name: 'delete_shipping_carrier',
         description: `Delete a shipping carrier.
 
 ⚠️ WARNING: This is PERMANENT and cannot be undone!
@@ -1718,7 +1718,7 @@ What Gets Deleted:
 - Carrier settings
 
 ⚠️ Before Deleting:
-1. Verify this is the correct carrier (use ghl_get_shipping_carrier)
+1. Verify this is the correct carrier (use get_shipping_carrier)
 2. Check if carrier is actively used
 3. Ensure other shipping options are available
 4. Test checkout without this carrier
@@ -1743,7 +1743,7 @@ Safer Alternative:
 
 Returns: Confirmation of deletion.
 
-Related Tools: ghl_get_shipping_carrier, ghl_list_shipping_carriers, ghl_update_shipping_carrier`,
+Related Tools: get_shipping_carrier, list_shipping_carriers, update_shipping_carrier`,
         inputSchema: {
           shippingCarrierId: z.string().describe('ID of the shipping carrier to permanently delete'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
@@ -1752,7 +1752,7 @@ Related Tools: ghl_get_shipping_carrier, ghl_list_shipping_carriers, ghl_update_
 
       // Store Settings Tools
       {
-        name: 'ghl_create_store_setting',
+        name: 'create_store_setting',
         description: `Create or update store settings including shipping origin and notifications.
 
 Configure essential store settings for e-commerce operations.
@@ -1797,7 +1797,7 @@ Examples:
 
 Returns: Created/updated store settings.
 
-Related Tools: ghl_get_store_setting, ghl_create_shipping_zone, ghl_create_shipping_rate`,
+Related Tools: get_store_setting, create_shipping_zone, create_shipping_rate`,
         inputSchema: {
           shippingOrigin: z.object({
             name: z.string().describe('Business/warehouse name'),
@@ -1814,7 +1814,7 @@ Related Tools: ghl_get_store_setting, ghl_create_shipping_zone, ghl_create_shipp
         }
       },
       {
-        name: 'ghl_get_store_setting',
+        name: 'get_store_setting',
         description: `Get current store settings.
 
 Retrieve all configured store settings.
@@ -1847,7 +1847,7 @@ Common Workflow:
 
 Returns: Complete store settings including shipping origin and notifications.
 
-Related Tools: ghl_create_store_setting, ghl_create_shipping_zone, ghl_list_shipping_zones`,
+Related Tools: create_store_setting, create_shipping_zone, list_shipping_zones`,
         inputSchema: {
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
@@ -1861,47 +1861,47 @@ Related Tools: ghl_create_store_setting, ghl_create_shipping_zone, ghl_list_ship
   async executeStoreTool(toolName: string, params: any): Promise<StoreToolResult> {
     switch (toolName) {
       // Shipping Zones
-      case 'ghl_create_shipping_zone':
+      case 'create_shipping_zone':
         return this.createShippingZone(params);
-      case 'ghl_list_shipping_zones':
+      case 'list_shipping_zones':
         return this.listShippingZones(params);
-      case 'ghl_get_shipping_zone':
+      case 'get_shipping_zone':
         return this.getShippingZone(params);
-      case 'ghl_update_shipping_zone':
+      case 'update_shipping_zone':
         return this.updateShippingZone(params);
-      case 'ghl_delete_shipping_zone':
+      case 'delete_shipping_zone':
         return this.deleteShippingZone(params);
 
       // Shipping Rates
-      case 'ghl_get_available_shipping_rates':
+      case 'get_available_shipping_rates':
         return this.getAvailableShippingRates(params);
-      case 'ghl_create_shipping_rate':
+      case 'create_shipping_rate':
         return this.createShippingRate(params);
-      case 'ghl_list_shipping_rates':
+      case 'list_shipping_rates':
         return this.listShippingRates(params);
-      case 'ghl_get_shipping_rate':
+      case 'get_shipping_rate':
         return this.getShippingRate(params);
-      case 'ghl_update_shipping_rate':
+      case 'update_shipping_rate':
         return this.updateShippingRate(params);
-      case 'ghl_delete_shipping_rate':
+      case 'delete_shipping_rate':
         return this.deleteShippingRate(params);
 
       // Shipping Carriers
-      case 'ghl_create_shipping_carrier':
+      case 'create_shipping_carrier':
         return this.createShippingCarrier(params);
-      case 'ghl_list_shipping_carriers':
+      case 'list_shipping_carriers':
         return this.listShippingCarriers(params);
-      case 'ghl_get_shipping_carrier':
+      case 'get_shipping_carrier':
         return this.getShippingCarrier(params);
-      case 'ghl_update_shipping_carrier':
+      case 'update_shipping_carrier':
         return this.updateShippingCarrier(params);
-      case 'ghl_delete_shipping_carrier':
+      case 'delete_shipping_carrier':
         return this.deleteShippingCarrier(params);
 
       // Store Settings
-      case 'ghl_create_store_setting':
+      case 'create_store_setting':
         return this.createStoreSetting(params);
-      case 'ghl_get_store_setting':
+      case 'get_store_setting':
         return this.getStoreSetting(params);
 
       default:

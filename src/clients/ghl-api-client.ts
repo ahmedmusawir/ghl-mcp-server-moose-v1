@@ -3952,9 +3952,12 @@ export class GHLApiClient {
         locationId: updateData.locationId || this.config.locationId
       };
 
+      // Extract only body fields - locationId goes in query params only
+      const { locationId, ...bodyData } = updateData;
+
       const response: AxiosResponse<GHLObjectRecordResponse> = await this.axiosInstance.put(
         `/objects/${schemaKey}/records/${recordId}`,
-        updateData,
+        bodyData,
         { params: queryParams }
       );
 
@@ -4435,21 +4438,37 @@ export class GHLApiClient {
     try {
       const locationId = request.locationId || this.config.locationId;
       
-      const params = new URLSearchParams();
-      if (request.page) params.append('page', request.page.toString());
-      if (request.limit) params.append('limit', request.limit.toString());
-      if (request.surveyId) params.append('surveyId', request.surveyId);
-      if (request.q) params.append('q', request.q);
-      if (request.startAt) params.append('startAt', request.startAt);
-      if (request.endAt) params.append('endAt', request.endAt);
+      const queryParams: Record<string, string> = {
+        locationId: locationId
+      };
+
+      if (request.page !== undefined) {
+        queryParams.page = request.page.toString();
+      }
+      if (request.limit !== undefined) {
+        queryParams.limit = request.limit.toString();
+      }
+      if (request.surveyId) {
+        queryParams.surveyId = request.surveyId;
+      }
+      if (request.q) {
+        queryParams.q = request.q;
+      }
+      if (request.startAt) {
+        queryParams.startAt = request.startAt;
+      }
+      if (request.endAt) {
+        queryParams.endAt = request.endAt;
+      }
 
       const response: AxiosResponse<GHLGetSurveySubmissionsResponse> = await this.axiosInstance.get(
-        `/locations/${locationId}/surveys/submissions?${params.toString()}`
+        '/surveys/submissions',
+        { params: queryParams }
       );
 
       return this.wrapResponse(response.data);
     } catch (error) {
-      throw error;
+      throw this.handleApiError(error as AxiosError<GHLErrorResponse>);
     }
   }
 

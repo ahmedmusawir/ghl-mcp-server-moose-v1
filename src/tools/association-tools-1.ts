@@ -20,7 +20,7 @@ export class AssociationTools {
     return [
       // Association Management Tools
       {
-        name: 'ghl_get_all_associations',
+        name: 'get_all_associations',
         description: 'Get all associations for a sub-account/location with pagination. Returns system-defined and user-defined associations.',
         inputSchema: {
           type: 'object',
@@ -43,7 +43,7 @@ export class AssociationTools {
         }
       },
       {
-        name: 'ghl_create_association',
+        name: 'create_association',
         description: 'Create a new association that defines relationship types between entities like contacts, custom objects, and opportunities.',
         inputSchema: {
           type: 'object',
@@ -73,7 +73,7 @@ export class AssociationTools {
         }
       },
       {
-        name: 'ghl_get_association_by_id',
+        name: 'get_association_by_id',
         description: 'Get a specific association by its ID. Works for both system-defined and user-defined associations.',
         inputSchema: {
           type: 'object',
@@ -87,7 +87,7 @@ export class AssociationTools {
         }
       },
       {
-        name: 'ghl_update_association',
+        name: 'update_association',
         description: 'Update the labels of an existing association. Only user-defined associations can be updated.',
         inputSchema: {
           type: 'object',
@@ -107,7 +107,7 @@ export class AssociationTools {
         }
       },
       {
-        name: 'ghl_delete_association',
+        name: 'delete_association',
         description: 'Delete a user-defined association. This will also delete all relations created with this association.',
         inputSchema: {
           type: 'object',
@@ -121,7 +121,7 @@ export class AssociationTools {
         }
       },
       {
-        name: 'ghl_get_association_by_key',
+        name: 'get_association_by_key',
         description: 'Get an association by its key name. Useful for finding both standard and user-defined associations.',
         inputSchema: {
           type: 'object',
@@ -139,7 +139,7 @@ export class AssociationTools {
         }
       },
       {
-        name: 'ghl_get_association_by_object_key',
+        name: 'get_association_by_object_key',
         description: 'Get associations by object keys like contacts, custom objects, and opportunities.',
         inputSchema: {
           type: 'object',
@@ -158,7 +158,7 @@ export class AssociationTools {
       },
       // Relation Management Tools
       {
-        name: 'ghl_create_relation',
+        name: 'create_relation',
         description: 'Create a relation between two entities using an existing association. Links specific records together.',
         inputSchema: {
           type: 'object',
@@ -184,7 +184,7 @@ export class AssociationTools {
         }
       },
       {
-        name: 'ghl_get_relations_by_record',
+        name: 'get_relations_by_record',
         description: 'Get all relations for a specific record ID with pagination and optional filtering by association IDs.',
         inputSchema: {
           type: 'object',
@@ -219,7 +219,7 @@ export class AssociationTools {
         }
       },
       {
-        name: 'ghl_delete_relation',
+        name: 'delete_relation',
         description: 'Delete a specific relation between two entities.',
         inputSchema: {
           type: 'object',
@@ -242,7 +242,7 @@ export class AssociationTools {
   async executeAssociationTool(name: string, args: any): Promise<any> {
     try {
       switch (name) {
-        case 'ghl_get_all_associations': {
+        case 'get_all_associations': {
           const params: MCPGetAllAssociationsParams = args;
           const result = await this.apiClient.getAssociations({
             locationId: params.locationId || '',
@@ -256,7 +256,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_create_association': {
+        case 'create_association': {
           const params: MCPCreateAssociationParams = args;
           const result = await this.apiClient.createAssociation({
             locationId: params.locationId || '',
@@ -273,7 +273,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_get_association_by_id': {
+        case 'get_association_by_id': {
           const params: MCPGetAssociationByIdParams = args;
           const result = await this.apiClient.getAssociationById(params.associationId);
           return {
@@ -283,7 +283,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_update_association': {
+        case 'update_association': {
           const params: MCPUpdateAssociationParams = args;
           const result = await this.apiClient.updateAssociation(params.associationId, {
             firstObjectLabel: params.firstObjectLabel,
@@ -296,7 +296,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_delete_association': {
+        case 'delete_association': {
           const params: MCPDeleteAssociationParams = args;
           const result = await this.apiClient.deleteAssociation(params.associationId);
           return {
@@ -306,7 +306,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_get_association_by_key': {
+        case 'get_association_by_key': {
           const params: MCPGetAssociationByKeyParams = args;
           const result = await this.apiClient.getAssociationByKey({
             keyName: params.keyName,
@@ -319,7 +319,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_get_association_by_object_key': {
+        case 'get_association_by_object_key': {
           const params: MCPGetAssociationByObjectKeyParams = args;
           const result = await this.apiClient.getAssociationByObjectKey({
             objectKey: params.objectKey,
@@ -332,7 +332,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_create_relation': {
+        case 'create_relation': {
           const params: MCPCreateRelationParams = args;
           const result = await this.apiClient.createRelation({
             locationId: params.locationId || '',
@@ -347,7 +347,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_get_relations_by_record': {
+        case 'get_relations_by_record': {
           const params: MCPGetRelationsByRecordParams = args;
           const result = await this.apiClient.getRelationsByRecord({
             recordId: params.recordId,
@@ -363,7 +363,7 @@ export class AssociationTools {
           };
         }
 
-        case 'ghl_delete_relation': {
+        case 'delete_relation': {
           const params: MCPDeleteRelationParams = args;
           const result = await this.apiClient.deleteRelation({
             relationId: params.relationId,

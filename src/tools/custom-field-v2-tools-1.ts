@@ -18,7 +18,7 @@ export class CustomFieldV2Tools {
     return [
       // Custom Field Management Tools
       {
-        name: 'ghl_get_custom_field_by_id',
+        name: 'get_custom_field_by_id',
         description: 'Get a custom field or folder by its ID. Supports custom objects and company (business) fields.',
         inputSchema: {
           type: 'object',
@@ -32,7 +32,7 @@ export class CustomFieldV2Tools {
         }
       },
       {
-        name: 'ghl_create_custom_field',
+        name: 'create_custom_field',
         description: 'Create a new custom field for custom objects or company (business). Supports various field types including text, number, options, date, file upload, etc.',
         inputSchema: {
           type: 'object',
@@ -115,7 +115,7 @@ export class CustomFieldV2Tools {
         }
       },
       {
-        name: 'ghl_update_custom_field',
+        name: 'update_custom_field',
         description: 'Update an existing custom field by ID. Can modify name, description, options, and other properties.',
         inputSchema: {
           type: 'object',
@@ -180,7 +180,7 @@ export class CustomFieldV2Tools {
         }
       },
       {
-        name: 'ghl_delete_custom_field',
+        name: 'delete_custom_field',
         description: 'Delete a custom field by ID. This will permanently remove the field and its data.',
         inputSchema: {
           type: 'object',
@@ -194,7 +194,7 @@ export class CustomFieldV2Tools {
         }
       },
       {
-        name: 'ghl_get_custom_fields_by_object_key',
+        name: 'get_custom_fields_by_object_key',
         description: 'Get all custom fields and folders for a specific object key (e.g., custom object or company).',
         inputSchema: {
           type: 'object',
@@ -213,7 +213,7 @@ export class CustomFieldV2Tools {
       },
       // Custom Field Folder Management Tools
       {
-        name: 'ghl_create_custom_field_folder',
+        name: 'create_custom_field_folder',
         description: 'Create a new custom field folder for organizing fields within an object.',
         inputSchema: {
           type: 'object',
@@ -235,7 +235,7 @@ export class CustomFieldV2Tools {
         }
       },
       {
-        name: 'ghl_update_custom_field_folder',
+        name: 'update_custom_field_folder',
         description: 'Update the name of an existing custom field folder.',
         inputSchema: {
           type: 'object',
@@ -257,7 +257,7 @@ export class CustomFieldV2Tools {
         }
       },
       {
-        name: 'ghl_delete_custom_field_folder',
+        name: 'delete_custom_field_folder',
         description: 'Delete a custom field folder. This will also affect any fields within the folder.',
         inputSchema: {
           type: 'object',
@@ -280,7 +280,7 @@ export class CustomFieldV2Tools {
   async executeCustomFieldV2Tool(name: string, args: any): Promise<any> {
     try {
       switch (name) {
-        case 'ghl_get_custom_field_by_id': {
+        case 'get_custom_field_by_id': {
           const params: MCPV2GetCustomFieldByIdParams = args;
           const result = await this.apiClient.getCustomFieldV2ById(params.id);
           return {
@@ -290,7 +290,7 @@ export class CustomFieldV2Tools {
           };
         }
 
-        case 'ghl_create_custom_field': {
+        case 'create_custom_field': {
           const params: MCPV2CreateCustomFieldParams = args;
           const result = await this.apiClient.createCustomFieldV2({
             locationId: params.locationId || '',
@@ -314,7 +314,7 @@ export class CustomFieldV2Tools {
           };
         }
 
-        case 'ghl_update_custom_field': {
+        case 'update_custom_field': {
           const params: MCPV2UpdateCustomFieldParams = args;
           const result = await this.apiClient.updateCustomFieldV2(params.id, {
             locationId: params.locationId || '',
@@ -333,7 +333,7 @@ export class CustomFieldV2Tools {
           };
         }
 
-        case 'ghl_delete_custom_field': {
+        case 'delete_custom_field': {
           const params: MCPV2DeleteCustomFieldParams = args;
           const result = await this.apiClient.deleteCustomFieldV2(params.id);
           return {
@@ -343,7 +343,7 @@ export class CustomFieldV2Tools {
           };
         }
 
-        case 'ghl_get_custom_fields_by_object_key': {
+        case 'get_custom_fields_by_object_key': {
           const params: MCPV2GetCustomFieldsByObjectKeyParams = args;
           const result = await this.apiClient.getCustomFieldsV2ByObjectKey({
             objectKey: params.objectKey,
@@ -356,7 +356,7 @@ export class CustomFieldV2Tools {
           };
         }
 
-        case 'ghl_create_custom_field_folder': {
+        case 'create_custom_field_folder': {
           const params: MCPV2CreateCustomFieldFolderParams = args;
           const result = await this.apiClient.createCustomFieldV2Folder({
             objectKey: params.objectKey,
@@ -370,7 +370,7 @@ export class CustomFieldV2Tools {
           };
         }
 
-        case 'ghl_update_custom_field_folder': {
+        case 'update_custom_field_folder': {
           const params: MCPV2UpdateCustomFieldFolderParams = args;
           const result = await this.apiClient.updateCustomFieldV2Folder(params.id, {
             name: params.name,
@@ -383,7 +383,7 @@ export class CustomFieldV2Tools {
           };
         }
 
-        case 'ghl_delete_custom_field_folder': {
+        case 'delete_custom_field_folder': {
           const params: MCPV2DeleteCustomFieldFolderParams = args;
           const result = await this.apiClient.deleteCustomFieldV2Folder({
             id: params.id,

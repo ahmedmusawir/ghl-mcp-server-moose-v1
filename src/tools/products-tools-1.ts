@@ -169,7 +169,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
     return [
       // Product Management Tools
       {
-        name: 'ghl_create_product',
+        name: 'create_product',
         description: 'Create a new product in GoHighLevel',
         inputSchema: {
           type: 'object',
@@ -190,7 +190,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
         }
       },
       {
-        name: 'ghl_list_products',
+        name: 'list_products',
         description: 'List products with optional filtering',
         inputSchema: {
           type: 'object',
@@ -207,7 +207,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
         }
       },
       {
-        name: 'ghl_get_product',
+        name: 'get_product',
         description: 'Get a specific product by ID',
         inputSchema: {
           type: 'object',
@@ -219,7 +219,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
         }
       },
       {
-        name: 'ghl_update_product',
+        name: 'update_product',
         description: 'Update an existing product',
         inputSchema: {
           type: 'object',
@@ -240,7 +240,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
         }
       },
       {
-        name: 'ghl_delete_product',
+        name: 'delete_product',
         description: 'Delete a product by ID',
         inputSchema: {
           type: 'object',
@@ -254,7 +254,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
 
       // Price Management Tools
       {
-        name: 'ghl_create_price',
+        name: 'create_price',
         description: 'Create a price for a product',
         inputSchema: {
           type: 'object',
@@ -275,7 +275,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
         }
       },
       {
-        name: 'ghl_list_prices',
+        name: 'list_prices',
         description: 'List prices for a product',
         inputSchema: {
           type: 'object',
@@ -291,7 +291,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
 
       // Inventory Tools
       {
-        name: 'ghl_list_inventory',
+        name: 'list_inventory',
         description: 'List inventory items with stock levels',
         inputSchema: {
           type: 'object',
@@ -307,7 +307,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
 
       // Collection Tools
       {
-        name: 'ghl_create_product_collection',
+        name: 'create_product_collection',
         description: 'Create a new product collection',
         inputSchema: {
           type: 'object',
@@ -328,7 +328,7 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
         }
       },
       {
-        name: 'ghl_list_product_collections',
+        name: 'list_product_collections',
         description: 'List product collections',
         inputSchema: {
           type: 'object',
@@ -346,25 +346,25 @@ ${params.includedInStore !== undefined ? `• **Store Status:** ${params.include
 
   async executeProductsTool(toolName: string, params: any): Promise<ProductsToolResult> {
     switch (toolName) {
-      case 'ghl_create_product':
+      case 'create_product':
         return this.createProduct(params as MCPCreateProductParams);
-      case 'ghl_list_products':
+      case 'list_products':
         return this.listProducts(params as MCPListProductsParams);
-      case 'ghl_get_product':
+      case 'get_product':
         return this.getProduct(params as MCPGetProductParams);
-      case 'ghl_update_product':
+      case 'update_product':
         return this.updateProduct(params as MCPUpdateProductParams);
-      case 'ghl_delete_product':
+      case 'delete_product':
         return this.deleteProduct(params as MCPDeleteProductParams);
-      case 'ghl_create_price':
+      case 'create_price':
         return this.createPrice(params as MCPCreatePriceParams);
-      case 'ghl_list_prices':
+      case 'list_prices':
         return this.listPrices(params as MCPListPricesParams);
-      case 'ghl_list_inventory':
+      case 'list_inventory':
         return this.listInventory(params as MCPListInventoryParams);
-      case 'ghl_create_product_collection':
+      case 'create_product_collection':
         return this.createProductCollection(params as MCPCreateProductCollectionParams);
-      case 'ghl_list_product_collections':
+      case 'list_product_collections':
         return this.listProductCollections(params as MCPListProductCollectionsParams);
       default:
         return {

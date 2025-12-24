@@ -7,7 +7,7 @@ export class SurveyTools {
   getToolDefinitions(): any[] {
     return [
       {
-        name: 'ghl_get_surveys',
+        name: 'get_surveys',
         description: `Retrieve all surveys for a location.
 
 List surveys used to collect information from contacts.
@@ -22,7 +22,7 @@ Surveys collect information through forms and questionnaires.
 
 Returns: Array of surveys with pagination.
 
-Related Tools: ghl_get_survey_submissions`,
+Related Tools: get_survey_submissions`,
         inputSchema: {
           locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
           skip: z.number().min(0).optional().describe('Number of records to skip for pagination (default: 0)'),
@@ -31,7 +31,7 @@ Related Tools: ghl_get_survey_submissions`,
         }
       },
       {
-        name: 'ghl_get_survey_submissions',
+        name: 'get_survey_submissions',
         description: `Retrieve survey submissions with filtering.
 
 Analyze responses from contacts who completed surveys.
@@ -47,7 +47,7 @@ Advanced filtering by survey ID, contact info, and date range.
 
 Returns: Array of submissions with contact and response data.
 
-Related Tools: ghl_get_surveys`,
+Related Tools: get_surveys`,
         inputSchema: {
           locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
           page: z.number().min(1).optional().describe('Page number for pagination (default: 1)'),
@@ -64,10 +64,10 @@ Related Tools: ghl_get_surveys`,
   async executeSurveyTool(name: string, params: any): Promise<any> {
     try {
       switch (name) {
-        case 'ghl_get_surveys':
+        case 'get_surveys':
           return await this.getSurveys(params);
         
-        case 'ghl_get_survey_submissions':
+        case 'get_survey_submissions':
           return await this.getSurveySubmissions(params);
         
         default:
@@ -169,8 +169,8 @@ Related Tools: ghl_get_surveys`,
 // Helper function to check if a tool name belongs to survey tools
 export function isSurveyTool(toolName: string): boolean {
   const surveyToolNames = [
-    'ghl_get_surveys',
-    'ghl_get_survey_submissions'
+    'get_surveys',
+    'get_survey_submissions'
   ];
   
   return surveyToolNames.includes(toolName);

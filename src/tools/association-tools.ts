@@ -8,7 +8,7 @@ export class AssociationTools {
     return [
       // Association Management Tools
       {
-        name: 'ghl_get_all_associations',
+        name: 'get_all_associations',
         description: `Get all associations for a location.
 
 Returns both system-defined and user-defined associations.
@@ -21,7 +21,7 @@ Use Cases:
 
 Returns: Array of associations with IDs, keys, and object mappings.
 
-Related Tools: ghl_create_association, ghl_get_association_by_id`,
+Related Tools: create_association, get_association_by_id`,
         inputSchema: {
           locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
           skip: z.number().min(0).optional().describe('Number of records to skip for pagination (default: 0)'),
@@ -29,7 +29,7 @@ Related Tools: ghl_create_association, ghl_get_association_by_id`,
         }
       },
       {
-        name: 'ghl_create_association',
+        name: 'create_association',
         description: `Create a new association between two object types.
 
 Define relationship types between entities like contacts, custom objects, and opportunities.
@@ -46,7 +46,7 @@ Examples:
 
 Returns: Created association with ID and configuration.
 
-Related Tools: ghl_create_relation, ghl_get_all_associations`,
+Related Tools: create_relation, get_all_associations`,
         inputSchema: {
           key: z.string().describe('Unique key for the association (e.g., "student_teacher")'),
           firstObjectLabel: z.string().describe('Label for the first object (e.g., "student")'),
@@ -57,7 +57,7 @@ Related Tools: ghl_create_relation, ghl_get_all_associations`,
         }
       },
       {
-        name: 'ghl_get_association_by_id',
+        name: 'get_association_by_id',
         description: `Get a specific association by its ID.
 
 Retrieve association details for both system-defined and user-defined associations.
@@ -69,13 +69,13 @@ Use Cases:
 
 Returns: Association with ID, key, labels, and object mappings.
 
-Related Tools: ghl_get_all_associations, ghl_update_association`,
+Related Tools: get_all_associations, update_association`,
         inputSchema: {
           associationId: z.string().describe('The ID of the association to retrieve')
         }
       },
       {
-        name: 'ghl_update_association',
+        name: 'update_association',
         description: `Update the labels of an existing association.
 
 Only user-defined associations can be updated (system associations are read-only).
@@ -87,7 +87,7 @@ Use Cases:
 
 Returns: Updated association with new labels.
 
-Related Tools: ghl_get_association_by_id, ghl_create_association`,
+Related Tools: get_association_by_id, create_association`,
         inputSchema: {
           associationId: z.string().describe('The ID of the association to update'),
           firstObjectLabel: z.string().describe('New label for the first object in the association'),
@@ -95,7 +95,7 @@ Related Tools: ghl_get_association_by_id, ghl_create_association`,
         }
       },
       {
-        name: 'ghl_delete_association',
+        name: 'delete_association',
         description: `Delete a user-defined association.
 
 ⚠️ WARNING: This is permanent and cannot be undone!
@@ -103,13 +103,13 @@ Related Tools: ghl_get_association_by_id, ghl_create_association`,
 
 Only user-defined associations can be deleted (system associations cannot be removed).
 
-Related Tools: ghl_get_all_associations, ghl_delete_relation`,
+Related Tools: get_all_associations, delete_relation`,
         inputSchema: {
           associationId: z.string().describe('The ID of the association to delete')
         }
       },
       {
-        name: 'ghl_get_association_by_key',
+        name: 'get_association_by_key',
         description: `Get an association by its key name.
 
 Find associations using their unique key identifier.
@@ -121,14 +121,14 @@ Use Cases:
 
 Returns: Association matching the key.
 
-Related Tools: ghl_get_all_associations, ghl_get_association_by_id`,
+Related Tools: get_all_associations, get_association_by_id`,
         inputSchema: {
           keyName: z.string().describe('The key name of the association to retrieve'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
-        name: 'ghl_get_association_by_object_key',
+        name: 'get_association_by_object_key',
         description: `Get associations by object key.
 
 Find all associations that involve a specific object type.
@@ -144,7 +144,7 @@ Examples:
 
 Returns: Array of associations involving the specified object.
 
-Related Tools: ghl_get_all_associations, ghl_create_association`,
+Related Tools: get_all_associations, create_association`,
         inputSchema: {
           objectKey: z.string().describe('The object key to search for (e.g., "custom_objects.pet", "contact", "opportunity")'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
@@ -152,7 +152,7 @@ Related Tools: ghl_get_all_associations, ghl_create_association`,
       },
       // Relation Management Tools
       {
-        name: 'ghl_create_relation',
+        name: 'create_relation',
         description: `Create a relation between two specific records.
 
 Link individual records together using an existing association.
@@ -169,7 +169,7 @@ Examples:
 
 Returns: Created relation with ID and record mappings.
 
-Related Tools: ghl_get_relations_by_record, ghl_delete_relation, ghl_create_association`,
+Related Tools: get_relations_by_record, delete_relation, create_association`,
         inputSchema: {
           associationId: z.string().describe('The ID of the association to use for this relation'),
           firstRecordId: z.string().describe('ID of the first record (matches first object in association)'),
@@ -178,7 +178,7 @@ Related Tools: ghl_get_relations_by_record, ghl_delete_relation, ghl_create_asso
         }
       },
       {
-        name: 'ghl_get_relations_by_record',
+        name: 'get_relations_by_record',
         description: `Get all relations for a specific record.
 
 Retrieve all relationships linked to a particular record with pagination.
@@ -193,7 +193,7 @@ Optionally filter by specific association IDs to narrow results.
 
 Returns: Array of relations with related record IDs and association info.
 
-Related Tools: ghl_create_relation, ghl_delete_relation`,
+Related Tools: create_relation, delete_relation`,
         inputSchema: {
           recordId: z.string().describe('The record ID to get relations for'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)'),
@@ -203,7 +203,7 @@ Related Tools: ghl_create_relation, ghl_delete_relation`,
         }
       },
       {
-        name: 'ghl_delete_relation',
+        name: 'delete_relation',
         description: `Delete a specific relation between two records.
 
 ⚠️ WARNING: This is permanent and cannot be undone!
@@ -215,7 +215,7 @@ Use Cases:
 - Unlink pet from owner
 - Disconnect ticket from product
 
-Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
+Related Tools: create_relation, get_relations_by_record`,
         inputSchema: {
           relationId: z.string().describe('The ID of the relation to delete'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
@@ -227,7 +227,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
   async executeAssociationTool(name: string, args: any): Promise<any> {
     try {
       switch (name) {
-        case 'ghl_get_all_associations': {
+        case 'get_all_associations': {
           const result = await this.apiClient.getAssociations({
             locationId: args.locationId || '',
             skip: args.skip || 0,
@@ -240,7 +240,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_create_association': {
+        case 'create_association': {
           const result = await this.apiClient.createAssociation({
             locationId: args.locationId || '',
             key: args.key,
@@ -256,7 +256,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_get_association_by_id': {
+        case 'get_association_by_id': {
           const result = await this.apiClient.getAssociationById(args.associationId);
           return {
             success: true,
@@ -265,7 +265,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_update_association': {
+        case 'update_association': {
           const result = await this.apiClient.updateAssociation(args.associationId, {
             firstObjectLabel: args.firstObjectLabel,
             secondObjectLabel: args.secondObjectLabel
@@ -277,7 +277,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_delete_association': {
+        case 'delete_association': {
           const result = await this.apiClient.deleteAssociation(args.associationId);
           return {
             success: true,
@@ -286,7 +286,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_get_association_by_key': {
+        case 'get_association_by_key': {
           const result = await this.apiClient.getAssociationByKey({
             keyName: args.keyName,
             locationId: args.locationId || ''
@@ -298,7 +298,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_get_association_by_object_key': {
+        case 'get_association_by_object_key': {
           const result = await this.apiClient.getAssociationByObjectKey({
             objectKey: args.objectKey,
             locationId: args.locationId
@@ -310,7 +310,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_create_relation': {
+        case 'create_relation': {
           const result = await this.apiClient.createRelation({
             locationId: args.locationId || '',
             associationId: args.associationId,
@@ -324,7 +324,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_get_relations_by_record': {
+        case 'get_relations_by_record': {
           const result = await this.apiClient.getRelationsByRecord({
             recordId: args.recordId,
             locationId: args.locationId || '',
@@ -339,7 +339,7 @@ Related Tools: ghl_create_relation, ghl_get_relations_by_record`,
           };
         }
 
-        case 'ghl_delete_relation': {
+        case 'delete_relation': {
           const result = await this.apiClient.deleteRelation({
             relationId: args.relationId,
             locationId: args.locationId || ''

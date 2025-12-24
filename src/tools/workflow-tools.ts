@@ -7,7 +7,7 @@ export class WorkflowTools {
   getToolDefinitions(): any[] {
     return [
       {
-        name: 'ghl_get_workflows',
+        name: 'get_workflows',
         description: `Retrieve all workflows for a location.
 
 Discover automation sequences and workflow configurations.
@@ -33,7 +33,7 @@ Related Tools: Contact and opportunity tools for workflow triggers`,
   async executeWorkflowTool(name: string, params: any): Promise<any> {
     try {
       switch (name) {
-        case 'ghl_get_workflows':
+        case 'get_workflows':
           return await this.getWorkflows(params);
         
         default:
@@ -82,7 +82,7 @@ Related Tools: Contact and opportunity tools for workflow triggers`,
 // Helper function to check if a tool name belongs to workflow tools
 export function isWorkflowTool(toolName: string): boolean {
   const workflowToolNames = [
-    'ghl_get_workflows'
+    'get_workflows'
   ];
   
   return workflowToolNames.includes(toolName);

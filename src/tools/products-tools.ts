@@ -144,7 +144,7 @@ export class ProductsTools {
     return [
       // Product Management Tools
       {
-        name: 'ghl_create_product',
+        name: 'create_product',
         description: `Create a new product in your GoHighLevel store.
 
 Add products to sell through your GHL e-commerce platform.
@@ -183,12 +183,12 @@ USAGE EXAMPLES:
 
 WORKFLOW:
 1. Create product with this tool
-2. Use ghl_create_price to add pricing
+2. Use create_price to add pricing
 3. Product appears in your store
 
 Returns: Complete product object with _id, name, productType, and all fields.
 
-Related Tools: ghl_create_price, ghl_update_product, ghl_list_products`,
+Related Tools: create_price, update_product, list_products`,
         inputSchema: {
           name: z.string().min(1).describe('Product name (customer-facing)'),
           productType: z.enum(['DIGITAL', 'PHYSICAL', 'SERVICE', 'PHYSICAL/DIGITAL']).describe('Product type: DIGITAL (downloads), PHYSICAL (ships), SERVICE (appointments), PHYSICAL/DIGITAL (combo)'),
@@ -200,7 +200,7 @@ Related Tools: ghl_create_price, ghl_update_product, ghl_list_products`,
         }
       },
       {
-        name: 'ghl_list_products',
+        name: 'list_products',
         description: `List products with filtering and search.
 
 Browse and search your product catalog.
@@ -241,7 +241,7 @@ RESPONSE FORMAT:
 
 Returns: Array of complete product objects with _id, name, productType, availableInStore, etc.
 
-Related Tools: ghl_get_product, ghl_create_product, ghl_update_product`,
+Related Tools: get_product, create_product, update_product`,
         inputSchema: {
           limit: z.number().min(1).max(100).optional().describe('Maximum products to return (default: 20, max: 100)'),
           offset: z.number().min(0).optional().describe('Number of products to skip (for pagination)'),
@@ -253,7 +253,7 @@ Related Tools: ghl_get_product, ghl_create_product, ghl_update_product`,
         }
       },
       {
-        name: 'ghl_get_product',
+        name: 'get_product',
         description: `Get a specific product by ID.
 
 Retrieve complete product details. REQUIRED before updating a product.
@@ -280,22 +280,22 @@ RESPONSE FORMAT:
   }
 }
 
-IMPORTANT: Always call this BEFORE ghl_update_product to get the current name and productType (both required for updates).
+IMPORTANT: Always call this BEFORE update_product to get the current name and productType (both required for updates).
 
 Returns: Complete product object with all fields from GHL API.
 
-Related Tools: ghl_list_products, ghl_update_product, ghl_list_prices`,
+Related Tools: list_products, update_product, list_prices`,
         inputSchema: {
           productId: z.string().describe('Product ID to retrieve'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
         }
       },
       {
-        name: 'ghl_update_product',
+        name: 'update_product',
         description: `Update an existing product.
 
 ⚠️ REQUIRED WORKFLOW:
-1. FIRST call ghl_get_product to get current name and productType
+1. FIRST call get_product to get current name and productType
 2. Include BOTH name and productType in your update (even if not changing them)
 3. Add the fields you want to change
 
@@ -331,7 +331,7 @@ USAGE EXAMPLES:
 
 Returns: Updated product object with all fields.
 
-Related Tools: ghl_get_product, ghl_create_product, ghl_create_price`,
+Related Tools: get_product, create_product, create_price`,
         inputSchema: {
           productId: z.string().describe('Product ID to update'),
           name: z.string().min(1).describe('Product name (REQUIRED - include current name even if not changing it)'),
@@ -343,7 +343,7 @@ Related Tools: ghl_get_product, ghl_create_product, ghl_create_price`,
         }
       },
       {
-        name: 'ghl_delete_product',
+        name: 'delete_product',
         description: `Delete a product by ID.
 
 ⚠️ WARNING: This is PERMANENT and cannot be undone!
@@ -361,7 +361,7 @@ What Gets Deleted:
 - Store listings
 
 ⚠️ Before Deleting:
-1. Verify correct product (use ghl_get_product)
+1. Verify correct product (use get_product)
 2. Check if product has active orders
 3. Consider hiding instead (availableInStore=false)
 4. Remove from collections first
@@ -387,7 +387,7 @@ Safer Alternative:
 
 Returns: Confirmation of deletion.
 
-Related Tools: ghl_update_product, ghl_get_product, ghl_list_products`,
+Related Tools: update_product, get_product, list_products`,
         inputSchema: {
           productId: z.string().describe('Product ID to permanently delete'),
           locationId: z.string().optional().describe('Location ID (uses default if not provided)')
@@ -396,7 +396,7 @@ Related Tools: ghl_update_product, ghl_get_product, ghl_list_products`,
 
       // Price Management Tools
       {
-        name: 'ghl_create_price',
+        name: 'create_price',
         description: `Create a price for a product.
 
 ⚠️ IMPORTANT: Amount is in CENTS (9900 = $99.00)
@@ -446,7 +446,7 @@ USAGE EXAMPLES:
 
 Returns: Created price object with _id and all fields.
 
-Related Tools: ghl_list_prices, ghl_create_product, ghl_list_products`,
+Related Tools: list_prices, create_product, list_products`,
         inputSchema: {
           productId: z.string().describe('Product ID to create price for'),
           name: z.string().describe('Price/variant name (e.g., "Standard", "Monthly Plan", "Large - Blue")'),
@@ -458,7 +458,7 @@ Related Tools: ghl_list_prices, ghl_create_product, ghl_list_products`,
         }
       },
       {
-        name: 'ghl_list_prices',
+        name: 'list_prices',
         description: `List prices for a product.
 
 View all pricing options and variants for a product.
@@ -496,7 +496,7 @@ NOTE: Amount is in cents (9900 = $99.00)
 
 Returns: Array of price objects with _id, name, type, amount, currency.
 
-Related Tools: ghl_create_price, ghl_get_product, ghl_list_products`,
+Related Tools: create_price, get_product, list_products`,
         inputSchema: {
           productId: z.string().describe('Product ID to list prices for'),
           limit: z.number().min(1).max(100).optional().describe('Maximum prices to return (for pagination)'),
@@ -507,7 +507,7 @@ Related Tools: ghl_create_price, ghl_get_product, ghl_list_products`,
 
       // Inventory Tools
       {
-        name: 'ghl_list_inventory',
+        name: 'list_inventory',
         description: `List inventory items with stock levels.
 
 Track product inventory and stock quantities.
@@ -549,7 +549,7 @@ Examples:
 
 Returns: Array of inventory items with stock levels.
 
-Related Tools: ghl_list_products, ghl_get_product, ghl_list_prices`,
+Related Tools: list_products, get_product, list_prices`,
         inputSchema: {
           limit: z.number().min(1).max(100).optional().describe('Maximum items to return (default: 20, max: 100)'),
           offset: z.number().min(0).optional().describe('Number of items to skip (for pagination)'),
@@ -560,7 +560,7 @@ Related Tools: ghl_list_products, ghl_get_product, ghl_list_prices`,
 
       // Collection Tools
       {
-        name: 'ghl_create_product_collection',
+        name: 'create_product_collection',
         description: `Create a new product collection.
 
 Organize products into collections for better browsing.
@@ -600,7 +600,7 @@ Examples:
 
 Returns: Created collection with ID and configuration.
 
-Related Tools: ghl_list_product_collections, ghl_create_product, ghl_list_products`,
+Related Tools: list_product_collections, create_product, list_products`,
         inputSchema: {
           name: z.string().min(1).describe('Collection name (e.g., "Summer Sale", "T-Shirts", "Best Sellers")'),
           slug: z.string().min(1).describe('URL-friendly slug (e.g., "summer-sale", "t-shirts")'),
@@ -613,7 +613,7 @@ Related Tools: ghl_list_product_collections, ghl_create_product, ghl_list_produc
         }
       },
       {
-        name: 'ghl_list_product_collections',
+        name: 'list_product_collections',
         description: `List product collections.
 
 Browse and search your product collections.
@@ -650,7 +650,7 @@ Common Workflow:
 
 Returns: Array of collections with details.
 
-Related Tools: ghl_create_product_collection, ghl_list_products, ghl_create_product`,
+Related Tools: create_product_collection, list_products, create_product`,
         inputSchema: {
           limit: z.number().min(1).max(100).optional().describe('Maximum collections to return (default: 20, max: 100)'),
           offset: z.number().min(0).optional().describe('Number of collections to skip (for pagination)'),
@@ -663,25 +663,25 @@ Related Tools: ghl_create_product_collection, ghl_list_products, ghl_create_prod
 
   async executeProductsTool(toolName: string, params: any): Promise<ProductsToolResult> {
     switch (toolName) {
-      case 'ghl_create_product':
+      case 'create_product':
         return this.createProduct(params);
-      case 'ghl_list_products':
+      case 'list_products':
         return this.listProducts(params);
-      case 'ghl_get_product':
+      case 'get_product':
         return this.getProduct(params);
-      case 'ghl_update_product':
+      case 'update_product':
         return this.updateProduct(params);
-      case 'ghl_delete_product':
+      case 'delete_product':
         return this.deleteProduct(params);
-      case 'ghl_create_price':
+      case 'create_price':
         return this.createPrice(params);
-      case 'ghl_list_prices':
+      case 'list_prices':
         return this.listPrices(params);
-      case 'ghl_list_inventory':
+      case 'list_inventory':
         return this.listInventory(params);
-      case 'ghl_create_product_collection':
+      case 'create_product_collection':
         return this.createProductCollection(params);
-      case 'ghl_list_product_collections':
+      case 'list_product_collections':
         return this.listProductCollections(params);
       default:
         return {
